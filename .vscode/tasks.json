@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Generate Commit Message",
+            "type": "shell",
+            "command": "powershell -Command \"try { git diff | cody chat --stdin -m 'Write a commit message for this diff' } catch { cody auth login --web; if ($?) { git diff | cody chat --stdin -m 'Write a commit message for this diff' } }\"",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        }
+    ]
+}
+
+// https://www.youtube.com/watch?v=wU8AdU2Nz5A
