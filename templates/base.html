@@ -13,6 +13,7 @@
     </head>
 
     <body>
+
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container d-flex gap-2 justify-content-evenly">
                 <a class="navbar-brand" href="#">Financeiro</a>
@@ -23,23 +24,60 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ml-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('index') }}">Início</a>
+                            <a class="nav-link" href="{{ url_for('main.index') }}">Início</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('listar_grupos') }}">Grupos</a>
+                            <a class="nav-link" href="">Grupos</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('listar_descricoes') }}">Descrições</a>
+                            <a class="nav-link" href="">Descrições</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('listar_fpgtos') }}">Formas de Pagamento</a>
+                            <a class="nav-link" href="">Formas de Pagamento</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('listar_transacoes') }}">Transações</a>
+                            <a class="nav-link" href="">Transações</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('listar_reposicoes') }}">Reposições</a>
+                            <a class="nav-link" href="">Reposições</a>
                         </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="{{ url_for('main.index') }}">Personal Finance</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.transactions') }}">Transactions</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.reports') }}">Reports</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <ul class="navbar-nav">
+                        {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">Register</a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
