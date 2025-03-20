@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Transações{% endblock %}
+
+{% block content %}
+
+<h1 class="text-center">Lista de Transações</h1>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Grupo</th>
+            <th>Descrição</th>
+            <th>Valor</th>
+            <th>Data de Pagamento</th>
+            <th>Forma de Pagamento</th>
+            <th>Detalhes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transacao in transacoes %}
+        <tr>
+            <td>{{ transacao.id }}</td>
+            <td>{{ transacao.tipo }}</td>
+            <td>{{ transacao.grupo.nome }}</td>
+            <td>{{ transacao.descricao.nome }}</td>
+            <td>{{ transacao.valor }}</td>
+            <td>{{ transacao.data_pgto }}</td>
+            <td>{{ transacao.formapgto.nome }}</td>
+            <td>{{ transacao.detalhes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% endblock %}

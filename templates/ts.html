@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sistema Financeiro</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.2/css/bootstrap.min.css">
+    </head>
+
+    <body>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-success mt-4">
+            {{ messages[0] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="container mt-5">
+            <h1 class="text-center">Sistema Financeiro</h1>
+            <form method="POST" class="mt-4">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    <label for="tipo">{{ form.tipo.label }}</label>
+                    {{ form.tipo(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="grupo">{{ form.grupo.label }}</label>
+                    {{ form.grupo(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="descricao">{{ form.descricao.label }}</label>
+                    {{ form.descricao(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="valor">{{ form.valor.label }}</label>
+                    {{ form.valor(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="data_pgto">{{ form.data_pgto.label }}</label>
+                    {{ form.data_pgto(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="forma_pgto">{{ form.forma_pgto.label }}</label>
+                    {{ form.forma_pgto(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    <label for="detalhes">{{ form.detalhes.label }}</label>
+                    {{ form.detalhes(class="form-control") }}
+                </div>
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-primary btn-block") }}
+                </div>
+            </form>
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="alert alert-success mt-4">
+                {{ messages[0] }}
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    </body>
+
+</html>

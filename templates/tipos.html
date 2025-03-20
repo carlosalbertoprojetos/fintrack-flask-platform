@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Adicionar Transação</title>
+    </head>
+
+    <body>
+        <h1>Adicionar Transação</h1>
+        <form action="/adicionar" method="post" class="mb-4">
+            <div class="row">
+                <!-- Tipo de Transação -->
+                <div class="col-md-3">
+                    <select name="tipo" class="form-control" id="tipo" required onchange="toggleFields()">
+                        <option value="receita">Receita</option>
+                        <option value="despesa">Despesa</option>
+                    </select>
+                </div>
+
+                <!-- Descrição -->
+                <div class="col-md-4">
+                    <input type="text" name="descricao" class="form-control" placeholder="Descrição" required>
+                </div>
+
+                <!-- Valor -->
+                <div class="col-md-3">
+                    <input type="number" step="0.01" name="valor" class="form-control" placeholder="Valor" required>
+                </div>
+
+                <!-- Tipo de Transação ID -->
+                <div class="col-md-3" id="tipoTransacaoDiv">
+                    <select name="transacao" class="form-control" id="transacao" required>
+                        <!-- Opções serão preenchidas dinamicamente -->
+                        <option value="">Selecione...</option>
+                        {% for receita in receitas %}
+                        <option value="{{ receita.id }}">{{ receita.descricao }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Tipo Transação ID (Tipo de Receita ou Despesa) -->
+                <div class="col-md-3" id="tipoTransacaoDiv">
+                    <select name="tipo_transacao" class="form-control" id="tipo_transacao" required>
+                        <!-- Opções serão preenchidas dinamicamente -->
+                        <option value="">Selecione...</option>
+                        {% for receita in receitas %}
+                        <option value="{{ receita.id }}">{{ receita.tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="row">
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary">Adicionar</button>
+                </div>
+            </div>
+        </form>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const tipoSelect = document.getElementById('tipo');
+                tipoSelect.addEventListener('change', toggleFields);
+                toggleFields(); // Chama uma vez para carregar no início
+            });
+
+
+            function toggleFields() {
+                const tipo = document.getElementById('tipo').value;
+                const transacaoSelect = document.getElementById('transacao');
+                const tipoTransacaoSelect = document.getElementById('tipo_transacao');
+
+                // Limpar as opções anteriores
+                transacaoSelect.innerHTML = '';
+                tipoTransacaoSelect.innerHTML = '';
+
+                // Se for receita
+                if (tipo === 'receita') {
+                    {% for receita in receitas %}
+                    const option = document.createElement('option');
+                    option.value = "{{ receita.id }}";
+                    option.textContent = "{{ receita.descricao }}";
+                    transacaoSelect.appendChild(option);
+
+                    const tipoOption = document.createElement('option');
+                    tipoOption.value = "{{ receita.id }}";
+                    tipoOption.textContent = "{{ receita.tipo }}";
+                    tipoTransacaoSelect.appendChild(tipoOption);
+                    {% endfor %}
+                } else if (tipo === 'despesa') {
+                    {% for despesa in despesas %}
+                    const option = document.createElement('option');
+                    option.value = "{{ despesa.id }}";
+                    option.textContent = "{{ despesa.descricao }}";
+                    transacaoSelect.appendChild(option);
+
+                    const tipoOption = document.createElement('option');
+                    tipoOption.value = "{{ despesa.id }}";
+                    tipoOption.textContent = "{{ despesa.tipo }}";
+                    tipoTransacaoSelect.appendChild(tipoOption);
+                    {% endfor %}
+                }
+            }
+
+            // Chamar a função para inicializar as opções no carregamento da página
+            window.onload = toggleFields;
+        </script>
+    </body>
+
+</html>

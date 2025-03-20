@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar/Editar Descrição{% endblock %}
+
+{% block content %}
+<h1 class="text-center">Cadastrar/Editar Descrição</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        <label for="nome" class="form-label">Nome da Descrição</label>
+        {{ form.nome(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        <label for="grupo_id" class="form-label">Grupo</label>
+        {{ form.grupo_id(class="form-control") }}
+    </div>
+    <button type="submit" class="btn btn-primary">{{ 'Salvar' if descricao else 'Cadastrar' }}</button>
+</form>
+{% endblock %}

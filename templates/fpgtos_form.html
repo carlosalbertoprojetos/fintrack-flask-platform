@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar/Editar Forma de Pagamento{% endblock %}
+
+{% block content %}
+<h1 class="text-center">{{ 'Editar' if fpgtos else 'Cadastrar' }} Forma de Pagamento</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        <label for="nome" class="form-label">Nome da Forma de Pagamento</label>
+        {{ form.nome(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        <label for="is_active" class="form-label">Ativo</label>
+        {{ form.is_active(class="form-check-input") }}
+    </div>
+    <button type="submit" class="btn btn-primary">{{ 'Salvar' if fpgtos else 'Cadastrar' }}</button>
+</form>
+{% endblock %}

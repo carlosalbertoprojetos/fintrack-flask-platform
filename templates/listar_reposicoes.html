@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Reposições{% endblock %}
+
+{% block content %}
+<h1 class="text-center">Lista de Reposições</h1>
+<a href="{{ url_for('cadastrar_reposicao') }}" class="btn btn-success mb-3">Cadastrar Nova Reposição</a>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Operação</th>
+            <th>Percentual</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for reposicao in reposicoes %}
+        <tr>
+            <td>{{ reposicao.id }}</td>
+            <td>{{ reposicao.operacao }}</td>
+            <td>{{ reposicao.percentual }}%</td>
+            <td>
+                <a href="{{ url_for('editar_reposicao', reposicao_id=reposicao.id) }}"
+                    class="btn btn-warning btn-sm">Editar</a>
+                <a href="{{ url_for('deletar_reposicao', reposicao_id=reposicao.id) }}" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Tem certeza que deseja deletar?')">Deletar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

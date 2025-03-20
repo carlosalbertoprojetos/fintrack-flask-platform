@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastrar/Editar Grupo{% endblock %}
+
+{% block content %}
+<h1 class="text-center">{{ 'Editar' if grupo else 'Cadastrar' }} Grupo</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        <label for="nome" class="form-label">Nome do Grupo</label>
+        {{ form.nome(class="form-control") }}
+    </div>
+    <div class="mb-3">
+        <label for="exclusivo" class="form-label">Exclusivo</label>
+        <select name="exclusivo" class="form-control">
+            <option value="" {% if not grupo or not grupo.exclusivo %}selected{% endif %}>Selecione...</option>
+            <option value="Receita" {% if grupo and grupo.exclusivo == 'Receita' %}selected{% endif %}>Receita</option>
+            <option value="Despesa" {% if grupo and grupo.exclusivo == 'Despesa' %}selected{% endif %}>Despesa</option>
+        </select>        
+    </div>
+    <button type="submit" class="btn btn-primary">{{ 'Salvar' if grupo else 'Cadastrar' }}</button>
+</form>
+{% endblock %}
+

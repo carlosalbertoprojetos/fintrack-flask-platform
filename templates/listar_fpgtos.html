@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Formas de Pagamento{% endblock %}
+
+{% block content %}
+<h1 class="text-center">Lista de Formas de Pagamento</h1>
+<a href="{{ url_for('cadastrar_fpgtos') }}" class="btn btn-success mb-3">Cadastrar Nova Forma de Pagamento</a>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Ativo</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for fpgtos in fpgtos %}
+        <tr>
+            <td>{{ fpgtos.id }}</td>
+            <td>{{ fpgtos.nome }}</td>
+            <td>{{ 'Sim' if fpgtos.is_active else 'Não' }}</td>
+            <td>
+                <a href="{{ url_for('editar_fpgtos', fpgtos_id=fpgtos.id) }}" class="btn btn-warning btn-sm">Editar</a>
+                <a href="{{ url_for('deletar_fpgtos', fpgtos_id=fpgtos.id) }}" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Tem certeza que deseja deletar?')">Deletar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

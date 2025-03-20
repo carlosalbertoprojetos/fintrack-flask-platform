@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Controle de Finanças</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+
+    <body>
+        <div class="container mt-4">
+            <h1 class="text-center">Controle de Finanças Pessoais</h1>
+            <h3 class="text-center text-{% if saldo >= 0 %}success{% else %}danger{% endif %}">Saldo: R$ {{ saldo |
+                round(2) }}</h3>
+
+            <div class="text-end mt-4">
+                <a href="/fechar" class="btn btn-danger">Sair do Sistema</a>
+            </div>
+
+            <form action="/adicionar" method="post" class="mb-4">
+                <div class="row my-2">
+                    <!-- Tipo de Transação -->
+                    <div class="col-2">
+                        <label for="tipo">Movimentação</label>
+                        <select name="tipo" class="form-control" id="tipo" required onchange="toggleFields()">
+                            <option value="receita">Receita</option>
+                            <option value="despesa">Despesa</option>
+                        </select>
+                    </div>
+
+                    <!-- Tipo de Transação ID (diferente dependendo do tipo de transação) -->
+                    <div class="col" id="tipoTransacaoDiv">
+                        <label for="tipo">Descrição</label>
+                        <select name="tipo_transacao_id" class="form-control" id="tipo_transacao_id" required>
+                            <!-- As opções serão preenchidas dinamicamente via JavaScript -->
+                        </select>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div class="col">
+                        <label for="">Detalhes</label>
+                        <input type="text" name="descricao" class="form-control" placeholder="Descrição" required>
+                    </div>
+
+                    <!-- Valor -->
+                    <div class="col">
+                        <label for="">Valor</label>
+                        <input type="number" step="0.01" name="valor" class="form-control" placeholder="Valor" required>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="row text-end">
+                    <div class="col">
+                        <button type="submit" class="btn btn-primary">Adicionar</button>
+                    </div>
+                </div>
+            </form>
+
+            <table class="table table-striped my-2">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Valor</th>
+                        <th>Tipo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transacao in transacoes %}
+                    <tr>
+                        <td>{{ transacao.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ transacao.descricao }}</td>
+                        <td>R$ {{ transacao.valor | round(2) }}</td>
+                        <td class="text-{% if transacao.tipo == 'receita' %}success{% else %}danger{% endif %}">{{
+                            transacao.tipo.capitalize() }}</td>
+                        <td>
+                            <a href="/deletar/{{ transacao.id }}" class="btn btn-danger btn-sm">Deletar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="row">
+                <h2>Receitas e Despesas</h2>
+                <div class="col">
+                    <h3>Receitas</h3>
+                    <a href="{{ url_for('add_receita') }}">Adicionar Receita</a>
+                    <ul>
+                        {% for receita in receitas %}
+                        <li>
+                            {{ receita.descricao }} ({{ receita.tipo }})
+                            <a href="{{ url_for('edit_receita', id=receita.id) }}">Editar</a>
+                            <a href="{{ url_for('delete_receita', id=receita.id) }}">Deletar</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col">
+                    <h3>Despesas</h3>
+                    <a href="{{ url_for('add_despesa') }}">Adicionar Despesa</a>
+                    <ul>
+                        {% for despesa in despesas %}
+                        <li>
+                            {{ despesa.descricao }} ({{ despesa.tipo }})
+                            <a href="{{ url_for('edit_despesa', id=despesa.id) }}">Editar</a>
+                            <a href="{{ url_for('delete_despesa', id=despesa.id) }}">Deletar</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <script>
+            // Função para alternar o conteúdo de acordo com o tipo de transação selecionado
+            function toggleFields() {
+                const tipo = document.getElementById('tipo').value;
+                const tipoTransacaoDiv = document.getElementById('tipoTransacaoDiv');
+                const tipoTransacaoSelect = document.getElementById('tipo_transacao_id');
+
+                // Limpar as opções anteriores
+                tipoTransacaoSelect.innerHTML = '';
+
+                // Preencher com base no tipo de transação
+                if (tipo === 'receita') {
+                    // Carregar as opções de "Receita" dinamicamente
+                    fetch('/api/receitas') // Supomos que você tem uma rota para retornar as receitas
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(receita => {
+                                const option = document.createElement('option');
+                                option.value = receita.id;
+                                option.textContent = receita.tipo;  // Tipo da receita
+                                tipoTransacaoSelect.appendChild(option);
+                            });
+                        });
+                } else if (tipo === 'despesa') {
+                    // Carregar as opções de "Despesa" dinamicamente
+                    fetch('/api/despesas') // Supomos que você tem uma rota para retornar as despesas
+                        .then(response => response.json())
+                        .then(data => {
+                            data.forEach(despesa => {
+                                const option = document.createElement('option');
+                                option.value = despesa.id;
+                                option.textContent = despesa.tipo;  // Tipo da despesa
+                                tipoTransacaoSelect.appendChild(option);
+                            });
+                        });
+                }
+            }
+
+            // Chamar a função para inicializar as opções no carregamento da página
+            window.onload = toggleFields;
+        </script>
+
+    </body>
+
+</html>
