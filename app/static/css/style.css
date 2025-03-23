@@ -1,0 +1,79 @@
+/* Manter footer na base da tela */
+/* html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+} */
+
+.container {
+    flex: 1;
+}
+
+/* Estilos personalizados para o sistema de finanças pessoais */
+
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 0.5rem;
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem 1.25rem;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Estilos para os valores monetários */
+.text-income {
+    color: #28a745;
+}
+
+.text-expense {
+    color: #dc3545;
+}
+
+/* Estilos para os cards do dashboard */
+.card-dashboard {
+    transition: transform 0.3s;
+}
+
+.card-dashboard:hover {
+    transform: translateY(-5px);
+}
+
+/* Estilos para os gráficos */
+canvas {
+    max-height: 300px;
+}
+
+/* Responsividade para dispositivos móveis */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+}
