@@ -29,6 +29,14 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('transaction.reports') }}">Relatórios</a>
                         </li>
+                        <!-- Link para listar categorias -->
+                        <li>
+                            <a class="nav-link" href="{{ url_for('transaction.categories') }}">Categorias</a>
+                        </li>
+                        <!-- Link para listar despesas -->
+                        <li>
+                            <a class="nav-link" href="{{ url_for('transaction.expenses') }}">Despesas</a>
+                        </li>
                         {% endif %}
                     </ul>
                     <ul class="navbar-nav">

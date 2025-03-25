@@ -12,97 +12,83 @@
             <div class="card-body">
                 <form method="POST" id="transactionForm">
                     {{ form.hidden_tag() }}
-                    
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             {{ form.type.label(class="form-label") }}
                             {{ form.type(class="form-select", id="transactionType") }}
                             {% for error in form.type.errors %}
-                                <div class="text-danger">{{ error }}</div>
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
                         </div>
                         <div class="col-md-6">
                             {{ form.date.label(class="form-label") }}
                             {{ form.date(class="form-control", type="date") }}
                             {% for error in form.date.errors %}
-                                <div class="text-danger">{{ error }}</div>
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
                         </div>
                     </div>
-                    
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             {{ form.amount.label(class="form-label") }}
                             {{ form.amount(class="form-control") }}
                             {% for error in form.amount.errors %}
-                                <div class="text-danger">{{ error }}</div>
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
                         </div>
                         <div class="col-md-6">
-                            {{ form.category.label(class="form-label") }}
-                            {{ form.category(class="form-select", id="categorySelect", **{'data-preselected': form.category.data if form.category.data else ''}) }}
-
-                            {% for error in form.category.errors %}
-                                <div class="text-danger">{{ error }}</div>
+                            {{ form.category_id.label(class="form-label") }}
+                            {{ form.category_id(class="form-select", id="categorySelect", **{'data-preselected':
+                            form.category_id.data if form.category_id.data else ''}) }}
+                            {% for error in form.category_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
+                        </div>
+                        <div class="form-check ms-3">
+                            {{ form.paid.label(class="form-check-label") }}
+                            {{ form.paid(class="form-check-input") }}
                         </div>
                     </div>
 
                     <!-- Adicione isso após o campo de categoria -->
-                    <div class="mb-3">
-                        <label for="descriptionSelect" class="form-label">Descrição Predefinida</label>
-                        {{ form.description_id(class="form-select", id="descriptionSelect") }}
-                        <div class="form-text">Selecione uma descrição predefinida ou digite uma personalizada abaixo.</div>
+                    <div class="col mb-3">
+                        <label for="expenseSelect" class="form-label">Tipo de Despesa</label>
+                        {{ form.expense_id(class="form-select", id="expenseSelect") }}
+                        <div class="form-text">Selecione uma descrição predefinida ou digite uma personalizada abaixo.
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Descrição</label>
-                        {{ form.description(class="form-control", id="description") }}
-                    </div>
 
-                    <div class="mb-3">
-                        {{ form.description.label(class="form-label") }}
-                        {{ form.description(class="form-control", rows=3) }}
-                        {% for error in form.description.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            {{ form.payment_method.label(class="form-label") }}
-                            {{ form.payment_method(class="form-select") }}
-                            {% for error in form.payment_method.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.status.label(class="form-label") }}
-                            {{ form.status(class="form-select") }}
-                            {% for error in form.status.errors %}
-                                <div class="text-danger">{{ error }}</div>
+                            {{ form.payment_method_id.label(class="form-label") }}
+                            {{ form.payment_method_id(class="form-select") }}
+                            {% for error in form.payment_method_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
                         </div>
                     </div>
-                    
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             {{ form.recurrence.label(class="form-label") }}
                             {{ form.recurrence(class="form-select") }}
                             {% for error in form.recurrence.errors %}
-                                <div class="text-danger">{{ error }}</div>
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
                         </div>
-                        <div class="col-md-6">
-                            {{ form.tags.label(class="form-label") }}
-                            {{ form.tags(class="form-control") }}
-                            {% for error in form.tags.errors %}
-                                <div class="text-danger">{{ error }}</div>
+
+                        <div class="mb-3">
+                            {{ form.details.label(class="form-label") }}
+                            {{ form.details(class="form-control", rows=3, id="details") }}
+                            {% for error in form.details.errors %}
+                            <div class="text-danger">{{ error }}</div>
                             {% endfor %}
-                            <div class="form-text">Separe as tags por vírgula (ex: casa, alimentação)</div>
                         </div>
+
                     </div>
-                    
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('transaction.transactions') }}" class="btn btn-secondary">Cancelar</a>
                         {{ form.submit(class="btn btn-primary") }}
@@ -116,22 +102,22 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const typeSelect = document.getElementById('transactionType');
         const categorySelect = document.getElementById('categorySelect');
-        
+
         if (typeSelect && categorySelect) {
             // Função para atualizar as categorias com base no tipo selecionado
             function updateCategories() {
                 const selectedType = typeSelect.value;
-                
+
                 // Fazer requisição AJAX para obter categorias filtradas
                 fetch(`/transactions/categories/${selectedType}`)
                     .then(response => response.json())
                     .then(data => {
                         // Limpar opções atuais
                         categorySelect.innerHTML = '';
-                        
+
                         // Adicionar novas opções
                         data.categories.forEach(category => {
                             const option = document.createElement('option');
@@ -139,7 +125,7 @@
                             option.textContent = category.name;
                             categorySelect.appendChild(option);
                         });
-                        
+
                         // Se houver um valor pré-selecionado (em caso de edição), selecione-o
                         if (categorySelect.dataset.preselected) {
                             categorySelect.value = categorySelect.dataset.preselected;
@@ -147,17 +133,17 @@
                     })
                     .catch(error => console.error('Erro ao carregar categorias:', error));
             }
-            
+
             // Atualizar categorias quando o tipo mudar
             typeSelect.addEventListener('change', updateCategories);
-            
+
             // Inicializar categorias com o tipo atual
             updateCategories();
-            
+
             // Formatar o campo de valor para exibir como moeda
             const amountInput = document.getElementById('amount');
             if (amountInput) {
-                amountInput.addEventListener('blur', function() {
+                amountInput.addEventListener('blur', function () {
                     if (this.value) {
                         const value = parseFloat(this.value.replace(',', '.'));
                         if (!isNaN(value)) {
@@ -171,15 +157,15 @@
                         }
                     }
                 });
-                
-                amountInput.addEventListener('focus', function() {
+
+                amountInput.addEventListener('focus', function () {
                     // Ao focar, mostrar o valor original sem formatação
                     const originalValue = this.getAttribute('data-value');
                     if (originalValue) {
                         this.value = originalValue;
                     }
                 });
-                
+
                 // Formatar o valor inicial se existir
                 if (amountInput.value) {
                     const value = parseFloat(amountInput.value.replace(',', '.'));
@@ -192,11 +178,11 @@
                     }
                 }
             }
-            
+
             // Ajustar o formulário antes do envio para garantir que os valores estejam corretos
             const transactionForm = document.getElementById('transactionForm');
             if (transactionForm) {
-                transactionForm.addEventListener('submit', function(e) {
+                transactionForm.addEventListener('submit', function (e) {
                     // Converter o valor formatado de volta para o formato numérico
                     if (amountInput && amountInput.getAttribute('data-value')) {
                         amountInput.value = amountInput.getAttribute('data-value');
@@ -211,11 +197,11 @@
 <!-- Adicione este script no bloco de scripts -->
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const categorySelect = document.getElementById('categorySelect');
-        const descriptionSelect = document.getElementById('descriptionSelect');
-        const descriptionInput = document.getElementById('description');
-        
+        const expenseSelect = document.getElementById('expenseSelect');
+        const expenseInput = document.getElementById('expense');
+
         // Função para carregar descrições predefinidas com base na categoria
         function loadExpenses(categoryId) {
             if (categoryId > 0) {
@@ -223,40 +209,40 @@
                     .then(response => response.json())
                     .then(data => {
                         // Limpar opções atuais
-                        descriptionSelect.innerHTML = '<option value="0">Selecione uma descrição predefinida</option>';
-                        
+                        expenseSelect.innerHTML = '<option value="0">Selecione uma descrição predefinida</option>';
+
                         // Adicionar novas opções
                         data.expenses.forEach(expense => {
                             const option = document.createElement('option');
                             option.value = expense.id;
                             option.textContent = expense.name;
-                            descriptionSelect.appendChild(option);
+                            expenseSelect.appendChild(option);
                         });
-                        
+
                         // Restaurar valor selecionado se estiver editando
-                        {% if form.description_id.data and form.description_id.data > 0 %}
-                        descriptionSelect.value = '{{ form.description_id.data }}';
+                        {% if form.expense_id.data and form.expense_id.data > 0 %}
+                        expenseSelect.value = '{{ form.expense_id.data }}';
                         {% endif %}
                     });
             } else {
                 // Limpar opções se nenhuma categoria for selecionada
-                descriptionSelect.innerHTML = '<option value="0">Selecione uma descrição predefinida</option>';
+                expenseSelect.innerHTML = '<option value="0">Selecione uma descrição predefinida</option>';
             }
         }
-        
+
         // Carregar descrições quando a categoria mudar
-        categorySelect.addEventListener('change', function() {
+        categorySelect.addEventListener('change', function () {
             loadExpenses(this.value);
         });
-        
+
         // Preencher o campo de descrição quando uma descrição predefinida for selecionada
-        descriptionSelect.addEventListener('change', function() {
+        expenseSelect.addEventListener('change', function () {
             if (this.value > 0) {
                 const selectedText = this.options[this.selectedIndex].text;
-                descriptionInput.value = selectedText;
+                expenseInput.value = selectedText;
             }
         });
-        
+
         // Carregar descrições iniciais se uma categoria já estiver selecionada
         if (categorySelect.value > 0) {
             loadExpenses(categorySelect.value);
