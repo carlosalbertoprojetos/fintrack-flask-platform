@@ -24,13 +24,6 @@ from datetime import datetime, date
 from flask import current_app
 
 
-class LoginForm(FlaskForm):
-    username = StringField("Nome de Usuário", validators=[DataRequired()])
-    password = PasswordField("Senha", validators=[DataRequired()])
-    remember_me = BooleanField("Lembrar-me")
-    submit = SubmitField("Entrar")
-
-
 class RegistrationForm(FlaskForm):
     username = StringField(
         "Nome de Usuário", validators=[DataRequired(), Length(min=3, max=20)]
@@ -58,6 +51,13 @@ class RegistrationForm(FlaskForm):
             )
 
 
+class LoginForm(FlaskForm):
+    username = StringField("Nome de Usuário", validators=[DataRequired()])
+    password = PasswordField("Senha", validators=[DataRequired()])
+    remember_me = BooleanField("Lembrar-me")
+    submit = SubmitField("Entrar")
+
+
 class CategoryForm(FlaskForm):
     name = StringField("Nome", validators=[DataRequired(), Length(max=64)])
     type = SelectField(
@@ -73,16 +73,10 @@ class CategoryForm(FlaskForm):
 
 class ExpenseForm(FlaskForm):
     name = StringField("Nome", validators=[DataRequired(), Length(max=64)])
+    category_id = SelectField("Categoria", coerce=int, validators=[Optional()])
     exclusive = BooleanField(default=False)
 
     submit = SubmitField("Salvar")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.payment_method.choices = [
-            (pm.id, pm.name)
-            for pm in PaymentMethod.query.filter_by(is_active=True).all()
-        ]
 
 
 class PaymentMethodForm(FlaskForm):
@@ -94,10 +88,10 @@ class PaymentMethodForm(FlaskForm):
 
 class TransactionForm(FlaskForm):
     date = DateField("Data", default=datetime.today, validators=[DataRequired()])
-    description = StringField("Descrição", validators=[DataRequired(), Length(max=128)])
-    description_id = SelectField(
-        "Descrição Predefinida", coerce=int, validators=[Optional()]
-    )
+    # description = StringField("Descrição", validators=[DataRequired(), Length(max=128)])
+    # description_id = SelectField(
+    #     "Descrição Predefinida", coerce=int, validators=[Optional()]
+    # )
     amount = FloatField("Valor", validators=[DataRequired(), NumberRange(min=0.01)])
     type = SelectField(
         "Tipo",

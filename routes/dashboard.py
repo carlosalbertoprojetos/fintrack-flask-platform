@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for
-from models import Transaction, Category, User
+from app.models import Transaction, Category, User
 from app import db
 from functools import wraps
 from sqlalchemy import func

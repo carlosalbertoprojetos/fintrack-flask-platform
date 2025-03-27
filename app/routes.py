@@ -43,7 +43,7 @@ def register():
         flash("Cadastro realizado com sucesso! Agora você pode fazer login.", "success")
         return redirect(url_for("auth.login"))
 
-    return render_template("register.html", form=form)
+    return render_template("add_register.html", form=form)
 
 
 @main_bp.route("/dashboard")
@@ -290,7 +290,8 @@ def add_category():
     # Se houver erros no formulário, exibe um alerta
     if form.errors:
         flash("Erro ao adicionar categoria. Verifique os campos.", "danger")
-        print(form.errors)  # Depuração no console
+        print(form.errors)  
+        # Depuração no console
 
     return render_template("add_category.html", form=form, edit=False)
 
@@ -344,16 +345,23 @@ def expenses():
 def add_expense():
     form = ExpenseForm()
 
-    if form.validate_on_submit():
-        exclusive = (
-            form.exclusive.data == "True"
-        )  # Isto garante que 'True' se torna um booleano True
+    # Preencher as opções de categorias
+    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
 
-        expense = Expense(name=form.name.data, exclusive=exclusive)
+    exclusive = (
+        form.exclusive.data == "True"
+    )  # Isto garante que 'True' se torna um booleano True
+
+    if form.validate_on_submit():
+        expense = Expense(
+            name=form.name.data, 
+            category_id=form.category_id.data,
+            exclusive=exclusive
+            )
 
         db.session.add(expense)
         db.session.commit()
-        flash("Descrição predefinida adicionada com sucesso!", "success")
+        flash("Despesa adicionada com sucesso!", "success")
         return redirect(url_for("transaction_bp.expenses"))
     else:
         print(form.errors)  # Isso ajudará a encontrar os erros de validação
@@ -451,6 +459,7 @@ def transactions():
     category_filter = request.args.get("category", "all")
     month_filter = request.args.get("month", datetime.now().month)
     year_filter = request.args.get("year", datetime.now().year)
+    page = request.args.get("page", 1, type=int)  # Obtém a página atual
 
     # Converter para inteiros se necessário
     try:
@@ -478,19 +487,19 @@ def transactions():
         )
 
     # Ordenar por data (mais recente primeiro)
-    transactions = query.order_by(Transaction.date.desc()).all()
+    transactions = query.order_by(Transaction.date.desc()).paginate(page=page, per_page=10)  # Adicionando paginação
 
     # Obter todas as categorias para o filtro
     categories = Category.query.all()
 
     # Calcular totais
-    income_total = sum(t.amount for t in transactions if t.type == "receita")
-    expense_total = sum(t.amount for t in transactions if t.type == "despesa")
+    income_total = sum(t.amount for t in transactions.items if t.type == "receita")
+    expense_total = sum(t.amount for t in transactions.items if t.type == "despesa")
     balance = income_total - expense_total
 
     # Preparar dados para o gráfico de distribuição por categoria
     category_data = {}
-    for transaction in transactions:
+    for transaction in transactions.items:
         if transaction.category:
             category_name = transaction.category.name
             if category_name not in category_data:
@@ -504,7 +513,7 @@ def transactions():
     category_chart_json = json.dumps(category_chart_data)
 
     return render_template(
-        "transactions.html",
+        "list_transactions.html",
         transactions=transactions,
         categories=categories,
         income_total=income_total,
@@ -537,7 +546,6 @@ def add_transaction():
     if form.validate_on_submit():
         transaction = Transaction(
             date=form.date.data,
-            description=form.description.data,
             amount=form.amount.data,
             type=form.type.data,
             category_id=form.category_id.data,
@@ -545,11 +553,12 @@ def add_transaction():
             payment_method_id=form.payment_method_id.data,
             paid=form.paid.data,
             notes=form.notes.data,
+            user_id=current_user.id
         )
         db.session.add(transaction)
         db.session.commit()
         flash("Transação adicionada com sucesso!", "success")
-        return redirect(url_for("transactions_list"))
+        return redirect(url_for("transaction.transactions"))
 
     return render_template("add_transaction.html", form=form)
 

@@ -166,8 +166,8 @@
                             <thead>
                                 <tr>
                                     <th>Data</th>
-                                    <th>Descrição</th>
                                     <th>Categoria</th>
+                                    <th>Despesa</th>
                                     <th>Valor</th>
                                     <th>Tipo</th>
                                 </tr>
@@ -176,8 +176,8 @@
                                 {% for transaction in monthly_transactions %}
                                 <tr>
                                     <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ transaction.description }}</td>
                                     <td>{{ transaction.category.name if transaction.category else 'Sem categoria' }}</td>
+                                    <td>{{ transaction.expense.name }}</td>
                                     <td class="text-right">R$ {{ "%.2f"|format(transaction.amount) }}</td>
                                     <td>
                                         {% if transaction.type == 'income' %}

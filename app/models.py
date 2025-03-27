@@ -1,6 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from sqlalchemy.orm import relationship
 from app import db, login_manager
 
 
@@ -18,9 +19,6 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
 
     transactions = db.relationship("Transaction", backref="user", lazy="dynamic")
-
-    def __repr__(self):
-        return f"<User {self.username}>"
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -52,7 +50,10 @@ class Expense(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
-    exclusive = db.Column(db.String(20), nullable=False)
+    # exclusive = db.Column(db.String(20), nullable=False)
+
+    # Chave estrangeira
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
 
     def __repr__(self):
         return f"<Expense {self.name}>"
@@ -83,11 +84,15 @@ class Transaction(db.Model):
 
     # Chaves estrangeiras
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=False)
     expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id"), nullable=True)
     payment_method_id = db.Column(
         db.Integer, db.ForeignKey("payment_method.id"), nullable=True
     )
+
+    # Relacionamentos
+    category = relationship("Category", backref="transactions")
+    expense = relationship("Expense", backref="transactions")
 
     def __repr__(self):
         return f"<Transaction {self.category_id} - {self.amount}>"
