@@ -13,7 +13,7 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-sm">
                 <thead>
                     <tr>
                         <th>Tipo</th>
@@ -21,9 +21,9 @@
                         <th>Categoria</th>
                         <th>Despesa</th>
                         <th>Valor</th>
-                        <th>Forma de Pagamento</th>
+                        <th>Pagamento</th>
                         <th>Detalhes</th>
-                        <th>Ações</th>
+                        <th class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -36,13 +36,13 @@
                         <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
                             R$ {{ "%.2f"|format(transaction.amount) }}
                         </td>
-                        <td>{{ transaction.payment_method }}</td>
-                        <td>{{ transaction.details }}</td>
-                        <td>
+                        <td>{{ transaction.payment_method.name|default('') }}</td>
+                        <td>{{ transaction.details or '' }}</td>
+                        <td class="text-center">
                             <a href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
-                                class="btn btn-sm btn-outline-primary">Editar</a>
+                                class="btn btn-outline-primary btn-sm">Editar</a>
                             <a href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
-                                class="btn btn-sm btn-outline-danger"
+                                class="btn btn-outline-danger btn-sm"
                                 onclick="return confirm('Tem certeza que deseja excluir esta transação?')">Excluir</a>
                         </td>
                     </tr>

@@ -39,13 +39,13 @@
 
         {% if expenses %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-sm">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>Nome</th>
                         <th>Categoria</th>
-                        <th>Ações</th>
+                        <th class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -53,14 +53,14 @@
                     <tr>
                         <td>{{ expense.id }}</td>
                         <td>{{ expense.name }}</td>
-                        <td>{{ expense.category.name if expense.category else 'Sem categoria' }}</td>
-                        <td>
+                        <td>{{ expense.category.name if expense.category else '---' }}</td>
+                        <td class="text-center">
                             <!-- Link para editar a despesa -->
                             <a href="{{ url_for('transaction.edit_expense', id=expense.id) }}"
-                                class="btn btn-warning btn-sm">Editar</a>
+                                class="btn btn-outline-primary btn-sm">Editar</a>
                             <!-- Link para excluir a despesa -->
                             <a href="{{ url_for('transaction.delete_expense', id=expense.id) }}"
-                                class="btn btn-danger btn-sm"
+                                class="btn btn-outline-danger btn-sm"
                                 onclick="return confirm('Tem certeza que deseja excluir esta despesa?');">Excluir</a>
                         </td>
                     </tr>

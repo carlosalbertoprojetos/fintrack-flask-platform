@@ -46,6 +46,7 @@ def register():
     return render_template("add_register.html", form=form)
 
 
+
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -292,35 +293,6 @@ def categories():
     return render_template("list_categories.html", **context)
 
 
-# @transaction_bp.route("/categories/add", methods=["GET", "POST"])
-# @login_required
-# def add_category():
-#     form = CategoryForm()
-
-#     if form.validate_on_submit():
-
-#         category = Category(
-#             name=form.name.data,
-#             type=form.type.data,
-#             exclusive=form.exclusive.data,
-#             icon=form.icon.data,
-#             color=form.color.data,
-#         )
-
-#         db.session.add(category)
-#         db.session.commit()
-#         flash("Categoria adicionada com sucesso!", "success")
-#         return redirect(url_for("transaction.categories"))
-
-#     # Se houver erros no formulário, exibe um alerta
-#     if form.errors:
-#         flash("Erro ao adicionar categoria. Verifique os campos.", "danger")
-#         print(form.errors)
-#         # Depuração no console
-
-#     return render_template("add_category.html", form=form, edit=False)
-
-
 @transaction_bp.route("/category/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_category(id):
@@ -383,36 +355,27 @@ def expenses():
     return render_template("list_expensives.html", **context)
 
 
-# @transaction_bp.route("/expenses/add", methods=["GET", "POST"])
-# @login_required
-# def add_expense():
-#     form = ExpenseForm()
-
-#     # Preencher as opções de categorias
-#     form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
-
-#     if form.validate_on_submit():
-#         expense = Expense(name=form.name.data, category_id=form.category_id.data)
-
-#         db.session.add(expense)
-#         db.session.commit()
-#         flash("Descrição adicionada com sucesso!", "success")
-#         return redirect(url_for("transaction.expenses"))
-#     else:
-#         print(form.errors)  # Isso ajudará a encontrar os erros de validação
-
-#     return render_template("add_expense.html", form=form, edit=False)
-
-
 @transaction_bp.route("/expenses/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_expense(id):
     expense = Expense.query.get_or_404(id)
     form = ExpenseForm(obj=expense)
 
+    # Retorna as opções da categoria ANTES da validação
+    categories = Category.query.all()
+    form.category_id.choices = [(0, "Selecione uma categoria")] + [
+        (c.id, c.name) for c in categories
+    ]
+
     if form.validate_on_submit():
         expense.name = form.name.data
         expense.exclusive = form.exclusive.data  # Atualizar com o valor do formulário
+
+        # Se o usuário selecionou uma categoria válida
+        expense.category_id = (
+            form.category_id.data if form.category_id.data > 0 else None
+        )
+
         db.session.commit()
         flash("Descrição predefinida atualizada com sucesso!", "success")
         return redirect(url_for("transaction.expenses"))
@@ -438,11 +401,11 @@ def delete_expense(id):
     return redirect(url_for("transaction.expenses"))
 
 
-@transaction_bp.route("/payment_methods", methods=["GET"])
+@transaction_bp.route("/payment_methods", methods=["GET", "POST"])
 @login_required
 def list_payment_methods():
     methods = PaymentMethod.query.all()
-    return render_template("payment_methods.html", methods=methods)
+    return render_template("list_payment_method.html", methods=methods)
 
 
 @transaction_bp.route("/payment_method/add", methods=["GET", "POST"])
@@ -590,23 +553,38 @@ def get_expenses(category_id):
 def add_transaction():
     form = TransactionForm()
 
-    form.category_id.choices = [
-        (category.id, category.name)
-        for category in Category.query.filter(Category.type == "receita").all()
-    ]
+    # Recupera tipo enviado no POST (se houver)
+    selected_type = request.form.get("type", "Receita")  # default = Receita
+    selected_category_id = request.form.get("category_id")
 
-    category = Category.query.filter_by(name="Salário").first()
-    if category:
-        form.expense_id.choices = [
-            (expense.id, expense.name)
-            for expense in Expense.query.filter_by(category_id=category.id).all()
-        ]
+    # Atualiza categorias conforme tipo selecionado
+    categories = Category.query.filter_by(type=selected_type).all()
+    form.category_id.choices = [(cat.id, cat.name) for cat in categories]
+
+    # Atualiza despesas se houver categoria selecionada
+    if selected_category_id:
+        expenses = Expense.query.filter_by(category_id=selected_category_id).all()
+        form.expense_id.choices = [(e.id, e.name) for e in expenses]
     else:
         form.expense_id.choices = []
 
+    # # Carrega categorias do tipo "Receita" inicialmente
+    # receita_categories = Category.query.filter_by(type="Receita").all()
+    # form.category_id.choices = [(cat.id, cat.name) for cat in receita_categories]
+
+    # # Carrega despesas da primeira categoria "Receita" (caso exista)
+    # if receita_categories:
+    #     first_category = receita_categories[0]
+    #     form.expense_id.choices = [
+    #         (expense.id, expense.name)
+    #         for expense in Expense.query.filter_by(category_id=first_category.id).all()
+    #     ]
+    # else:
+    #     form.expense_id.choices = []
+
+    # Formas de pagamento
     form.payment_method_id.choices = [
-        (payment_method.id, payment_method.name)
-        for payment_method in PaymentMethod.query.all()
+        (pm.id, pm.name) for pm in PaymentMethod.query.all()
     ]
 
     if form.validate_on_submit():
@@ -634,43 +612,34 @@ def add_transaction():
 def edit_transaction(id):
     transaction = Transaction.query.get_or_404(id)
 
-    # Verificar se a transação pertence ao usuário atual
     if transaction.user_id != current_user.id:
         flash("Você não tem permissão para editar esta transação.", "danger")
         return redirect(url_for("transaction.transactions"))
 
     form = TransactionForm(obj=transaction)
 
-    # Carregar categorias
-    categories = Category.query.all()
-    form.category_id.choices = [(c.id, c.name) for c in categories]
-    form.category_id.choices.insert(0, (0, "Selecione uma categoria"))
+    # Preenche choices corretas para categoria, despesa e forma de pagamento
+    selected_type = transaction.type
+    selected_category_id = transaction.category_id
 
-    # Carregar descrições predefinidas
-    form.expense_id.choices = [(0, "Selecione uma despesa")]
-    if transaction.category_id:
-        category = Category.query.get(transaction.category_id)
-        expenses = Expense.query.all()
-        form.expense_id.choices.extend([(e.id, e.name) for e in expenses])
+    # Categories de acordo com tipo
+    categories = Category.query.filter_by(type=selected_type).all()
+    form.category_id.choices = [(c.id, c.name) for c in categories]
+
+    # Despesas da categoria atual
+    if selected_category_id:
+        expenses = Expense.query.filter_by(category_id=selected_category_id).all()
+        form.expense_id.choices = [(e.id, e.name) for e in expenses]
+    else:
+        form.expense_id.choices = []
+
+    # Formas de pagamento
+    form.payment_method_id.choices = [
+        (pm.id, pm.name) for pm in PaymentMethod.query.all()
+    ]
 
     if form.validate_on_submit():
-        transaction.date = form.date.data
-        transaction.description = form.description.data
-        transaction.amount = form.amount.data
-        transaction.type = form.type.data
-        transaction.paid = form.paid.data
-        transaction.notes = form.notes.data
-
-        if form.category_id.data and form.category_id.data > 0:
-            transaction.category_id = form.category_id.data
-        else:
-            transaction.category_id = None
-
-        if form.expense_id.data and form.expense_id.data > 0:
-            transaction.expense_id = form.expense_id.data
-        else:
-            transaction.expense_id = None
-
+        form.populate_obj(transaction)
         db.session.commit()
         flash("Transação atualizada com sucesso!", "success")
         return redirect(url_for("transaction.transactions"))

@@ -58,6 +58,11 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Entrar")
 
 
+class SecureDataForm(FlaskForm):
+    data = StringField("Data", validators=[DataRequired()])
+    submit = SubmitField("Save")
+
+
 class CategoryForm(FlaskForm):
     name = StringField("Nome", validators=[DataRequired(), Length(max=64)])
     type = SelectField(

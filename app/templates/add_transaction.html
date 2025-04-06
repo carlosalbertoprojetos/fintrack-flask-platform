@@ -99,9 +99,13 @@
 {% block extra_js %}
 
 <script>
-    // Usa placeholders só como base
+    // URLs para buscar categorias e despesas
     const getCategoriesUrlTemplate = "{{ url_for('transaction.get_categories', type='__TYPE__') }}";
     const expensesEndpointBase = "{{ url_for('transaction.get_expenses', category_id=0).replace('0', '') }}";
+
+    // Valores salvos da transação que serão usados para marcar os selects
+    const selectedCategoryId = "{{ form.category_id.data or '' }}";
+    const selectedExpenseId = "{{ form.expense_id.data or '' }}";
 
     document.addEventListener("DOMContentLoaded", function () {
         const typeSelect = document.getElementById("transactionType");
@@ -128,12 +132,15 @@
                     return res.json();
                 })
                 .then(data => {
-                    // console.log("Categorias recebidas:", data);
                     let options = '<option value="">Selecione uma categoria</option>';
                     data.forEach(category => {
-                        options += `<option value="${category.id}">${category.name}</option>`;
+                        const selected = category.id == selectedCategoryId ? 'selected' : '';
+                        options += `<option value="${category.id}" ${selected}>${category.name}</option>`;
                     });
                     categorySelect.innerHTML = options;
+
+                    // Após carregar categorias, aciona carregamento das despesas
+                    categorySelect.dispatchEvent(new Event('change'));
                 })
                 .catch(err => {
                     console.error('Erro ao carregar categorias:', err);
@@ -158,16 +165,16 @@
                     return res.json();
                 })
                 .then(data => {
-                    // console.log("Despesas recebidas:", data);
                     let options;
-                    if (data == 0) {
+                    if (data.length === 0) {
                         options = '<option value="">Não há descrição para esta Categoria</option>';
                     } else {
                         options = '<option value="">Selecione uma descrição</option>';
                     }
 
                     data.forEach(expense => {
-                        options += `<option value="${expense.id}">${expense.name}</option>`;
+                        const selected = expense.id == selectedExpenseId ? 'selected' : '';
+                        options += `<option value="${expense.id}" ${selected}>${expense.name}</option>`;
                     });
                     expenseSelect.innerHTML = options;
                 })
@@ -176,8 +183,10 @@
                     expenseSelect.innerHTML = '<option value="">Erro ao carregar</option>';
                 });
         });
+
+        // Gatilho inicial para carregar categorias com base no tipo já salvo
+        typeSelect.dispatchEvent(new Event("change"));
     });
 </script>
-
 
 {% endblock %}
