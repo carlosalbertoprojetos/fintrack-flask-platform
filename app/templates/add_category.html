@@ -12,19 +12,18 @@
             <div class="card-body">
                 <form method="POST">
                     {{ form.hidden_tag() }}
-
                     <div class="mb-3">
-                        {{ form.name.label(class="form-label") }}
-                        {{ form.name(class="form-control") }}
-                        {% for error in form.name.errors %}
+                        {{ form.type.label(class="form-label") }}
+                        {{ form.type(class="form-select") }}
+                        {% for error in form.type.errors %}
                         <div class="text-danger">{{ error }}</div>
                         {% endfor %}
                     </div>
 
                     <div class="mb-3">
-                        {{ form.type.label(class="form-label") }}
-                        {{ form.type(class="form-select") }}
-                        {% for error in form.type.errors %}
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                        {% for error in form.name.errors %}
                         <div class="text-danger">{{ error }}</div>
                         {% endfor %}
                     </div>
@@ -37,17 +36,9 @@
                         {% for error in form.exclusive.errors %}
                         <div class="text-danger">{{ error }}</div>
                         {% endfor %}
-                        <div class="form-text">
-                            Defina se esta categoria é exclusiva para:
-                            <ul>
-                                <li>Sim: Apenas para Receitas</li>
-                                <li>Não: Pode ser usada tanto para Receitas quanto para Despesas</li>
-                            </ul>
-                        </div>
                     </div>
 
-
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         {{ form.icon.label(class="form-label") }}
                         {{ form.icon(class="form-control") }}
                         {% for error in form.icon.errors %}
@@ -61,7 +52,7 @@
                         {% for error in form.color.errors %}
                         <div class="text-danger">{{ error }}</div>
                         {% endfor %}
-                    </div>
+                    </div> -->
 
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('transaction.categories') }}" class="btn btn-secondary">Cancelar</a>

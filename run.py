@@ -1,6 +1,6 @@
 import os
 from app import create_app, db
-from app.models import Category
+from app.models import Category, PaymentMethod, Expense
 from flask_migrate import Migrate
 
 app = create_app()
@@ -8,6 +8,8 @@ migrate = Migrate(app, db)
 
 with app.app_context():
     categories = Category.query.all()
+    payments = PaymentMethod.query.all()
+    expensives = Expense.query.all()
 
 
 @app.cli.command("init-db")

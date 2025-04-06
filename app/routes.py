@@ -10,8 +10,8 @@ from app.forms import (
     TransactionForm,
     CategoryForm,
 )
-from sqlalchemy import func, extract
-from datetime import datetime, timedelta
+from sqlalchemy import func, extract, desc
+from datetime import datetime
 from calendar import monthrange
 import json
 
@@ -260,20 +260,13 @@ def logout():
     return redirect(url_for("main.index"))
 
 
-@transaction_bp.route("/categories")
+@transaction_bp.route("/categories", methods=["GET", "POST"])
 @login_required
 def categories():
-    categories = Category.query.all()
-    return render_template("add_categories.html", categories=categories)
-
-
-@transaction_bp.route("/categories/add", methods=["GET", "POST"])
-@login_required
-def add_category():
+    categories = Category.query.order_by(desc(Category.id)).all()
     form = CategoryForm()
 
     if form.validate_on_submit():
-
         category = Category(
             name=form.name.data,
             type=form.type.data,
@@ -286,17 +279,49 @@ def add_category():
         db.session.commit()
         flash("Categoria adicionada com sucesso!", "success")
         return redirect(url_for("transaction.categories"))
+    else:
+        print(form.errors)  # Isso ajudará a encontrar os erros de validação
 
     # Se houver erros no formulário, exibe um alerta
     if form.errors:
         flash("Erro ao adicionar categoria. Verifique os campos.", "danger")
-        print(form.errors)  
-        # Depuração no console
+        print(form.errors)
 
-    return render_template("add_category.html", form=form, edit=False)
+    context = {"categories": categories, "form": form, "edit": False}
+
+    return render_template("list_categories.html", **context)
 
 
-@transaction_bp.route("/categories/edit/<int:id>", methods=["GET", "POST"])
+# @transaction_bp.route("/categories/add", methods=["GET", "POST"])
+# @login_required
+# def add_category():
+#     form = CategoryForm()
+
+#     if form.validate_on_submit():
+
+#         category = Category(
+#             name=form.name.data,
+#             type=form.type.data,
+#             exclusive=form.exclusive.data,
+#             icon=form.icon.data,
+#             color=form.color.data,
+#         )
+
+#         db.session.add(category)
+#         db.session.commit()
+#         flash("Categoria adicionada com sucesso!", "success")
+#         return redirect(url_for("transaction.categories"))
+
+#     # Se houver erros no formulário, exibe um alerta
+#     if form.errors:
+#         flash("Erro ao adicionar categoria. Verifique os campos.", "danger")
+#         print(form.errors)
+#         # Depuração no console
+
+#     return render_template("add_category.html", form=form, edit=False)
+
+
+@transaction_bp.route("/category/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_category(id):
     category = Category.query.get_or_404(id)
@@ -306,8 +331,8 @@ def edit_category(id):
         category.name = form.name.data
         category.type = form.type.data
         category.exclusive = form.exclusive.data  # Usando o valor booleano diretamente
-        category.icon = form.icon.data
-        category.color = form.color.data
+        # category.icon = form.icon.data
+        # category.color = form.color.data
         db.session.commit()
         flash("Categoria atualizada com sucesso!", "success")
         return redirect(url_for("transaction.categories"))
@@ -315,7 +340,7 @@ def edit_category(id):
     return render_template("add_category.html", form=form, edit=True)
 
 
-@transaction_bp.route("/categories/delete/<int:id>")
+@transaction_bp.route("/category/delete/<int:id>")
 @login_required
 def delete_category(id):
     category = Category.query.get_or_404(id)
@@ -333,40 +358,50 @@ def delete_category(id):
     return redirect(url_for("transaction.categories"))
 
 
-@transaction_bp.route("/expenses")
+@transaction_bp.route("/expenses", methods=["GET", "POST"])
 @login_required
 def expenses():
-    expenses = Expense.query.all()
-    return render_template("list_expensive.html", expenses=expenses)
-
-
-@transaction_bp.route("/expenses/add", methods=["GET", "POST"])
-@login_required
-def add_expense():
+    expenses = Expense.query.order_by(desc(Expense.id)).all()
     form = ExpenseForm()
 
     # Preencher as opções de categorias
     form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
 
-    exclusive = (
-        form.exclusive.data == "True"
-    )  # Isto garante que 'True' se torna um booleano True
-
     if form.validate_on_submit():
-        expense = Expense(
-            name=form.name.data, 
-            category_id=form.category_id.data,
-            exclusive=exclusive
-            )
+        expense = Expense(name=form.name.data, category_id=form.category_id.data)
 
         db.session.add(expense)
         db.session.commit()
-        flash("Despesa adicionada com sucesso!", "success")
-        return redirect(url_for("transaction_bp.expenses"))
+        flash("Descrição adicionada com sucesso!", "success")
+        return redirect(url_for("transaction.expenses"))
+
     else:
         print(form.errors)  # Isso ajudará a encontrar os erros de validação
 
-    return render_template("add_expense.html", form=form, edit=False)
+    context = {"expenses": expenses, "form": form, "edit": False}
+
+    return render_template("list_expensives.html", **context)
+
+
+# @transaction_bp.route("/expenses/add", methods=["GET", "POST"])
+# @login_required
+# def add_expense():
+#     form = ExpenseForm()
+
+#     # Preencher as opções de categorias
+#     form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
+
+#     if form.validate_on_submit():
+#         expense = Expense(name=form.name.data, category_id=form.category_id.data)
+
+#         db.session.add(expense)
+#         db.session.commit()
+#         flash("Descrição adicionada com sucesso!", "success")
+#         return redirect(url_for("transaction.expenses"))
+#     else:
+#         print(form.errors)  # Isso ajudará a encontrar os erros de validação
+
+#     return render_template("add_expense.html", form=form, edit=False)
 
 
 @transaction_bp.route("/expenses/edit/<int:id>", methods=["GET", "POST"])
@@ -487,7 +522,9 @@ def transactions():
         )
 
     # Ordenar por data (mais recente primeiro)
-    transactions = query.order_by(Transaction.date.desc()).paginate(page=page, per_page=10)  # Adicionando paginação
+    transactions = query.order_by(Transaction.date.desc()).paginate(
+        page=page, per_page=10
+    )  # Adicionando paginação
 
     # Obter todas as categorias para o filtro
     categories = Category.query.all()
@@ -528,16 +565,45 @@ def transactions():
     )
 
 
+# Filtra as categorias, conforme o tipo, para retornar em transações
+@transaction_bp.route("/get_categories/<string:type>")
+@login_required
+def get_categories(type):
+    categories = Category.query.filter(
+        (Category.exclusive == False)
+        | ((Category.exclusive == True) & (Category.type == type))
+    )
+
+    return jsonify([{"id": cat.id, "name": cat.name} for cat in categories])
+
+
+# Fitra as descrições, conforme a categoria, para retornar em transações
+@transaction_bp.route("/get_expenses/<int:category_id>")
+@login_required
+def get_expenses(category_id):
+    expenses = Expense.query.filter_by(category_id=category_id).all()
+    return jsonify([{"id": expense.id, "name": expense.name} for expense in expenses])
+
+
 @transaction_bp.route("/add", methods=["GET", "POST"])
 @login_required
 def add_transaction():
     form = TransactionForm()
 
-    # Preencher as opções de categorias, despesas e métodos de pagamento
-    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
-    form.expense_id.choices = [
-        (expense.id, expense.name) for expense in Expense.query.all()
+    form.category_id.choices = [
+        (category.id, category.name)
+        for category in Category.query.filter(Category.type == "receita").all()
     ]
+
+    category = Category.query.filter_by(name="Salário").first()
+    if category:
+        form.expense_id.choices = [
+            (expense.id, expense.name)
+            for expense in Expense.query.filter_by(category_id=category.id).all()
+        ]
+    else:
+        form.expense_id.choices = []
+
     form.payment_method_id.choices = [
         (payment_method.id, payment_method.name)
         for payment_method in PaymentMethod.query.all()
@@ -553,7 +619,7 @@ def add_transaction():
             payment_method_id=form.payment_method_id.data,
             paid=form.paid.data,
             notes=form.notes.data,
-            user_id=current_user.id
+            user_id=current_user.id,
         )
         db.session.add(transaction)
         db.session.commit()
@@ -581,14 +647,10 @@ def edit_transaction(id):
     form.category_id.choices.insert(0, (0, "Selecione uma categoria"))
 
     # Carregar descrições predefinidas
-    form.expense_id.choices = [(0, "Selecione uma descrição predefinida")]
+    form.expense_id.choices = [(0, "Selecione uma despesa")]
     if transaction.category_id:
         category = Category.query.get(transaction.category_id)
-        expenses = Expense.query.filter(
-            (Expense.exclusive == category.type)
-            | (Expense.exclusive.is_(None))
-            | (Expense.exclusive == "")
-        ).all()
+        expenses = Expense.query.all()
         form.expense_id.choices.extend([(e.id, e.name) for e in expenses])
 
     if form.validate_on_submit():
@@ -630,19 +692,6 @@ def delete_transaction(id):
     db.session.commit()
     flash("Transação excluída com sucesso!", "success")
     return redirect(url_for("transaction.transactions"))
-
-
-@transaction_bp.route("/categories/<type>")
-@login_required
-def get_categories(type):
-    # Busca categorias que são exclusivas para o tipo selecionado ou que não são exclusivas
-    categories = Category.query.filter(
-        (Category.exclusive == type)
-        | (Category.exclusive.is_(None))
-        | (Category.exclusive == "")
-    ).all()
-
-    return jsonify({"categories": [{"id": c.id, "name": c.name} for c in categories]})
 
 
 @transaction_bp.route("/reports")

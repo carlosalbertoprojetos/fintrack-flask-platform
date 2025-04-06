@@ -36,10 +36,9 @@ class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     type = db.Column(db.String(20), nullable=False)
-    exclusive = db.Column(db.Boolean, default=False)  # Defina como Boolean
+    exclusive = db.Column(db.Boolean, default=False)
     icon = db.Column(db.String(50), nullable=True)
     color = db.Column(db.String(20), nullable=True)
-    exclusive = db.Column(db.String(20), nullable=False)
 
     def __repr__(self):
         return f"<Category {self.name}>"
@@ -50,10 +49,12 @@ class Expense(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
-    # exclusive = db.Column(db.String(20), nullable=False)
 
     # Chave estrangeira
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
+
+    # Relacionamento para acessar o objeto Category diretamente
+    category = db.relationship("Category", backref="expenses")
 
     def __repr__(self):
         return f"<Expense {self.name}>"

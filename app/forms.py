@@ -74,8 +74,6 @@ class CategoryForm(FlaskForm):
 class ExpenseForm(FlaskForm):
     name = StringField("Nome", validators=[DataRequired(), Length(max=64)])
     category_id = SelectField("Categoria", coerce=int, validators=[Optional()])
-    exclusive = BooleanField(default=False)
-
     submit = SubmitField("Salvar")
 
 
@@ -88,18 +86,14 @@ class PaymentMethodForm(FlaskForm):
 
 class TransactionForm(FlaskForm):
     date = DateField("Data", default=datetime.today, validators=[DataRequired()])
-    # description = StringField("Descrição", validators=[DataRequired(), Length(max=128)])
-    # description_id = SelectField(
-    #     "Descrição Predefinida", coerce=int, validators=[Optional()]
-    # )
     amount = FloatField("Valor", validators=[DataRequired(), NumberRange(min=0.01)])
     type = SelectField(
         "Tipo",
-        choices=[("income", "Receita"), ("expense", "Despesa")],
-        validators=[DataRequired()],
+        choices=[("receita", "Receita"), ("despesa", "Despesa")],
+        default="receita",
     )
     category_id = SelectField("Categoria", coerce=int, validators=[Optional()])
-    expense_id = SelectField("Tipo de Despesa", coerce=int, validators=[Optional()])
+    expense_id = SelectField("Descrição", coerce=int, validators=[Optional()])
     payment_method_id = SelectField(
         "Forma de Pagamento", coerce=int, validators=[Optional()]
     )
@@ -107,10 +101,10 @@ class TransactionForm(FlaskForm):
     recurrence = SelectField(
         "Recorrência",
         choices=[
-            ("none", "Nenhuma"),
-            ("daily", "Diária"),
-            ("weekly", "Semanal"),
-            ("monthly", "Mensal"),
+            ("nenhuma", "Nenhuma"),
+            ("diaria", "Diária"),
+            ("semanal", "Semanal"),
+            ("mensal", "Mensal"),
         ],
         validators=[Optional()],
     )

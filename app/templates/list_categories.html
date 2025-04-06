@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Categorias{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Categorias</h1>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Insira Nova Categoria</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="row mb-2">
+                <div class="col-md-5">
+                    {{ form.type.label(class="form-label") }}
+                    {{ form.type(class="form-select") }}
+                    {% for error in form.type.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-6">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control") }}
+                    {% for error in form.name.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-1">
+                    {{ form.exclusive.label(class="form-label") }}
+                    <div>
+                        {{ form.exclusive(class="form-check-input") }}
+                    </div>
+                    {% for error in form.exclusive.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="d-flex justify-content-end">
+                    {{ form.submit(class="btn btn-primary btn-sm") }}
+                </div>
+            </div>
+        </form>
+
+        {% if categories %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo</th>
+                        <th>Nome</th>
+                        <th>Exclusivo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td>{{ category.id }}</td>
+                        <td>{{ category.type }}</td>
+                        <td>{{ category.name }}</td>
+                        <td>{% if category.exclusive == False %} Não {% else %} Sim {% endif %}</td>
+                        <td>
+                            <!-- Link para editar a despesa -->
+                            <a href="{{ url_for('transaction.edit_category', id=category.id) }}"
+                                class="btn btn-warning btn-sm">Editar</a>
+                            <!-- Link para excluir a despesa -->
+                            <a href="{{ url_for('transaction.delete_expense', id=category.id) }}"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm('Tem certeza que deseja excluir esta despesa?');">Excluir</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center">
+                <p class="mb-3">Nenhuma categoria registrada.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+{% endblock %}

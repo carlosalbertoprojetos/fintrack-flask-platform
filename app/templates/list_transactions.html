@@ -16,66 +16,78 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Tipo</th>
                         <th>Data</th>
                         <th>Categoria</th>
                         <th>Despesa</th>
                         <th>Valor</th>
+                        <th>Forma de Pagamento</th>
+                        <th>Detalhes</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for transaction in transactions %}
                     <tr>
+                        <td>{{ transaction.type }}</td>
                         <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ transaction.category.name }}</td>
                         <td>{{ transaction.expense.name }}</td>
-                        <td class="{% if transaction.type == 'Receita' %}text-success{% else %}text-danger{% endif %}">
-                            {% if transaction.type == 'Receita' %}+{% else %}-{% endif %}
+                        <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
                             R$ {{ "%.2f"|format(transaction.amount) }}
                         </td>
+                        <td>{{ transaction.payment_method }}</td>
+                        <td>{{ transaction.details }}</td>
                         <td>
-                            <a href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
-                            <a href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja excluir esta transação?')">Excluir</a>
+                            <a href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
+                                class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
+                                class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Tem certeza que deseja excluir esta transação?')">Excluir</a>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
+
         <nav aria-label="Paginação de transações">
             <ul class="pagination justify-content-center">
                 {% if transactions.has_prev %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('transaction.transactions', page=transactions.prev_num) }}">Anterior</a>
+                    <a class="page-link"
+                        href="{{ url_for('transaction.transactions', page=transactions.prev_num) }}">Anterior</a>
                 </li>
                 {% else %}
                 <li class="page-item disabled">
                     <span class="page-link">Anterior</span>
                 </li>
                 {% endif %}
-                
-                {% for page_num in transactions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                    {% if page_num %}
-                        {% if page_num == transactions.page %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_num }}</span>
-                        </li>
-                        {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('transaction.transactions', page=page_num) }}">{{ page_num }}</a>
-                        </li>
-                        {% endif %}
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    {% endif %}
+
+                {% for page_num in transactions.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2)
+                %}
+                {% if page_num %}
+                {% if page_num == transactions.page %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('transaction.transactions', page=page_num) }}">{{ page_num
+                        }}</a>
+                </li>
+                {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+                {% endif %}
                 {% endfor %}
-                
+
                 {% if transactions.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('transaction.transactions', page=transactions.next_num) }}">Próxima</a>
+                    <a class="page-link"
+                        href="{{ url_for('transaction.transactions', page=transactions.next_num) }}">Próxima</a>
                 </li>
                 {% else %}
                 <li class="page-item disabled">
@@ -84,7 +96,7 @@
                 {% endif %}
             </ul>
         </nav>
-        
+
     </div>
 </div>
 {% else %}

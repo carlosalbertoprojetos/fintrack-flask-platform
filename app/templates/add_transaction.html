@@ -3,6 +3,7 @@
 {% block title %}{% if edit %}Editar{% else %}Nova{% endif %} Transação - Finanças Pessoais{% endblock %}
 
 {% block content %}
+
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
@@ -12,7 +13,6 @@
             <div class="card-body">
                 <form method="POST" id="transactionForm">
                     {{ form.hidden_tag() }}
-
                     <div class="row mb-3">
                         <div class="col-md-6">
                             {{ form.type.label(class="form-label") }}
@@ -40,8 +40,7 @@
                         </div>
                         <div class="col-md-6">
                             {{ form.category_id.label(class="form-label") }}
-                            {{ form.category_id(class="form-select", id="categorySelect", **{'data-preselected':
-                            form.category_id.data if form.category_id.data else ''}) }}
+                            {{ form.category_id(class="form-select", id="categorySelect") }}
                             {% for error in form.category_id.errors %}
                             <div class="text-danger">{{ error }}</div>
                             {% endfor %}
@@ -52,14 +51,10 @@
                         </div>
                     </div>
 
-                    <!-- Adicione isso após o campo de categoria -->
                     <div class="col mb-3">
-                        <label for="expenseSelect" class="form-label">Tipo de Despesa</label>
+                        <label for="expenseSelect" class="form-label">Descrição</label>
                         {{ form.expense_id(class="form-select", id="expenseSelect") }}
-                        <div class="form-text">Selecione uma descrição predefinida ou digite uma personalizada abaixo.
-                        </div>
                     </div>
-
 
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -98,155 +93,91 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const typeSelect = document.getElementById('transactionType');
-        const categorySelect = document.getElementById('categorySelect');
+    // Usa placeholders só como base
+    const getCategoriesUrlTemplate = "{{ url_for('transaction.get_categories', type='__TYPE__') }}";
+    const expensesEndpointBase = "{{ url_for('transaction.get_expenses', category_id=0).replace('0', '') }}";
 
-        if (typeSelect && categorySelect) {
-            // Função para atualizar as categorias com base no tipo selecionado
-            function updateCategories() {
-                const selectedType = typeSelect.value;
+    document.addEventListener("DOMContentLoaded", function () {
+        const typeSelect = document.getElementById("transactionType");
+        const categorySelect = document.getElementById("categorySelect");
+        const expenseSelect = document.getElementById("expenseSelect");
 
-                // Fazer requisição AJAX para obter categorias filtradas
-                fetch(`/transactions/categories/${selectedType}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Limpar opções atuais
-                        categorySelect.innerHTML = '';
+        typeSelect.addEventListener("change", function () {
+            const type = this.value;
 
-                        // Adicionar novas opções
-                        data.categories.forEach(category => {
-                            const option = document.createElement('option');
-                            option.value = category.id;
-                            option.textContent = category.name;
-                            categorySelect.appendChild(option);
-                        });
-
-                        // Se houver um valor pré-selecionado (em caso de edição), selecione-o
-                        if (categorySelect.dataset.preselected) {
-                            categorySelect.value = categorySelect.dataset.preselected;
-                        }
-                    })
-                    .catch(error => console.error('Erro ao carregar categorias:', error));
+            if (!type) {
+                categorySelect.innerHTML = '<option value="">Selecione um tipo</option>';
+                expenseSelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
+                return;
             }
 
-            // Atualizar categorias quando o tipo mudar
-            typeSelect.addEventListener('change', updateCategories);
+            categorySelect.innerHTML = '<option value="">Carregando...</option>';
+            expenseSelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
 
-            // Inicializar categorias com o tipo atual
-            updateCategories();
+            const url = getCategoriesUrlTemplate.replace('__TYPE__', type);
 
-            // Formatar o campo de valor para exibir como moeda
-            const amountInput = document.getElementById('amount');
-            if (amountInput) {
-                amountInput.addEventListener('blur', function () {
-                    if (this.value) {
-                        const value = parseFloat(this.value.replace(',', '.'));
-                        if (!isNaN(value)) {
-                            // Formatar para exibição, mas manter o valor original para o formulário
-                            const formattedValue = value.toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            });
-                            this.setAttribute('data-value', value);
-                            this.value = formattedValue;
-                        }
-                    }
-                });
-
-                amountInput.addEventListener('focus', function () {
-                    // Ao focar, mostrar o valor original sem formatação
-                    const originalValue = this.getAttribute('data-value');
-                    if (originalValue) {
-                        this.value = originalValue;
-                    }
-                });
-
-                // Formatar o valor inicial se existir
-                if (amountInput.value) {
-                    const value = parseFloat(amountInput.value.replace(',', '.'));
-                    if (!isNaN(value)) {
-                        amountInput.setAttribute('data-value', value);
-                        amountInput.value = value.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                    }
-                }
-            }
-
-            // Ajustar o formulário antes do envio para garantir que os valores estejam corretos
-            const transactionForm = document.getElementById('transactionForm');
-            if (transactionForm) {
-                transactionForm.addEventListener('submit', function (e) {
-                    // Converter o valor formatado de volta para o formato numérico
-                    if (amountInput && amountInput.getAttribute('data-value')) {
-                        amountInput.value = amountInput.getAttribute('data-value');
-                    }
-                });
-            }
-        }
-    });
-</script>
-{% endblock %}
-
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const categorySelect = document.getElementById('categorySelect');
-        const expenseSelect = document.getElementById('expenseSelect');
-        const expenseInput = document.getElementById('expense');
-
-        // Função para carregar descrições predefinidas com base na categoria
-        function loadExpenses(categoryId) {
-            if (categoryId > 0) {
-                fetch(`/transactions/expenses/${categoryId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        // Limpar opções atuais
-                        expenseSelect.innerHTML = '<option value="0">Selecione uma descrição predefinida</option>';
-
-                        // Adicionar novas opções
-                        data.expenses.forEach(expense => {
-                            const option = document.createElement('option');
-                            option.value = expense.id;
-                            option.textContent = expense.name;
-                            expenseSelect.appendChild(option);
-                        });
-
-                        // Restaurar valor selecionado se estiver editando
-                        {% if form.expense_id.data and form.expense_id.data > 0 %}
-                        expenseSelect.value = '{{ form.expense_id.data }}';
-                        {% endif %}
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro ao buscar categorias');
+                    return res.json();
+                })
+                .then(data => {
+                    // console.log("Categorias recebidas:", data);
+                    let options = '<option value="">Selecione uma categoria</option>';
+                    data.forEach(category => {
+                        options += `<option value="${category.id}">${category.name}</option>`;
                     });
-            } else {
-                // Limpar opções se nenhuma categoria for selecionada
-                expenseSelect.innerHTML = '<option value="0">Selecione uma descrição predefinida</option>';
-            }
-        }
-
-        // Carregar descrições quando a categoria mudar
-        categorySelect.addEventListener('change', function () {
-            loadExpenses(this.value);
+                    categorySelect.innerHTML = options;
+                })
+                .catch(err => {
+                    console.error('Erro ao carregar categorias:', err);
+                    categorySelect.innerHTML = '<option value="">Erro ao carregar</option>';
+                });
         });
 
-        // Preencher o campo de descrição quando uma descrição predefinida for selecionada
-        expenseSelect.addEventListener('change', function () {
-            if (this.value > 0) {
-                const selectedText = this.options[this.selectedIndex].text;
-                expenseInput.value = selectedText;
-            }
-        });
+        categorySelect.addEventListener("change", function () {
+            const categoryId = this.value;
 
-        // Carregar descrições iniciais se uma categoria já estiver selecionada
-        if (categorySelect.value > 0) {
-            loadExpenses(categorySelect.value);
-        }
+            if (!categoryId) {
+                expenseSelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
+                return;
+            }
+
+            expenseSelect.innerHTML = '<option value="">Carregando...</option>';
+            const url = expensesEndpointBase + categoryId;
+
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('Erro ao buscar despesas');
+                    return res.json();
+                })
+                .then(data => {
+                    // console.log("Despesas recebidas:", data);
+                    let options;
+                    if (data == 0) {
+                        options = '<option value="">Não há descrição para esta Categoria</option>';
+                    } else {
+                        options = '<option value="">Selecione uma descrição</option>';
+                    }
+
+                    data.forEach(expense => {
+                        options += `<option value="${expense.id}">${expense.name}</option>`;
+                    });
+                    expenseSelect.innerHTML = options;
+                })
+                .catch(err => {
+                    console.error('Erro ao carregar despesas:', err);
+                    expenseSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+                });
+        });
     });
 </script>
+
+
 {% endblock %}

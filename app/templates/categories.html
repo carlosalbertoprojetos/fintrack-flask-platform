@@ -27,24 +27,21 @@
                         <td>{{ category.name }}</td>
                         <td>
                             {% if category.type == 'income' %}
-                                <span class="badge bg-success">Receita</span>
+                            <span class="badge bg-success">Receita</span>
                             {% else %}
-                                <span class="badge bg-danger">Despesa</span>
+                            <span class="badge bg-danger">Despesa</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if category.exclusive == 'income' %}
-                                <span class="badge bg-info">Apenas Receitas</span>
-                            {% elif category.exclusive == 'expense' %}
-                                <span class="badge bg-info">Apenas Despesas</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Ambos</span>
-                            {% endif %}
+                            {{ category.exclusive }}
                         </td>
                         <td>
                             <div class="btn-group" role="group">
-                                <a href="{{ url_for('transaction.edit_category', id=category.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
-                                <a href="{{ url_for('transaction.delete_category', id=category.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Tem certeza que deseja excluir esta categoria?')">Excluir</a>
+                                <a href="{{ url_for('transaction.edit_category', id=category.id) }}"
+                                    class="btn btn-sm btn-outline-primary">Editar</a>
+                                <a href="{{ url_for('transaction.delete_category', id=category.id) }}"
+                                    class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Tem certeza que deseja excluir esta categoria?')">Excluir</a>
                             </div>
                         </td>
                     </tr>
