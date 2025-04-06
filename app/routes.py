@@ -46,7 +46,6 @@ def register():
     return render_template("add_register.html", form=form)
 
 
-
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
@@ -369,7 +368,6 @@ def edit_expense(id):
 
     if form.validate_on_submit():
         expense.name = form.name.data
-        expense.exclusive = form.exclusive.data  # Atualizar com o valor do formulário
 
         # Se o usuário selecionou uma categoria válida
         expense.category_id = (

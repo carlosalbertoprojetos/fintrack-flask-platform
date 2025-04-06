@@ -32,7 +32,7 @@ class User(UserMixin, db.Model):
 # Criptografar senha do usuário
 class SecureData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     encrypted_data = db.Column(db.LargeBinary)
 
 

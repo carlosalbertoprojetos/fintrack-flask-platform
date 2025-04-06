@@ -4,9 +4,9 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Transações</h1>
-    <a href="{{ url_for('transaction.add_transaction') }}" class="btn btn-primary">Nova Transação</a>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 text-gray-800">Transações</h1>
+    <a href="{{ url_for('transaction.add_transaction') }}" class="btn btn-primary btn-sm">Nova Transação</a>
 </div>
 
 {% if transactions %}

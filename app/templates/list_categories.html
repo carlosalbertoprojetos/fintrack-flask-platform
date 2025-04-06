@@ -4,8 +4,8 @@
 
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Categorias</h1>
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 text-gray-800">Categorias</h1>
 </div>
 
 <div class="card">
@@ -69,7 +69,7 @@
                             <a href="{{ url_for('transaction.edit_category', id=category.id) }}"
                                 class="btn btn-outline-primary btn-sm">Editar</a>
                             <!-- Link para excluir a despesa -->
-                            <a href="{{ url_for('transaction.delete_expense', id=category.id) }}"
+                            <a href="{{ url_for('transaction.delete_category', id=category.id) }}"
                                 class="btn btn-outline-danger btn-sm"
                                 onclick="return confirm('Tem certeza que deseja excluir esta despesa?');">Excluir</a>
                         </td>
