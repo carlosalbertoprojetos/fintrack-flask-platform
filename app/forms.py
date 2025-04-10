@@ -90,7 +90,10 @@ class PaymentMethodForm(FlaskForm):
 
 
 class TransactionForm(FlaskForm):
-    date = DateField("Data", default=datetime.today, validators=[DataRequired()])
+    date = DateField(
+        default=datetime.today,
+        render_kw={"readonly": True, "class": "form-control transparent-white"} # Campo somente leitura
+    )
     amount = FloatField("Valor", validators=[DataRequired(), NumberRange(min=0.01)])
     type = SelectField(
         "Tipo",
@@ -102,6 +105,7 @@ class TransactionForm(FlaskForm):
     payment_method_id = SelectField(
         "Forma de Pagamento", coerce=int, validators=[Optional()]
     )
+    payment_date = DateField("Data de Pagamento", validators=[Optional()])  
     paid = BooleanField("Pago", default=False)
     recurrence = SelectField(
         "Recorrência",

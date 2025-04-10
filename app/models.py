@@ -82,6 +82,7 @@ class Transaction(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    payment_date = db.Column(db.DateTime)
     amount = db.Column(db.Float, nullable=False)
     type = db.Column(db.String(20), nullable=False)
     paid = db.Column(db.Boolean, default=False)

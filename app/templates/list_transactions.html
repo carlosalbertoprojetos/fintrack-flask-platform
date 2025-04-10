@@ -21,7 +21,8 @@
                         <th>Categoria</th>
                         <th>Despesa</th>
                         <th>Valor</th>
-                        <th>Pagamento</th>
+                        <th class="text-center">Forma</th>
+                        <th class="text-center">Pagamento</th>
                         <th>Detalhes</th>
                         <th class="text-center">Ações</th>
                     </tr>
@@ -36,7 +37,10 @@
                         <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
                             R$ {{ "%.2f"|format(transaction.amount) }}
                         </td>
-                        <td>{{ transaction.payment_method.name|default('') }}</td>
+                        <td class="text-center">{{ transaction.payment_method.name|default('') }}</td>
+                        <td class="text-center">
+                            {{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '' }}
+                        </td>
                         <td>{{ transaction.details or '' }}</td>
                         <td class="text-center">
                             <a href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"

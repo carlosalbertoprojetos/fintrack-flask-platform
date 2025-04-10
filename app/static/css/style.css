@@ -68,12 +68,19 @@ canvas {
     .card-body {
         padding: 1rem;
     }
-    
+
     h1 {
         font-size: 1.8rem;
     }
-    
+
     .table-responsive {
         font-size: 0.9rem;
     }
+}
+
+.transparent-white {
+    background-color: transparent !important;
+    color: white !important;
+    font-weight: bolder;
+    border: none;
 }

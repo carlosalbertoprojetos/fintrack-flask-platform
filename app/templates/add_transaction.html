@@ -4,93 +4,84 @@
 
 {% block content %}
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
+<div class="card">
+    <div class="card-header d-flex justify-content-between bg-primary text-white">
+        <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
+        <h4>{{ form.date }}</h4>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="transactionForm">
+            {{ form.hidden_tag() }}
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    {{ form.type.label(class="form-label") }}
+                    {{ form.type(class="form-select form-select-sm", id="transactionType") }}
+                    {% for error in form.type.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-4">
+                    {{ form.category_id.label(class="form-label") }}
+                    {{ form.category_id(class="form-select form-select-sm", id="categorySelect") }}
+                    {% for error in form.category_id.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-4">
+                    {{ form.expense_id.label(class="form-label") }}
+                    {{ form.expense_id(class="form-select form-select-sm", id="expenseSelect") }}
+                    {% for error in form.expense_id.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST" id="transactionForm">
-                    {{ form.hidden_tag() }}
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            {{ form.type.label(class="form-label") }}
-                            {{ form.type(class="form-select", id="transactionType") }}
-                            {% for error in form.type.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.date.label(class="form-label") }}
-                            {{ form.date(class="form-control", type="date") }}
-                            {% for error in form.date.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            {{ form.amount.label(class="form-label") }}
-                            {{ form.amount(class="form-control") }}
-                            {% for error in form.amount.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="col-md-6">
-                            {{ form.category_id.label(class="form-label") }}
-                            {{ form.category_id(class="form-select", id="categorySelect") }}
-                            {% for error in form.category_id.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="form-check ms-3">
-                            {{ form.paid.label(class="form-check-label") }}
-                            {{ form.paid(class="form-check-input") }}
-                        </div>
-                    </div>
-
-                    <div class="col mb-3">
-                        <label for="expenseSelect" class="form-label">Descrição</label>
-                        {{ form.expense_id(class="form-select", id="expenseSelect") }}
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            {{ form.payment_method_id.label(class="form-label") }}
-                            {{ form.payment_method_id(class="form-select") }}
-                            {% for error in form.payment_method_id.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            {{ form.recurrence.label(class="form-label") }}
-                            {{ form.recurrence(class="form-select") }}
-                            {% for error in form.recurrence.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.details.label(class="form-label") }}
-                            {{ form.details(class="form-control", rows=3, id="details") }}
-                            {% for error in form.details.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('transaction.transactions') }}" class="btn btn-secondary">Cancelar</a>
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
-                </form>
+            <div class="row mb-3">
+                <div class="col-md-2">
+                    {{ form.amount.label(class="form-label") }}
+                    {{ form.amount(class="form-control form-control-sm") }}
+                    {% for error in form.amount.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-2">
+                    {{ form.payment_method_id.label(class="form-label") }}
+                    {{ form.payment_method_id(class="form-select form-select-sm") }}
+                    {% for error in form.payment_method_id.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-2">
+                    {{ form.payment_date.label(class="form-label") }}
+                    {{ form.payment_date(class="form-control form-control-sm", type="date") }}
+                    {% for error in form.payment_date.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-1 d-flex flex-column">
+                    {{ form.paid.label(class="form-check-label") }}
+                    {{ form.paid(class="form-check-input") }}
+                </div>
+                <div class="col-md-2">
+                    {{ form.recurrence.label(class="form-label") }}
+                    {{ form.recurrence(class="form-select form-select-sm") }}
+                    {% for error in form.recurrence.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {{ form.details.label(class="form-label") }}
+                    {{ form.details(class="form-control form-control-sm", rows=3, id="details") }}
+                    {% for error in form.details.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
             </div>
-        </div>
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('transaction.transactions') }}" class="btn btn-secondary">Cancelar</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
     </div>
 </div>
 

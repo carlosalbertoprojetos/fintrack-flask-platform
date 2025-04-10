@@ -636,6 +636,10 @@ def edit_transaction(id):
         (pm.id, pm.name) for pm in PaymentMethod.query.all()
     ]
 
+    # Caso o campo payment_date não esteja vazio, ele será atualizado
+    if form.payment_date.data:
+        transaction.payment_date = form.payment_date.data
+
     if form.validate_on_submit():
         form.populate_obj(transaction)
         db.session.commit()
