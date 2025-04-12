@@ -204,10 +204,13 @@ def dashboard():
         Transaction.user_id == current_user.id, Transaction.paid == "False"
     ).count()
 
-    # Converter dados para JSON para uso nos gráficos
-    expense_chart_json = json.dumps(expense_chart_data)
-    income_chart_json = json.dumps(income_chart_data)
-    monthly_data_json = json.dumps(monthly_data)
+    expense_chart_json = expense_chart_data
+    income_chart_json = income_chart_data
+    monthly_data_json = monthly_data
+
+    # print(monthly_data_json)
+    # print(expense_chart_json)
+    # print(income_chart_json)
 
     return render_template(
         "dashboard.html",

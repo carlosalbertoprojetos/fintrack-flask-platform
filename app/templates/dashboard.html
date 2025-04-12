@@ -3,6 +3,15 @@
 {% block title %}Dashboard - Finanças Pessoais{% endblock %}
 
 {% block content %}
+
+<head>
+    <style>
+        .chart-area {
+            height: 350px !important;
+        }
+        </style>
+</head>
+
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Dashboard Financeiro - {{ current_month }}</h1>
 
@@ -76,7 +85,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Evolução Financeira (Últimos 6 meses)</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-area">
+                    <div class="chart-area" style="height: 300px;">
                         <canvas id="monthlyChart"></canvas>
                     </div>
                 </div>
@@ -209,114 +218,114 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+
 <script>
-    // Dados para os gráficos
-    const monthlyData = {{ monthly_data_json| safe }};
-    const expenseData = {{ expense_chart_json| safe }};
-    const incomeData = {{ income_chart_json| safe }};
+    // Dados para os gráficos - Certifique-se de que os dados JSON estão sendo corretamente serializados
+    const monthlyData = {{ monthly_data_json|tojson }};
+    const expenseData = {{ expense_chart_json|tojson }};
+    const incomeData = {{ income_chart_json|tojson }};
 
     // Gráfico de Evolução Mensal
-    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-    new Chart(monthlyCtx, {
-        type: 'line',
-        data: {
-            labels: monthlyData.map(item => item.month),
-            datasets: [
-                {
-                    label: 'Receitas',
-                    data: monthlyData.map(item => item.income),
-                    borderColor: '#1cc88a',
-                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                },
-                {
-                    label: 'Descrição',
-                    data: monthlyData.map(item => item.expense),
-                    borderColor: '#e74a3b',
-                    backgroundColor: 'rgba(231, 74, 59, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                },
-                {
-                    label: 'Saldo',
-                    data: monthlyData.map(item => item.balance),
-                    borderColor: '#4e73df',
-                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verificar se os elementos do gráfico existem antes de prosseguir
+        const monthlyChartElement = document.getElementById('monthlyChart');
+        const expenseChartElement = document.getElementById('expenseChart');
+        const incomeChartElement = document.getElementById('incomeChart');
 
-    // Gráfico de Descrição por Categoria
-    const expenseCtx = document.getElementById('expenseChart').getContext('2d');
-    new Chart(expenseCtx, {
-        type: 'doughnut',
-        data: {
-            labels: expenseData.map(item => item.name),
-            datasets: [{
-                data: expenseData.map(item => item.value),
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                hoverBorderColor: "rgba(234, 236, 244, 1)",
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    display: false
+        if (monthlyChartElement) {
+            const monthlyCtx = monthlyChartElement.getContext('2d');
+            new Chart(monthlyCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlyData.map(item => item.month),
+                    datasets: [
+                        {
+                            label: 'Receitas',
+                            data: monthlyData.map(item => item.receita), // Verificar se a propriedade é 'income' na sua estrutura de dados
+                            borderColor: '#1cc88a',
+                            backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Despesas',
+                            data: monthlyData.map(item => item.despesa), // Verificar se a propriedade é 'expense' na sua estrutura de dados
+                            borderColor: '#e74a3b',
+                            backgroundColor: 'rgba(231, 74, 59, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Saldo',
+                            data: monthlyData.map(item => item.balance),
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
                 }
-            },
-            cutout: '70%'
+            });
         }
-    });
 
-    // Gráfico de Receitas por Categoria
-    const incomeCtx = document.getElementById('incomeChart').getContext('2d');
-    new Chart(incomeCtx, {
-        type: 'doughnut',
-        data: {
-            labels: incomeData.map(item => item.name),
-            datasets: [{
-                data: incomeData.map(item => item.value),
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                hoverBorderColor: "rgba(234, 236, 244, 1)",
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    display: false
+        // Gráfico de Despesas por Categoria
+        if (expenseChartElement) {
+            const expenseCtx = expenseChartElement.getContext('2d');
+            new Chart(expenseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: expenseData.map(item => item.name),
+                    datasets: [{
+                        data: expenseData.map(item => item.value),
+                        backgroundColor: expenseData.map((item, index) => 
+                            ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
                 }
-            },
-            cutout: '70%'
+            });
+        }
+
+        // Gráfico de Receitas por Categoria
+        if (incomeChartElement) {
+            const incomeCtx = incomeChartElement.getContext('2d');
+            new Chart(incomeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: incomeData.map(item => item.name),
+                    datasets: [{
+                        data: incomeData.map(item => item.value),
+                        backgroundColor: incomeData.map((item, index) => 
+                            ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
         }
     });
 </script>
