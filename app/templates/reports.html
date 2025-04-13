@@ -3,6 +3,7 @@
 {% block title %}Relatórios - Finanças Pessoais{% endblock %}
 
 {% block content %}
+
 <div class="container-fluid">
     <h1 class="h3 mb-4 text-gray-800">Relatórios Financeiros</h1>
 
@@ -451,19 +452,18 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    var categoryChartData = {{ category_chart_json| tojson }};
+    var categoryChartData = {{ category_chart_json | default([]) | tojson }};
 </script>
-
 
 <script>
     {% if report_type == 'monthly' %}
     // Dados para os gráficos do relatório mensal
-    const expenseData = {{ expense_chart_data| safe }};
-    const incomeData = {{ income_chart_data| safe }};
-    const dailyData = {{ daily_data| safe }};
+    const expenseData = {{ expense_chart_data | safe }};
+    const incomeData = {{ income_chart_data | safe }};
+    const dailyData = {{ daily_data | tojson | safe }};
 
     // Gráfico de Despesas por Categoria
     const expenseCtx = document.getElementById('expenseChart').getContext('2d');
@@ -526,7 +526,7 @@
             datasets: [
                 {
                     label: 'Receitas',
-                    data: dailyData.map(item => item.income),
+                    data: dailyData.map(item => item.receita),
                     borderColor: '#1cc88a',
                     backgroundColor: 'rgba(28, 200, 138, 0.1)',
                     tension: 0.3,
@@ -534,7 +534,7 @@
                 },
                 {
                     label: 'Despesas',
-                    data: dailyData.map(item => item.expense),
+                    data: dailyData.map(item => item.despesa),
                     borderColor: '#e74a3b',
                     backgroundColor: 'rgba(231, 74, 59, 0.1)',
                     tension: 0.3,
@@ -569,9 +569,9 @@
 
     {% if report_type == 'annual' %}
     // Dados para os gráficos do relatório anual
-    const monthlyData = {{ monthly_data| safe }};
-    const topExpenseData = {{ top_expense_chart_data| safe }};
-    const topIncomeData = {{ top_income_chart_data| safe }};
+    const monthlyData = {{ monthly_data | safe }};
+    const topExpenseData = {{ top_expense_chart_data | safe }};
+    const topIncomeData = {{ top_income_chart_data | safe }};
 
     // Gráfico de Evolução Mensal
     const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
@@ -677,7 +677,7 @@
 
     {% if report_type == 'category' and selected_category %}
     // Dados para os gráficos do relatório por categoria
-    const categoryMonthlyData = {{ monthly_data| safe }};
+    const categoryMonthlyData = {{ monthly_data | safe }};
 
     // Gráfico de Evolução Mensal da Categoria
     const categoryMonthlyCtx = document.getElementById('categoryMonthlyChart').getContext('2d');
@@ -710,4 +710,5 @@
     });
     {% endif %}
 </script>
+
 {% endblock %}

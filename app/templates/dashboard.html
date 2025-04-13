@@ -18,58 +18,52 @@
     <!-- Cards de Resumo -->
     <div class="row">
         <!-- Card de Receitas -->
-        <div class="col-xl-4 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 text-center mb-4">
             <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Receitas do Mês</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(income_total) }}
-                            </div>
+                <div class="card-body align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Receitas do Mês</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(income_total) }}
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Card de Descrição -->
-        <div class="col-xl-4 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 text-center mb-4">
             <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Despesas do Mês</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(expense_total) }}
-                            </div>
+                <div class="card-body align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Despesas do Mês</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(expense_total) }}
                         </div>
-                        <div class="col-auto">
-                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-credit-card fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Card de Saldo -->
-        <div class="col-xl-4 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 text-center mb-4">
             <div
                 class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div
-                                class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
-                                Saldo do Mês</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance) }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
-                        </div>
+                <div class="card-body align-items-center">
+                    <div class="col mr-2">
+                        <div
+                            class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
+                            Saldo do Mês</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance) }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>

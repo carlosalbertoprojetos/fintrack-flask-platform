@@ -208,10 +208,6 @@ def dashboard():
     income_chart_json = income_chart_data
     monthly_data_json = monthly_data
 
-    # print(monthly_data_json)
-    # print(expense_chart_json)
-    # print(income_chart_json)
-
     return render_template(
         "dashboard.html",
         monthly_transactions=monthly_transactions,
@@ -671,19 +667,17 @@ def delete_transaction(id):
 @transaction_bp.route("/reports")
 @login_required
 def reports():
-    # Obter parâmetros de filtro
+    from decimal import Decimal
+    from calendar import monthrange
+
     report_type = request.args.get("type", "monthly")
     year = request.args.get("year", datetime.now().year, type=int)
     month = request.args.get("month", datetime.now().month, type=int)
-
-    # Dados para os filtros
     years = range(datetime.now().year - 5, datetime.now().year + 1)
 
-    # Preparar dados para o relatório
     if report_type == "monthly":
-        # Relatório mensal - detalhamento por categoria no mês selecionado
         income_by_category = (
-            db.session.query(Category.name, func.sum(Transaction.amount).label("total"))
+            db.session.query(Category.name, func.sum(Transaction.amount))
             .join(Transaction)
             .filter(
                 Transaction.user_id == current_user.id,
@@ -696,7 +690,7 @@ def reports():
         )
 
         expense_by_category = (
-            db.session.query(Category.name, func.sum(Transaction.amount).label("total"))
+            db.session.query(Category.name, func.sum(Transaction.amount))
             .join(Transaction)
             .filter(
                 Transaction.user_id == current_user.id,
@@ -708,60 +702,63 @@ def reports():
             .all()
         )
 
-        # Calcular totais
-        income_total = sum(total for _, total in income_by_category)
-        expense_total = sum(total for _, total in expense_by_category)
-        balance = income_total - expense_total
+        income_total = sum(Decimal(total or 0) for _, total in income_by_category)
+        expense_total = sum(Decimal(total or 0) for _, total in expense_by_category)
+        balance = float(income_total - expense_total)
 
-        # Preparar dados para gráficos
         income_chart_data = [
-            {"name": cat, "value": float(total)} for cat, total in income_by_category
+            {"name": name, "value": float(total or 0)}
+            for name, total in income_by_category
         ]
         expense_chart_data = [
-            {"name": cat, "value": float(total)} for cat, total in expense_by_category
+            {"name": name, "value": float(total or 0)}
+            for name, total in expense_by_category
         ]
 
-        # Dados diários para o mês
         days_in_month = monthrange(year, month)[1]
+        receita_acumulada = 0
+        despesa_acumulada = 0
+        saldo = 0
         daily_data = []
 
         for day in range(1, days_in_month + 1):
-            day_date = datetime(year, month, day)
-
-            # Pular dias futuros
-            if day_date > datetime.now():
+            current_date = datetime(year, month, day).date()
+            if current_date > datetime.now().date():
                 break
 
-            day_income = (
+            receita_dia = (
                 db.session.query(func.sum(Transaction.amount))
                 .filter(
                     Transaction.user_id == current_user.id,
                     Transaction.type == "receita",
-                    func.date(Transaction.date) == day_date.date(),
+                    func.date(Transaction.date) == current_date,
                 )
                 .scalar()
                 or 0
             )
 
-            day_expense = (
+            despesa_dia = (
                 db.session.query(func.sum(Transaction.amount))
                 .filter(
                     Transaction.user_id == current_user.id,
                     Transaction.type == "despesa",
-                    func.date(Transaction.date) == day_date.date(),
+                    func.date(Transaction.date) == current_date,
                 )
                 .scalar()
                 or 0
             )
 
-            daily_data.append(
-                {
-                    "day": day,
-                    "receita": float(day_income),
-                    "despesa": float(day_expense),
-                    "balance": float(day_income - day_expense),
-                }
-            )
+            receita_acumulada += float(receita_dia)
+            despesa_acumulada += float(despesa_dia)
+            saldo = receita_acumulada - despesa_acumulada
+
+            daily_data.append({
+                "day": f"{day:02d}",
+                "receita": receita_acumulada,
+                "despesa": despesa_acumulada,
+                "balance": saldo
+            })
+
 
         return render_template(
             "reports.html",
@@ -769,14 +766,14 @@ def reports():
             year=year,
             month=month,
             years=years,
+            income_total=float(income_total),
+            expense_total=float(expense_total),
+            balance=balance,
             income_by_category=income_by_category,
             expense_by_category=expense_by_category,
-            income_total=income_total,
-            expense_total=expense_total,
-            balance=balance,
             income_chart_data=json.dumps(income_chart_data),
             expense_chart_data=json.dumps(expense_chart_data),
-            daily_data=json.dumps(daily_data),
+            daily_data=daily_data,  # ATENÇÃO: agora enviamos como dicionário direto
             month_name=datetime(year, month, 1).strftime("%B"),
         )
 
@@ -950,8 +947,10 @@ def reports():
                 categories=categories,
             )
 
+  
     # Tipo de relatório inválido
     return redirect(url_for("transaction.reports", type="monthly"))
+
 
 
 @transaction_bp.route("/export")
