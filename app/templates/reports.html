@@ -70,11 +70,13 @@
     </div>
 
     {% if report_type == 'monthly' %}
+
     <!-- Relatório Mensal -->
     <div class="row">
+
         <!-- Cards de Resumo -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
+        <div class="col-xl-4 col-md-6 mb-2">
+            <div class="card border-left-success shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -91,8 +93,9 @@
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
+        <!-- Card de Descrição -->
+        <div class="col-xl-4 col-md-6 mb-2">
+            <div class="card border-left-danger shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -109,9 +112,10 @@
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6 mb-4">
+        <!-- Card de Saldo -->
+        <div class="col-xl-4 col-md-6 mb-2">
             <div
-                class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow h-100 py-2">
+                class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
@@ -455,7 +459,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    var categoryChartData = {{ category_chart_json | default([]) | tojson }};
+    var categoryChartData = {{ category_chart_json | default ([]) | tojson }};
 </script>
 
 <script>

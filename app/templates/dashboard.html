@@ -9,66 +9,76 @@
         .chart-area {
             height: 350px !important;
         }
-        </style>
+    </style>
 </head>
 
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Dashboard Financeiro - {{ current_month }}</h1>
+    <h1 class="h3 mb-4 text-gray-800">Dashboard - {{ current_month }}</h1>
 
     <!-- Cards de Resumo -->
     <div class="row">
+
         <!-- Card de Receitas -->
-        <div class="col-xl-4 col-md-6 text-center mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Receitas do Mês</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(income_total) }}
+        <div class="col-xl-4 col-md-6 mb-2">
+            <div class="card border-left-success shadow py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Receitas do Mês</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(income_total) }}
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Card de Descrição -->
-        <div class="col-xl-4 col-md-6 text-center mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                            Despesas do Mês</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(expense_total) }}
+        <div class="col-xl-4 col-md-6 mb-2">
+            <div class="card border-left-success shadow py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Despesas do Mês</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(expense_total) }}
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-credit-card fa-2x text-gray-300"></i>
+                        <div class="col-auto">
+                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+
         <!-- Card de Saldo -->
-        <div class="col-xl-4 col-md-6 text-center mb-4">
+        <div class="col-xl-4 col-md-6 mb-2">
             <div
-                class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow h-100 py-2">
-                <div class="card-body align-items-center">
-                    <div class="col mr-2">
-                        <div
-                            class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
-                            Saldo do Mês</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance) }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+                class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div
+                                class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
+                                Saldo do Mês</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Gráficos e Estatísticas -->
     <div class="row">
@@ -169,7 +179,8 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">Transações Recentes</h6>
-                    <a href="{{ url_for('transaction.transactions') }}" class="btn btn-sm btn-primary">Ver Todas</a>
+                    <a href="{{ url_for('transaction.transactions') }}" class="btn btn-sm btn-primary">Ver
+                        Todas</a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -194,14 +205,16 @@
                                         <span class="badge badge-danger">Despesa</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ transaction.category.name if transaction.category else 'Sem categoria' }}
+                                    <td>{{ transaction.category.name if transaction.category else 'Sem
+                                        categoria' }}
                                     </td>
                                     <td>{{ transaction.expense.name }}</td>
                                     <td class="text-right">R$ {{ "%.2f"|format(transaction.amount) }}</td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center">Nenhuma transação registrada neste mês.</td>
+                                    <td colspan="5" class="text-center">Nenhuma transação registrada neste mês.
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -221,12 +234,12 @@
 
 <script>
     // Dados para os gráficos - Certifique-se de que os dados JSON estão sendo corretamente serializados
-    const monthlyData = {{ monthly_data_json|tojson }};
-    const expenseData = {{ expense_chart_json|tojson }};
-    const incomeData = {{ income_chart_json|tojson }};
+    const monthlyData = {{ monthly_data_json| tojson }};
+    const expenseData = {{ expense_chart_json| tojson }};
+    const incomeData = {{ income_chart_json| tojson }};
 
     // Gráfico de Evolução Mensal
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Verificar se os elementos do gráfico existem antes de prosseguir
         const monthlyChartElement = document.getElementById('monthlyChart');
         const expenseChartElement = document.getElementById('expenseChart');
@@ -291,7 +304,7 @@
                     labels: expenseData.map(item => item.name),
                     datasets: [{
                         data: expenseData.map(item => item.value),
-                        backgroundColor: expenseData.map((item, index) => 
+                        backgroundColor: expenseData.map((item, index) =>
                             ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
                     }]
                 },
@@ -311,7 +324,7 @@
                     labels: incomeData.map(item => item.name),
                     datasets: [{
                         data: incomeData.map(item => item.value),
-                        backgroundColor: incomeData.map((item, index) => 
+                        backgroundColor: incomeData.map((item, index) =>
                             ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
                     }]
                 },
