@@ -1,6 +1,15 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import (
+    Blueprint,
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    request,
+    jsonify,
+    current_app,
+)
 from flask_login import login_user, logout_user, login_required, current_user
-from app import db
+from app import db, mail
 from app.models import Expense, PaymentMethod, User, Category, Transaction
 from app.forms import (
     ExpenseForm,
@@ -9,11 +18,15 @@ from app.forms import (
     RegistrationForm,
     TransactionForm,
     CategoryForm,
+    RequestResetForm,
+    ResetPasswordForm,
 )
 from sqlalchemy import func, extract, desc
 from datetime import datetime
 from calendar import monthrange
 import json
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer as Serializer
 
 # Blueprints
 main_bp = Blueprint("main", __name__)
@@ -752,16 +765,29 @@ def reports():
             despesa_acumulada += float(despesa_dia)
             saldo = receita_acumulada - despesa_acumulada
 
-            daily_data.append({
-                "day": f"{day:02d}",
-                "receita": receita_acumulada,
-                "despesa": despesa_acumulada,
-                "balance": saldo
-            })
+            daily_data.append(
+                {
+                    "day": f"{day:02d}",
+                    "receita": receita_acumulada,
+                    "despesa": despesa_acumulada,
+                    "balance": saldo,
+                }
+            )
 
+        # Todas as transações do mês
+        transactions = (
+            Transaction.query.filter(
+                Transaction.user_id == current_user.id,
+                extract("month", Transaction.date) == month,
+                extract("year", Transaction.date) == year,
+            )
+            .order_by(Transaction.date.desc())
+            .all()
+        )
 
         return render_template(
             "reports.html",
+            transactions=transactions,
             report_type=report_type,
             year=year,
             month=month,
@@ -865,9 +891,20 @@ def reports():
             {"name": cat, "value": float(total)} for cat, total in top_income_categories
         ]
 
+        # Todas as transações do ano
+        transactions = (
+            Transaction.query.filter(
+                Transaction.user_id == current_user.id,
+                extract("year", Transaction.date) == year,
+            )
+            .order_by(Transaction.date.desc())
+            .all()
+        )
+
         return render_template(
             "reports.html",
             report_type=report_type,
+            transactions=transactions,
             year=year,
             years=years,
             monthly_data=json.dumps(monthly_data),
@@ -947,10 +984,8 @@ def reports():
                 categories=categories,
             )
 
-  
     # Tipo de relatório inválido
     return redirect(url_for("transaction.reports", type="monthly"))
-
 
 
 @transaction_bp.route("/export")
@@ -959,3 +994,61 @@ def export_data():
     # Implementação futura para exportação de dados
     flash("Funcionalidade de exportação será implementada em breve!", "info")
     return redirect(url_for("transaction.transactions"))
+
+
+def send_reset_email(user):
+    token = user.get_reset_token()
+    reset_url = url_for("auth.reset_token", token=token, _external=True)
+
+    print("\n" + "=" * 50)
+    print("EMAIL DE RECUPERAÇÃO DE SENHA (CONSOLE)")
+    print("=" * 50)
+    print(f"De: {current_app.config['MAIL_DEFAULT_SENDER']}")
+    print(f"Para: {user.email}")
+    print(f"Assunto: Recuperação de Senha - Finanças Pessoais")
+    print("-" * 50)
+    print("Conteúdo do email:")
+    print(f"Para redefinir sua senha, visite o seguinte link:")
+    print(f"{reset_url}")
+    print(
+        "\nSe você não solicitou esta recuperação de senha, simplesmente ignore este email."
+    )
+    print("=" * 50 + "\n")
+
+    msg = Message("Recuperação de Senha - Finanças Pessoais", recipients=[user.email])
+    msg.body = f"""Para redefinir sua senha, visite o seguinte link:
+{reset_url}
+
+Se você não solicitou esta recuperação de senha, simplesmente ignore este email.
+"""
+    mail.send(msg)
+
+
+@auth_bp.route("/reset_request", methods=["GET", "POST"])
+def reset_request():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        send_reset_email(user)
+        flash("Um email foi enviado com instruções para redefinir sua senha.", "info")
+        return redirect(url_for("auth.login"))
+    return render_template("reset_request.html", title="Recuperar Senha", form=form)
+
+
+@auth_bp.route("/reset_password/<token>", methods=["GET", "POST"])
+def reset_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+    user = User.verify_reset_token(token)
+    if user is None:
+        flash("O token de recuperação é inválido ou expirou.", "warning")
+        return redirect(url_for("auth.reset_request"))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash("Sua senha foi atualizada! Agora você pode fazer login.", "success")
+        return redirect(url_for("auth.login"))
+    return render_template("reset_password.html", title="Redefinir Senha", form=form)

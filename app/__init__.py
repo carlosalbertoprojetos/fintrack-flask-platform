@@ -4,22 +4,26 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from datetime import datetime
 from config import Config
+from flask_mail import Mail
 
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
+login_manager.login_message = "Por favor, faça login para acessar esta página."
+mail = Mail()
 
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    app.config.from_mapping(DEBUG=True)   
+    app.config.from_mapping(DEBUG=True)
 
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    mail.init_app(app)
 
     from app.routes import main_bp, auth_bp, transaction_bp
 

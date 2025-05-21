@@ -3,6 +3,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy.orm import relationship
 from app import db, login_manager
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from flask import current_app
 
 
 @login_manager.user_loader
@@ -17,7 +19,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(64), unique=True, index=True)
     email = db.Column(db.String(120), unique=True, index=True)
     password_hash = db.Column(db.String(128))
-    salt = db.Column(db.LargeBinary) # criptografia
+    salt = db.Column(db.LargeBinary)  # criptografia
     transactions = db.relationship("Transaction", backref="user", lazy="dynamic")
 
     def set_password(self, password):
@@ -26,13 +28,27 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+    def get_reset_token(self, expires_sec=1800):
+        s = Serializer(current_app.config["SECRET_KEY"])
+        return s.dumps({"user_id": self.id})
+
+    @staticmethod
+    def verify_reset_token(token):
+        s = Serializer(current_app.config["SECRET_KEY"])
+        try:
+            user_id = s.loads(token, max_age=1800)["user_id"]
+        except:
+            return None
+        return User.query.get(user_id)
+
     def __repr__(self):
         return f"<User {self.username}>"
+
 
 # Criptografar senha do usuário
 class SecureData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     encrypted_data = db.Column(db.LargeBinary)
 
 

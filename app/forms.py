@@ -92,7 +92,10 @@ class PaymentMethodForm(FlaskForm):
 class TransactionForm(FlaskForm):
     date = DateField(
         default=datetime.today,
-        render_kw={"readonly": True, "class": "form-control transparent-white"} # Campo somente leitura
+        render_kw={
+            "readonly": True,
+            "class": "form-control transparent-white",
+        },  # Campo somente leitura
     )
     amount = FloatField("Valor", validators=[DataRequired(), NumberRange(min=0.01)])
     type = SelectField(
@@ -105,7 +108,7 @@ class TransactionForm(FlaskForm):
     payment_method_id = SelectField(
         "Forma de Pagamento", coerce=int, validators=[Optional()]
     )
-    payment_date = DateField("Data de Pagamento", validators=[Optional()])  
+    payment_date = DateField("Data de Pagamento", validators=[Optional()])
     paid = BooleanField("Pago", default=False)
     recurrence = SelectField(
         "Recorrência",
@@ -121,3 +124,23 @@ class TransactionForm(FlaskForm):
     notes = TextAreaField("Observações", validators=[Optional(), Length(max=500)])
 
     submit = SubmitField("Salvar")
+
+
+class RequestResetForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    submit = SubmitField("Solicitar Recuperação de Senha")
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user is None:
+            raise ValidationError(
+                "Não existe uma conta com este email. Por favor, verifique o email ou registre-se."
+            )
+
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField("Nova Senha", validators=[DataRequired(), Length(min=6)])
+    password2 = PasswordField(
+        "Confirmar Nova Senha", validators=[DataRequired(), EqualTo("password")]
+    )
+    submit = SubmitField("Redefinir Senha")
