@@ -893,3 +893,110 @@ def payment_method_expense_report():
         total_amount=total_amount,  # Este agora é o total final (original - desconto)
         payment_method_totals=payment_method_totals,
     )
+
+
+@transaction_bp.route("/transactions")
+@login_required
+def transactions():
+    page = request.args.get("page", 1, type=int)
+    per_page = 10  # número de itens por página
+
+    # Buscar transações do usuário atual com paginação
+    transactions = (
+        Transaction.query.filter_by(user_id=current_user.id)
+        .order_by(Transaction.date.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+
+    return render_template("list_transactions.html", transactions=transactions)
+
+
+@transaction_bp.route("/transactions/add", methods=["GET", "POST"])
+@login_required
+def add_transaction():
+    form = TransactionForm()
+
+    # Preencher as opções de categorias
+    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
+    # Preencher as opções de formas de pagamento
+    form.payment_method_id.choices = [
+        (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
+    ]
+    # Preencher as opções de descrições predefinidas
+    form.expense_id.choices = [(0, "Selecione uma descrição")] + [
+        (exp.id, exp.name) for exp in Expense.query.all()
+    ]
+
+    if form.validate_on_submit():
+        transaction = Transaction(
+            type=form.type.data,
+            date=form.date.data,
+            due_date=form.due_date.data,
+            category_id=form.category_id.data,
+            expense_id=form.expense_id.data if form.expense_id.data > 0 else None,
+            description=form.description.data,
+            amount=form.amount.data,
+            discount=form.discount.data or 0,
+            payment_method_id=form.payment_method_id.data,
+            paid=form.paid.data,
+            user_id=current_user.id,
+        )
+
+        db.session.add(transaction)
+        db.session.commit()
+        flash("Transação adicionada com sucesso!", "success")
+        return redirect(url_for("transaction.transactions"))
+
+    return render_template("add_transaction.html", form=form)
+
+
+@transaction_bp.route("/transactions/edit/<int:id>", methods=["GET", "POST"])
+@login_required
+def edit_transaction(id):
+    transaction = Transaction.query.filter_by(
+        id=id, user_id=current_user.id
+    ).first_or_404()
+    form = TransactionForm(obj=transaction)
+
+    # Preencher as opções de categorias
+    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
+    # Preencher as opções de formas de pagamento
+    form.payment_method_id.choices = [
+        (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
+    ]
+    # Preencher as opções de descrições predefinidas
+    form.expense_id.choices = [(0, "Selecione uma descrição")] + [
+        (exp.id, exp.name) for exp in Expense.query.all()
+    ]
+
+    if form.validate_on_submit():
+        transaction.type = form.type.data
+        transaction.date = form.date.data
+        transaction.due_date = form.due_date.data
+        transaction.category_id = form.category_id.data
+        transaction.expense_id = (
+            form.expense_id.data if form.expense_id.data > 0 else None
+        )
+        transaction.description = form.description.data
+        transaction.amount = form.amount.data
+        transaction.discount = form.discount.data or 0
+        transaction.payment_method_id = form.payment_method_id.data
+        transaction.paid = form.paid.data
+
+        db.session.commit()
+        flash("Transação atualizada com sucesso!", "success")
+        return redirect(url_for("transaction.transactions"))
+
+    return render_template("edit_transaction.html", form=form, transaction=transaction)
+
+
+@transaction_bp.route("/transactions/delete/<int:id>")
+@login_required
+def delete_transaction(id):
+    transaction = Transaction.query.filter_by(
+        id=id, user_id=current_user.id
+    ).first_or_404()
+    db.session.delete(transaction)
+    db.session.commit()
+    flash("Transação excluída com sucesso!", "success")
+    return redirect(url_for("transaction.transactions"))

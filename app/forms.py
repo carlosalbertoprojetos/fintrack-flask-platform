@@ -126,6 +126,7 @@ class TransactionForm(FlaskForm):
         ],
         validators=[Optional()],
     )
+    description = StringField("Descrição", validators=[Optional(), Length(max=200)])
     details = TextAreaField("Detalhes", validators=[Optional(), Length(max=500)])
     notes = TextAreaField("Observações", validators=[Optional(), Length(max=500)])
 
