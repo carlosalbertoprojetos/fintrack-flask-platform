@@ -1,183 +1,211 @@
-{% extends "base.html" %}
-
-{% block title %}{% if edit %}Editar{% else %}Nova{% endif %} Transação - Finanças Pessoais{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}{% if edit %}Editar{% else %}Nova{%
+endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
 
 <div class="card">
-    <div class="card-header d-flex justify-content-between bg-primary text-white">
-        <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
-        <h4>{{ form.date }}</h4>
-    </div>
-    <div class="card-body">
-        <form method="POST" id="transactionForm">
-            {{ form.hidden_tag() }}
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    {{ form.type.label(class="form-label") }}
-                    {{ form.type(class="form-select form-select-sm", id="transactionType") }}
-                    {% for error in form.type.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-4">
-                    {{ form.category_id.label(class="form-label") }}
-                    {{ form.category_id(class="form-select form-select-sm", id="categorySelect") }}
-                    {% for error in form.category_id.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-4">
-                    {{ form.expense_id.label(class="form-label") }}
-                    {{ form.expense_id(class="form-select form-select-sm", id="expenseSelect") }}
-                    {% for error in form.expense_id.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-            </div>
+  <div class="card-header d-flex justify-content-between bg-primary text-white">
+    <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
+    <h4>{{ form.date }}</h4>
+  </div>
+  <div class="card-body">
+    <form method="POST" id="transactionForm">
+      {{ form.hidden_tag() }}
+      <div class="row mb-3">
+        <div class="col-md-4">
+          {{ form.type.label(class="form-label") }} {{
+          form.type(class="form-select form-select-sm", id="transactionType") }}
+          {% for error in form.type.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-4">
+          {{ form.category_id.label(class="form-label") }} {{
+          form.category_id(class="form-select form-select-sm",
+          id="categorySelect") }} {% for error in form.category_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-4">
+          {{ form.expense_id.label(class="form-label") }} {{
+          form.expense_id(class="form-select form-select-sm",
+          id="expenseSelect") }} {% for error in form.expense_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
 
-            <div class="row mb-3">
-                <div class="col-md-2">
-                    {{ form.amount.label(class="form-label") }}
-                    {{ form.amount(class="form-control form-control-sm") }}
-                    {% for error in form.amount.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-2">
-                    {{ form.payment_method_id.label(class="form-label") }}
-                    {{ form.payment_method_id(class="form-select form-select-sm") }}
-                    {% for error in form.payment_method_id.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-2">
-                    {{ form.payment_date.label(class="form-label") }}
-                    {{ form.payment_date(class="form-control form-control-sm", type="date") }}
-                    {% for error in form.payment_date.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="col-md-1 d-flex flex-column">
-                    {{ form.paid.label(class="form-check-label") }}
-                    {{ form.paid(class="form-check-input") }}
-                </div>
-                <div class="col-md-2">
-                    {{ form.recurrence.label(class="form-label") }}
-                    {{ form.recurrence(class="form-select form-select-sm") }}
-                    {% for error in form.recurrence.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-                <div class="mb-3">
-                    {{ form.details.label(class="form-label") }}
-                    {{ form.details(class="form-control form-control-sm", rows=3, id="details") }}
-                    {% for error in form.details.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="d-flex justify-content-between">
-                <a href="{{ url_for('transaction.transactions') }}" class="btn btn-secondary">Cancelar</a>
-                {{ form.submit(class="btn btn-primary") }}
-            </div>
-        </form>
-    </div>
+      <div class="row mb-3">
+        <div class="col-md-2">
+          {{ form.amount.label(class="form-label") }} {{
+          form.amount(class="form-control form-control-sm") }} {% for error in
+          form.amount.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2" id="dueDateField" style="display: none">
+          {{ form.due_date.label(class="form-label") }} {{
+          form.due_date(class="form-control form-control-sm", type="date") }} {%
+          for error in form.due_date.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2">
+          {{ form.payment_method_id.label(class="form-label") }} {{
+          form.payment_method_id(class="form-select form-select-sm") }} {% for
+          error in form.payment_method_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2">
+          {{ form.payment_date.label(class="form-label") }} {{
+          form.payment_date(class="form-control form-control-sm", type="date")
+          }} {% for error in form.payment_date.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-1 d-flex flex-column">
+          {{ form.paid.label(class="form-check-label") }} {{
+          form.paid(class="form-check-input") }}
+        </div>
+        <div class="col-md-2">
+          {{ form.recurrence.label(class="form-label") }} {{
+          form.recurrence(class="form-select form-select-sm") }} {% for error in
+          form.recurrence.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.details.label(class="form-label") }} {{
+          form.details(class="form-control form-control-sm", rows=3,
+          id="details") }} {% for error in form.details.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="d-flex justify-content-between">
+        <a
+          href="{{ url_for('transaction.transactions') }}"
+          class="btn btn-secondary"
+          >Cancelar</a
+        >
+        {{ form.submit(class="btn btn-primary") }}
+      </div>
+    </form>
+  </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 
 <script>
-    // URLs para buscar categorias e despesas
-    const getCategoriesUrlTemplate = "{{ url_for('transaction.get_categories', type='__TYPE__') }}";
-    const expensesEndpointBase = "{{ url_for('transaction.get_expenses', category_id=0).replace('0', '') }}";
+  // URLs para buscar categorias e despesas
+  const getCategoriesUrlTemplate =
+    "{{ url_for('transaction.get_categories', type='__TYPE__') }}";
+  const expensesEndpointBase =
+    "{{ url_for('transaction.get_expenses', category_id=0).replace('0', '') }}";
 
-    // Valores salvos da transação que serão usados para marcar os selects
-    const selectedCategoryId = "{{ form.category_id.data or '' }}";
-    const selectedExpenseId = "{{ form.expense_id.data or '' }}";
+  // Valores salvos da transação que serão usados para marcar os selects
+  const selectedCategoryId = "{{ form.category_id.data or '' }}";
+  const selectedExpenseId = "{{ form.expense_id.data or '' }}";
 
-    document.addEventListener("DOMContentLoaded", function () {
-        const typeSelect = document.getElementById("transactionType");
-        const categorySelect = document.getElementById("categorySelect");
-        const expenseSelect = document.getElementById("expenseSelect");
+  document.addEventListener("DOMContentLoaded", function () {
+    const typeSelect = document.getElementById("transactionType");
+    const categorySelect = document.getElementById("categorySelect");
+    const expenseSelect = document.getElementById("expenseSelect");
+    const dueDateField = document.getElementById("dueDateField");
 
-        typeSelect.addEventListener("change", function () {
-            const type = this.value;
+    // Função para mostrar/esconder o campo de data de vencimento
+    function toggleDueDateField() {
+      dueDateField.style.display =
+        typeSelect.value === "despesa" ? "block" : "none";
+    }
 
-            if (!type) {
-                categorySelect.innerHTML = '<option value="">Selecione um tipo</option>';
-                expenseSelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
-                return;
-            }
+    // Mostrar/esconder campo de data de vencimento ao carregar a página
+    toggleDueDateField();
 
-            categorySelect.innerHTML = '<option value="">Carregando...</option>';
-            expenseSelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
+    // Mostrar/esconder campo de data de vencimento quando o tipo mudar
+    typeSelect.addEventListener("change", function () {
+      toggleDueDateField();
+      const type = this.value;
 
-            const url = getCategoriesUrlTemplate.replace('__TYPE__', type);
+      if (!type) {
+        categorySelect.innerHTML =
+          '<option value="">Selecione um tipo</option>';
+        expenseSelect.innerHTML =
+          '<option value="">Selecione uma categoria primeiro</option>';
+        return;
+      }
 
-            fetch(url)
-                .then(res => {
-                    if (!res.ok) throw new Error('Erro ao buscar categorias');
-                    return res.json();
-                })
-                .then(data => {
-                    let options = '<option value="">Selecione uma categoria</option>';
-                    data.forEach(category => {
-                        const selected = category.id == selectedCategoryId ? 'selected' : '';
-                        options += `<option value="${category.id}" ${selected}>${category.name}</option>`;
-                    });
-                    categorySelect.innerHTML = options;
+      categorySelect.innerHTML = '<option value="">Carregando...</option>';
+      expenseSelect.innerHTML =
+        '<option value="">Selecione uma categoria primeiro</option>';
 
-                    // Após carregar categorias, aciona carregamento das despesas
-                    categorySelect.dispatchEvent(new Event('change'));
-                })
-                .catch(err => {
-                    console.error('Erro ao carregar categorias:', err);
-                    categorySelect.innerHTML = '<option value="">Erro ao carregar</option>';
-                });
+      const url = getCategoriesUrlTemplate.replace("__TYPE__", type);
+
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) throw new Error("Erro ao buscar categorias");
+          return res.json();
+        })
+        .then((data) => {
+          let options = '<option value="">Selecione uma categoria</option>';
+          data.forEach((category) => {
+            const selected =
+              category.id == selectedCategoryId ? "selected" : "";
+            options += `<option value="${category.id}" ${selected}>${category.name}</option>`;
+          });
+          categorySelect.innerHTML = options;
+
+          // Após carregar categorias, aciona carregamento das despesas
+          categorySelect.dispatchEvent(new Event("change"));
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar categorias:", err);
+          categorySelect.innerHTML =
+            '<option value="">Erro ao carregar</option>';
         });
-
-        categorySelect.addEventListener("change", function () {
-            const categoryId = this.value;
-
-            if (!categoryId) {
-                expenseSelect.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
-                return;
-            }
-
-            expenseSelect.innerHTML = '<option value="">Carregando...</option>';
-            const url = expensesEndpointBase + categoryId;
-
-            fetch(url)
-                .then(res => {
-                    if (!res.ok) throw new Error('Erro ao buscar despesas');
-                    return res.json();
-                })
-                .then(data => {
-                    let options;
-                    if (data.length === 0) {
-                        options = '<option value="">Não há descrição para esta Categoria</option>';
-                    } else {
-                        options = '<option value="">Selecione uma descrição</option>';
-                    }
-
-                    data.forEach(expense => {
-                        const selected = expense.id == selectedExpenseId ? 'selected' : '';
-                        options += `<option value="${expense.id}" ${selected}>${expense.name}</option>`;
-                    });
-                    expenseSelect.innerHTML = options;
-                })
-                .catch(err => {
-                    console.error('Erro ao carregar despesas:', err);
-                    expenseSelect.innerHTML = '<option value="">Erro ao carregar</option>';
-                });
-        });
-
-        // Gatilho inicial para carregar categorias com base no tipo já salvo
-        typeSelect.dispatchEvent(new Event("change"));
     });
+
+    categorySelect.addEventListener("change", function () {
+      const categoryId = this.value;
+
+      if (!categoryId) {
+        expenseSelect.innerHTML =
+          '<option value="">Selecione uma categoria primeiro</option>';
+        return;
+      }
+
+      expenseSelect.innerHTML = '<option value="">Carregando...</option>';
+      const url = expensesEndpointBase + categoryId;
+
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) throw new Error("Erro ao buscar despesas");
+          return res.json();
+        })
+        .then((data) => {
+          let options;
+          if (data.length === 0) {
+            options =
+              '<option value="">Não há descrição para esta Categoria</option>';
+          } else {
+            options = '<option value="">Selecione uma descrição</option>';
+          }
+
+          data.forEach((expense) => {
+            const selected = expense.id == selectedExpenseId ? "selected" : "";
+            options += `<option value="${expense.id}" ${selected}>${expense.name}</option>`;
+          });
+          expenseSelect.innerHTML = options;
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar despesas:", err);
+          expenseSelect.innerHTML =
+            '<option value="">Erro ao carregar</option>';
+        });
+    });
+
+    // Gatilho inicial para carregar categorias com base no tipo já salvo
+    typeSelect.dispatchEvent(new Event("change"));
+  });
 </script>
 
 {% endblock %}

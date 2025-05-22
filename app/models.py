@@ -98,6 +98,7 @@ class Transaction(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    due_date = db.Column(db.DateTime, nullable=True)  # Data de vencimento para despesas
     payment_date = db.Column(db.DateTime)
     amount = db.Column(db.Float, nullable=False)
     type = db.Column(db.String(20), nullable=False)

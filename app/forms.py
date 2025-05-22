@@ -97,6 +97,9 @@ class TransactionForm(FlaskForm):
             "class": "form-control transparent-white",
         },  # Campo somente leitura
     )
+    due_date = DateField(
+        "Data de Vencimento", validators=[Optional()]
+    )  # Campo opcional para data de vencimento
     amount = FloatField("Valor", validators=[DataRequired(), NumberRange(min=0.01)])
     type = SelectField(
         "Tipo",

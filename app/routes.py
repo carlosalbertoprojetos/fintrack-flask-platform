@@ -605,6 +605,10 @@ def add_transaction():
             category_id=form.category_id.data,
             expense_id=form.expense_id.data,
             payment_method_id=form.payment_method_id.data,
+            payment_date=form.payment_date.data,
+            due_date=(
+                form.due_date.data if form.type.data == "despesa" else None
+            ),  # Só salva a data de vencimento se for despesa
             paid=form.paid.data,
             notes=form.notes.data,
             user_id=current_user.id,
@@ -648,12 +652,13 @@ def edit_transaction(id):
         (pm.id, pm.name) for pm in PaymentMethod.query.all()
     ]
 
-    # Caso o campo payment_date não esteja vazio, ele será atualizado
-    if form.payment_date.data:
-        transaction.payment_date = form.payment_date.data
-
     if form.validate_on_submit():
         form.populate_obj(transaction)
+        # Atualiza a data de vencimento apenas se for despesa
+        if form.type.data == "despesa":
+            transaction.due_date = form.due_date.data
+        else:
+            transaction.due_date = None
         db.session.commit()
         flash("Transação atualizada com sucesso!", "success")
         return redirect(url_for("transaction.transactions"))
