@@ -103,7 +103,7 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
 <script>
   // URLs para buscar categorias e despesas
   const getCategoriesUrlTemplate =
-    "{{ url_for('transaction.get_categories', type='__TYPE__') }}";
+    "{{ url_for('transaction.get_categories_by_type', type='__TYPE__') }}";
   const expensesEndpointBase =
     "{{ url_for('transaction.get_expenses', category_id=0).replace('0', '') }}";
 

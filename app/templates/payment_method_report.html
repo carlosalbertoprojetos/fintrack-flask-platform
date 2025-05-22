@@ -61,9 +61,12 @@
                         <th>Tipo</th>
                         <th>Categoria</th>
                         <th>Descrição</th>
-                        <th>Valor Original</th>
+                        <th>Valor</th>
+                        {% if transactions|selectattr('type', 'equalto', 'despesa')|list %}
+                        <th>Vencimento</th>
                         <th>Desconto</th>
                         <th>Valor Final</th>
+                        {% endif %}
                         <th>Forma de Pagamento</th>
                         <th>Status</th>
                     </tr>
@@ -78,6 +81,8 @@
                         <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
                             R$ {{ "%.2f"|format(transaction.amount) }}
                         </td>
+                        {% if transaction.type == 'despesa' %}
+                        <td>{{ transaction.due_date.strftime('%d/%m/%Y') if transaction.due_date else '-' }}</td>
                         <td class="text-danger">
                             {% if transaction.discount > 0 %}
                             -R$ {{ "%.2f"|format(transaction.discount) }}
@@ -85,9 +90,10 @@
                             -
                             {% endif %}
                         </td>
-                        <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
+                        <td class="text-danger">
                             R$ {{ "%.2f"|format(transaction.amount - transaction.discount) }}
                         </td>
+                        {% endif %}
                         <td>{{ transaction.payment_method.name }}</td>
                         <td>
                             {% if transaction.paid %}
@@ -103,8 +109,11 @@
                     <tr class="table-primary">
                         <td colspan="4"><strong>Total</strong></td>
                         <td><strong>R$ {{ "%.2f"|format(total_amount) }}</strong></td>
+                        {% if transactions|selectattr('type', 'equalto', 'despesa')|list %}
+                        <td></td>
                         <td><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
                         <td><strong>R$ {{ "%.2f"|format(total_final) }}</strong></td>
+                        {% endif %}
                         <td colspan="2"></td>
                     </tr>
                 </tfoot>

@@ -1,147 +1,236 @@
-{% extends 'base.html' %} {% block title %}Transações - Finanças Pessoais{%
+{% extends "base.html" %} {% block title %}Transações - {{ current_month }}{%
 endblock %} {% block content %}
-
-<div class="d-flex justify-content-between align-items-center">
-  <h1 class="h3 text-gray-800">Transações</h1>
-  <a
-    href="{{ url_for('transaction.add_transaction') }}"
-    class="btn btn-primary btn-sm"
-    >Nova Transação</a
-  >
-</div>
-
-{% if transactions %}
-<div class="card">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-hover table-sm">
-        <thead>
-          <tr>
-            <th>Tipo</th>
-            <th>Data</th>
-            <th>Vencimento</th>
-            <th>Categoria</th>
-            <th>Despesa</th>
-            <th>Valor</th>
-            <th>Desconto</th>
-            <th>Valor Final</th>
-            <th class="text-center">Forma</th>
-            <th class="text-center">Pagamento</th>
-            <th>Detalhes</th>
-            <th class="text-center">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for transaction in transactions %}
-          <tr>
-            <td>{{ transaction.type }}</td>
-            <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-            <td>
-              {{ transaction.due_date.strftime('%d/%m/%Y') if
-              transaction.due_date else '' }}
-            </td>
-            <td>{{ transaction.category.name }}</td>
-            <td>{{ transaction.expense.name }}</td>
-            <td
-              class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}"
-            >
-              R$ {{ "%.2f"|format(transaction.amount or 0) }}
-            </td>
-            <td class="text-success">
-              {% if transaction.discount and transaction.discount > 0 %} R$ {{
-              "%.2f"|format(transaction.discount) }} {% else %} - {% endif %}
-            </td>
-            <td
-              class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}"
-            >
-              R$ {{ "%.2f"|format((transaction.amount or 0) -
-              (transaction.discount or 0)) }}
-            </td>
-            <td class="text-center">
-              {{ transaction.payment_method.name|default('') }}
-            </td>
-            <td class="text-center">
-              {{ transaction.payment_date.strftime('%d/%m/%Y') if
-              transaction.payment_date else '' }}
-            </td>
-            <td>{{ transaction.details or '' }}</td>
-            <td class="text-center">
-              <a
-                href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
-                class="btn btn-outline-primary btn-sm"
-                >Editar</a
-              >
-              <a
-                href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
-                class="btn btn-outline-danger btn-sm"
-                onclick="return confirm('Tem certeza que deseja excluir esta transação?')"
-                >Excluir</a
-              >
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <nav aria-label="Paginação de transações">
-      <ul class="pagination justify-content-center">
-        {% if transactions.has_prev %}
-        <li class="page-item">
-          <a
-            class="page-link"
-            href="{{ url_for('transaction.transactions', page=transactions.prev_num) }}"
-            >Anterior</a
-          >
-        </li>
-        {% else %}
-        <li class="page-item disabled">
-          <span class="page-link">Anterior</span>
-        </li>
-        {% endif %} {% for page_num in transactions.iter_pages(left_edge=1,
-        right_edge=1, left_current=1, right_current=2) %} {% if page_num %} {%
-        if page_num == transactions.page %}
-        <li class="page-item active">
-          <span class="page-link">{{ page_num }}</span>
-        </li>
-        {% else %}
-        <li class="page-item">
-          <a
-            class="page-link"
-            href="{{ url_for('transaction.transactions', page=page_num) }}"
-            >{{ page_num }}</a
-          >
-        </li>
-        {% endif %} {% else %}
-        <li class="page-item disabled">
-          <span class="page-link">...</span>
-        </li>
-        {% endif %} {% endfor %} {% if transactions.has_next %}
-        <li class="page-item">
-          <a
-            class="page-link"
-            href="{{ url_for('transaction.transactions', page=transactions.next_num) }}"
-            >Próxima</a
-          >
-        </li>
-        {% else %}
-        <li class="page-item disabled">
-          <span class="page-link">Próxima</span>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
-  </div>
-</div>
-{% else %}
-<div class="card">
-  <div class="card-body text-center">
-    <p class="mb-3">Nenhuma transação registrada.</p>
+<div class="container-fluid px-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">Transações - {{ current_month }}</h1>
     <a
       href="{{ url_for('transaction.add_transaction') }}"
       class="btn btn-primary"
-      >Adicionar Transação</a
     >
+      <i class="fas fa-plus"></i> Nova Transação
+    </a>
   </div>
+
+  {% if transactions.items %}
+  <!-- Tabela de Receitas -->
+  <div class="card mb-4">
+    <div class="card-header bg-success text-white">
+      <h5 class="card-title mb-0">Receitas</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Categoria</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Forma de Pagamento</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set income_transactions = transactions.items|selectattr('type',
+            'equalto', 'receita')|list %} {% for transaction in
+            income_transactions %}
+            <tr>
+              <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+              <td>{{ transaction.category.name }}</td>
+              <td>
+                {{ transaction.expense.name if transaction.expense else
+                transaction.description }}
+              </td>
+              <td class="text-success">
+                R$ {{ "%.2f"|format(transaction.amount or 0) }}
+              </td>
+              <td>{{ transaction.payment_method.name }}</td>
+              <td>
+                {% if transaction.paid %}
+                <span class="badge bg-success">Pago</span>
+                {% else %}
+                <span class="badge bg-warning">Pendente</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <a
+                    href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
+                    class="btn btn-outline-primary"
+                    title="Editar"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a
+                    href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
+                    class="btn btn-outline-danger"
+                    title="Excluir"
+                    onclick="return confirm('Tem certeza que deseja excluir esta transação?')"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center">
+                Nenhuma receita registrada no período.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Despesas -->
+  <div class="card">
+    <div class="card-header bg-danger text-white">
+      <h5 class="card-title mb-0">Despesas</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Categoria</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Desconto</th>
+              <th>Valor Final</th>
+              <th>Vencimento</th>
+              <th>Data Pagamento</th>
+              <th>Forma de Pagamento</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set expense_transactions = transactions.items|selectattr('type',
+            'equalto', 'despesa')|list %} {% for transaction in
+            expense_transactions %} {% set final_value = (transaction.amount or
+            0) - (transaction.discount or 0) %}
+            <tr>
+              <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+              <td>{{ transaction.category.name }}</td>
+              <td>
+                {{ transaction.expense.name if transaction.expense else
+                transaction.description }}
+              </td>
+              <td class="text-danger">
+                R$ {{ "%.2f"|format(transaction.amount or 0) }}
+              </td>
+              <td class="text-danger">
+                {% if transaction.discount and transaction.discount > 0 %} -R$
+                {{ "%.2f"|format(transaction.discount) }} {% else %} - {% endif
+                %}
+              </td>
+              <td class="text-danger">R$ {{ "%.2f"|format(final_value) }}</td>
+              <td>
+                {{ transaction.due_date.strftime('%d/%m/%Y') if
+                transaction.due_date else '-' }}
+              </td>
+              <td>
+                {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                transaction.payment_date else '-' }}
+              </td>
+              <td>{{ transaction.payment_method.name }}</td>
+              <td>
+                {% if transaction.paid %}
+                <span class="badge bg-success">Pago</span>
+                {% else %}
+                <span class="badge bg-warning">Pendente</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <a
+                    href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
+                    class="btn btn-outline-primary"
+                    title="Editar"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a
+                    href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
+                    class="btn btn-outline-danger"
+                    title="Excluir"
+                    onclick="return confirm('Tem certeza que deseja excluir esta transação?')"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="11" class="text-center">
+                Nenhuma despesa registrada no período.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if transactions.pages > 1 %}
+  <nav aria-label="Paginação de transações" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if transactions.has_prev %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="{{ url_for('transaction.transactions', page=transactions.prev_num) }}"
+          >Anterior</a
+        >
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">Anterior</span>
+      </li>
+      {% endif %} {% for page_num in transactions.iter_pages(left_edge=1,
+      right_edge=1, left_current=1, right_current=2) %} {% if page_num %} {% if
+      page_num == transactions.page %}
+      <li class="page-item active">
+        <span class="page-link">{{ page_num }}</span>
+      </li>
+      {% else %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="{{ url_for('transaction.transactions', page=page_num) }}"
+          >{{ page_num }}</a
+        >
+      </li>
+      {% endif %} {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">...</span>
+      </li>
+      {% endif %} {% endfor %} {% if transactions.has_next %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="{{ url_for('transaction.transactions', page=transactions.next_num) }}"
+          >Próxima</a
+        >
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">Próxima</span>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %} {% else %}
+  <div class="alert alert-info">
+    Nenhuma transação encontrada para o mês de {{ current_month }}.
+  </div>
+  {% endif %}
 </div>
-{% endif %} {% endblock %}
+{% endblock %}

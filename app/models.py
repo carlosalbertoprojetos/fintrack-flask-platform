@@ -107,6 +107,9 @@ class Transaction(db.Model):
     notes = db.Column(db.Text, nullable=True)
     recurrence = db.Column(db.String(10), default="none", nullable=False)
     details = db.Column(db.String(500), nullable=True)
+    description = db.Column(
+        db.String(500), nullable=True
+    )  # Campo para descrição manual
 
     # Chaves estrangeiras
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)

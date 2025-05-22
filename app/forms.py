@@ -111,6 +111,9 @@ class TransactionForm(FlaskForm):
     )
     category_id = SelectField("Categoria", coerce=int, validators=[Optional()])
     expense_id = SelectField("Descrição", coerce=int, validators=[Optional()])
+    description = StringField(
+        "Descrição", validators=[Optional(), Length(max=500)]
+    )  # Campo para descrição manual
     payment_method_id = SelectField(
         "Forma de Pagamento", coerce=int, validators=[Optional()]
     )
@@ -126,7 +129,6 @@ class TransactionForm(FlaskForm):
         ],
         validators=[Optional()],
     )
-    description = StringField("Descrição", validators=[Optional(), Length(max=200)])
     details = TextAreaField("Detalhes", validators=[Optional(), Length(max=500)])
     notes = TextAreaField("Observações", validators=[Optional(), Length(max=500)])
 

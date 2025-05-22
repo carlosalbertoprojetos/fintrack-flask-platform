@@ -248,6 +248,8 @@ def dashboard():
         projected_expense=projected_expense,
         pending_transactions=pending_transactions,
         current_month=datetime.now().strftime("%B %Y"),
+        datetime=datetime,
+        monthrange=monthrange,
     )
 
 
@@ -901,14 +903,27 @@ def transactions():
     page = request.args.get("page", 1, type=int)
     per_page = 10  # número de itens por página
 
-    # Buscar transações do usuário atual com paginação
+    # Obter o mês e ano atual
+    current_date = datetime.now()
+    current_month = current_date.month
+    current_year = current_date.year
+
+    # Buscar transações do usuário atual do mês atual com paginação
     transactions = (
-        Transaction.query.filter_by(user_id=current_user.id)
+        Transaction.query.filter(
+            Transaction.user_id == current_user.id,
+            extract("month", Transaction.date) == current_month,
+            extract("year", Transaction.date) == current_year,
+        )
         .order_by(Transaction.date.desc())
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    return render_template("list_transactions.html", transactions=transactions)
+    return render_template(
+        "list_transactions.html",
+        transactions=transactions,
+        current_month=current_date.strftime("%B/%Y"),
+    )
 
 
 @transaction_bp.route("/transactions/add", methods=["GET", "POST"])
@@ -933,7 +948,11 @@ def add_transaction():
             date=form.date.data,
             due_date=form.due_date.data,
             category_id=form.category_id.data,
-            expense_id=form.expense_id.data if form.expense_id.data > 0 else None,
+            expense_id=(
+                form.expense_id.data
+                if form.expense_id.data and form.expense_id.data > 0
+                else None
+            ),
             description=form.description.data,
             amount=form.amount.data,
             discount=form.discount.data or 0,
@@ -975,7 +994,9 @@ def edit_transaction(id):
         transaction.due_date = form.due_date.data
         transaction.category_id = form.category_id.data
         transaction.expense_id = (
-            form.expense_id.data if form.expense_id.data > 0 else None
+            form.expense_id.data
+            if form.expense_id.data and form.expense_id.data > 0
+            else None
         )
         transaction.description = form.description.data
         transaction.amount = form.amount.data
@@ -1000,3 +1021,35 @@ def delete_transaction(id):
     db.session.commit()
     flash("Transação excluída com sucesso!", "success")
     return redirect(url_for("transaction.transactions"))
+
+
+@transaction_bp.route("/expenses/by-category/<int:category_id>")
+@login_required
+def get_expenses(category_id):
+    expenses = Expense.query.filter_by(category_id=category_id).all()
+    return jsonify([{"id": exp.id, "name": exp.name} for exp in expenses])
+
+
+@transaction_bp.route("/categories/by-type/<string:type>")
+@login_required
+def get_categories_by_type(type):
+    try:
+        # Buscar categorias do tipo específico
+        type_categories = Category.query.filter_by(type=type).all()
+
+        # Buscar categorias não exclusivas (que podem ser usadas em qualquer tipo)
+        # Garantir que exclusive seja False (não None)
+        non_exclusive_categories = Category.query.filter(
+            Category.exclusive.is_(False)  # Usar is_ para comparação com False
+        ).all()
+
+        # Combinar as duas listas, evitando duplicatas
+        all_categories = list(set(type_categories + non_exclusive_categories))
+
+        # Ordenar por nome
+        all_categories.sort(key=lambda x: x.name)
+
+        return jsonify([{"id": cat.id, "name": cat.name} for cat in all_categories])
+    except Exception as e:
+        print(f"Erro ao buscar categorias: {str(e)}")  # Log do erro
+        return jsonify([])  # Retorna lista vazia em caso de erro

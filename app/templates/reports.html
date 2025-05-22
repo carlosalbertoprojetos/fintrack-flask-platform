@@ -13,116 +13,128 @@
             <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
         </div>
         <div class="card-body">
-            <form method="GET" class="mb-4">
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="type">Tipo de Relatório</label>
-                            <select name="type" id="type" class="form-select" onchange="this.form.submit()">
-                                <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Mensal</option>
-                                <option value="annual" {% if report_type == 'annual' %}selected{% endif %}>Anual</option>
-                                <option value="category" {% if report_type == 'category' %}selected{% endif %}>Por Categoria</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="payment_method">Forma de Pagamento</label>
-                            <select name="payment_method_id" id="payment_method" class="form-select">
-                                <option value="">Todas as formas</option>
-                                {% for method in payment_methods %}
-                                <option value="{{ method.id }}" {% if selected_method_id == method.id %}selected{% endif %}>
-                                    {{ method.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    {% if report_type != 'annual' %}
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="month">Mês</label>
-                            <select name="month" id="month" class="form-select">
-                                {% for m in range(1, 13) %}
-                                <option value="{{ m }}" {% if month == m %}selected{% endif %}>
-                                    {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][m-1] }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="year">Ano</label>
-                            <select name="year" id="year" class="form-select">
-                                {% for y in years %}
-                                <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Tipo de Relatório</label>
+                    <select name="type" id="type" class="form-select" onchange="this.form.submit()">
+                        <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Mensal</option>
+                        <option value="annual" {% if report_type == 'annual' %}selected{% endif %}>Anual</option>
+                        <option value="category" {% if report_type == 'category' %}selected{% endif %}>Por Categoria</option>
+                    </select>
                 </div>
-                <div class="mt-3">
-                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                <div class="col-md-3">
+                    <label for="year" class="form-label">Ano</label>
+                    <select name="year" id="year" class="form-select" onchange="this.form.submit()">
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if report_type != 'annual' %}
+                <div class="col-md-3">
+                    <label for="month" class="form-label">Mês</label>
+                    <select name="month" id="month" class="form-select" onchange="this.form.submit()">
+                        {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][m-1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-md-3">
+                    <label for="payment_method_id" class="form-label">Forma de Pagamento</label>
+                    <select name="payment_method_id" id="payment_method_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">Todas</option>
+                        {% for method in payment_methods %}
+                        <option value="{{ method.id }}" {% if method.id == selected_method_id %}selected{% endif %}>{{ method.name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Tabela de Transações -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Transações</h6>
+    <!-- Resumo -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Receitas</h5>
+                    <h3 class="mb-0">R$ {{ "%.2f"|format(income_total) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Despesas</h5>
+                    <h3 class="mb-0">R$ {{ "%.2f"|format(expense_total) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card {% if balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Saldo</h5>
+                    <h3 class="mb-0">R$ {{ "%.2f"|format(balance) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Receitas por Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="incomeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Despesas por Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Receitas -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h2 class="h5 mb-0">Receitas</h2>
         </div>
         <div class="card-body">
-            {% if transactions %}
+            {% set income_transactions = transactions|selectattr('type', 'equalto', 'receita')|list %}
+            {% if income_transactions %}
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover table-sm">
                     <thead>
                         <tr>
                             <th>Data</th>
-                            <th>Tipo</th>
                             <th>Categoria</th>
                             <th>Descrição</th>
-                            <th>Valor Original</th>
-                            <th>Desconto</th>
-                            <th>Valor Final</th>
-                            <th>Forma de Pagamento</th>
-                            <th>Status</th>
+                            <th>Valor</th>
+                            <th class="text-center">Forma</th>
+                            <th class="text-center">Pagamento</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for transaction in transactions %}
-                        {% set final_value = (transaction.amount or 0) - (transaction.discount or 0) %}
+                        {% for transaction in income_transactions %}
                         <tr>
                             <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                            <td>
-                                {% if transaction.type == 'receita' %}
-                                <span class="badge bg-success">Receita</span>
-                                {% else %}
-                                <span class="badge bg-danger">Despesa</span>
-                                {% endif %}
-                            </td>
                             <td>{{ transaction.category.name }}</td>
-                            <td>{{ transaction.expense.name if transaction.expense else '' }}</td>
-                            <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
-                                R$ {{ "%.2f"|format(transaction.amount or 0) }}
-                            </td>
-                            <td class="text-danger">
-                                {% if transaction.discount and transaction.discount > 0 %}
-                                -R$ {{ "%.2f"|format(transaction.discount) }}
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
-                                R$ {{ "%.2f"|format(final_value) }}
-                            </td>
-                            <td>{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
-                            <td>
-                                {% if transaction.paid %}
+                            <td>{{ transaction.description }}</td>
+                            <td class="text-success">R$ {{ "%.2f"|format(transaction.amount or 0) }}</td>
+                            <td class="text-center">{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
+                            <td class="text-center">
+                                {% if transaction.paid == 'True' %}
                                 <span class="badge bg-success">Pago</span>
                                 {% else %}
                                 <span class="badge bg-warning">Pendente</span>
@@ -131,21 +143,64 @@
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <tfoot>
-                        <tr class="table-primary">
-                            <td colspan="4"><strong>Total</strong></td>
-                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_original) }}</strong></td>
-                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
-                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_final) }}</strong></td>
-                            <td colspan="2"></td>
-                        </tr>
-                    </tfoot>
                 </table>
             </div>
             {% else %}
-            <div class="alert alert-info">
-                Nenhuma transação encontrada para os filtros selecionados.
+            <p class="text-center mb-0">Nenhuma receita registrada.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tabela de Despesas -->
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h2 class="h5 mb-0">Despesas</h2>
+        </div>
+        <div class="card-body">
+            {% set expense_transactions = transactions|selectattr('type', 'equalto', 'despesa')|list %}
+            {% if expense_transactions %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Desconto</th>
+                            <th>Valor Final</th>
+                            <th>Vencimento</th>
+                            <th>Data Pagamento</th>
+                            <th class="text-center">Forma</th>
+                            <th class="text-center">Pagamento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in expense_transactions %}
+                        <tr>
+                            <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ transaction.category.name }}</td>
+                            <td>{{ transaction.description }}</td>
+                            <td class="text-danger">R$ {{ "%.2f"|format(transaction.amount or 0) }}</td>
+                            <td class="text-danger">R$ {{ "%.2f"|format(transaction.discount or 0) }}</td>
+                            <td class="text-danger">R$ {{ "%.2f"|format((transaction.amount or 0) - (transaction.discount or 0)) }}</td>
+                            <td>{{ transaction.due_date.strftime('%d/%m/%Y') if transaction.due_date else '-' }}</td>
+                            <td>{{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '-' }}</td>
+                            <td class="text-center">{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
+                            <td class="text-center">
+                                {% if transaction.paid == 'True' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <p class="text-center mb-0">Nenhuma despesa registrada.</p>
             {% endif %}
         </div>
     </div>
