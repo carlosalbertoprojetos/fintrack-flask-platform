@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Despesas por Forma de Pagamento - Finanças Pessoais{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Relatório de Despesas por Forma de Pagamento</h4>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="mb-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="payment_method">Forma de Pagamento</label>
+                        <select name="payment_method_id" id="payment_method" class="form-select">
+                            <option value="">Todas as formas</option>
+                            {% for method in payment_methods %}
+                            <option value="{{ method.id }}" {% if selected_method_id == method.id %}selected{% endif %}>
+                                {{ method.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="month">Mês</label>
+                        <select name="month" id="month" class="form-select">
+                            {% for m in range(1, 13) %}
+                            <option value="{{ m }}" {% if month == m %}selected{% endif %}>
+                                {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][m-1] }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="year">Ano</label>
+                        <select name="year" id="year" class="form-select">
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+            </div>
+        </form>
+
+        {% if payment_method_totals %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Resumo por Forma de Pagamento</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Forma de Pagamento</th>
+                                <th class="text-end">Qtd. Transações</th>
+                                <th class="text-end">Valor Original</th>
+                                <th class="text-end">Descontos</th>
+                                <th class="text-end">Valor Final</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for method_id, totals in payment_method_totals.items() %}
+                            {% if totals.count > 0 %}
+                            <tr>
+                                <td>{{ totals.name }}</td>
+                                <td class="text-end">{{ totals.count }}</td>
+                                <td class="text-end text-danger">R$ {{ "%.2f"|format(totals.original) }}</td>
+                                <td class="text-end text-danger">R$ {{ "%.2f"|format(totals.discount) }}</td>
+                                <td class="text-end text-danger">R$ {{ "%.2f"|format(totals.final) }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-primary">
+                                <td><strong>Total Geral</strong></td>
+                                <td class="text-end"><strong>{{ transactions|length }}</strong></td>
+                                <td class="text-end"><strong>R$ {{ "%.2f"|format(total_original) }}</strong></td>
+                                <td class="text-end"><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
+                                <td class="text-end"><strong>R$ {{ "%.2f"|format(total_amount) }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Categoria</th>
+                        <th>Descrição</th>
+                        <th>Valor Original</th>
+                        <th>Desconto</th>
+                        <th>Valor Final</th>
+                        <th>Forma de Pagamento</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    {% set final_value = (transaction.amount or 0) - (transaction.discount or 0) %}
+                    <tr>
+                        <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ transaction.category.name }}</td>
+                        <td>{{ transaction.expense.name if transaction.expense else '' }}</td>
+                        <td class="text-danger">
+                            R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                        </td>
+                        <td class="text-danger">
+                            {% if transaction.discount and transaction.discount > 0 %}
+                            -R$ {{ "%.2f"|format(transaction.discount) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td class="text-danger">
+                            R$ {{ "%.2f"|format(final_value) }}
+                        </td>
+                        <td>{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
+                        <td>
+                            {% if transaction.paid %}
+                            <span class="badge bg-success">Pago</span>
+                            {% else %}
+                            <span class="badge bg-warning">Pendente</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-primary">
+                        <td colspan="3"><strong>Total</strong></td>
+                        <td class="text-end"><strong>R$ {{ "%.2f"|format(total_original) }}</strong></td>
+                        <td class="text-end"><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
+                        <td class="text-end"><strong>R$ {{ "%.2f"|format(total_amount) }}</strong></td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            Nenhuma despesa encontrada para os filtros selecionados.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

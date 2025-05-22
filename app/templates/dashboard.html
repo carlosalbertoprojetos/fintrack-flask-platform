@@ -1,339 +1,380 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard - Finanças Pessoais{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Dashboard - Finanças Pessoais{%
+endblock %} {% block content %}
 
 <head>
-    <style>
-        .chart-area {
-            height: 350px !important;
-        }
-    </style>
+  <style>
+    .chart-area {
+      height: 350px !important;
+    }
+  </style>
 </head>
 
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Dashboard - {{ current_month }}</h1>
+  <h1 class="h3 mb-4 text-gray-800">Dashboard - {{ current_month }}</h1>
 
-    <!-- Cards de Resumo -->
-    <div class="row">
-
-        <!-- Card de Receitas -->
-        <div class="col-xl-4 col-md-6 mb-2">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Receitas do Mês</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(income_total) }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+  <!-- Cards de Resumo -->
+  <div class="row">
+    <!-- Card de Receitas -->
+    <div class="col-xl-4 col-md-6 mb-2">
+      <div class="card border-left-success shadow py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Receitas do Mês
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(income_total) }}
+              </div>
             </div>
-        </div>
-
-        <!-- Card de Descrição -->
-        <div class="col-xl-4 col-md-6 mb-2">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Despesas do Mês</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(expense_total) }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
             </div>
+          </div>
         </div>
-
-
-        <!-- Card de Saldo -->
-        <div class="col-xl-4 col-md-6 mb-2">
-            <div
-                class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div
-                                class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
-                                Saldo do Mês</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance) }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-
-    <!-- Gráficos e Estatísticas -->
-    <div class="row">
-        <!-- Gráfico de Evolução Mensal -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Evolução Financeira (Últimos 6 meses)</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area" style="height: 300px;">
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
+    <!-- Card de Descrição -->
+    <div class="col-xl-4 col-md-6 mb-2">
+      <div class="card border-left-success shadow py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+              >
+                Despesas do Mês
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(expense_total) }}
+              </div>
             </div>
-        </div>
-
-        <!-- Estatísticas -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Estatísticas do Mês</h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <p class="mb-1 small">Média Diária de Despesas</p>
-                        <h4 class="text-dark">R$ {{ "%.2f"|format(daily_avg_expense) }}</h4>
-                    </div>
-                    <div class="mb-3">
-                        <p class="mb-1 small">Projeção de Despesas para o Mês</p>
-                        <h4 class="text-dark">R$ {{ "%.2f"|format(projected_expense) }}</h4>
-                    </div>
-                    <div class="mb-3">
-                        <p class="mb-1 small">Total de Transações</p>
-                        <h4 class="text-dark">{{ total_transactions }}</h4>
-                    </div>
-                    <div class="mb-3">
-                        <p class="mb-1 small">Transações Pendentes</p>
-                        <h4 class="text-dark">{{ pending_transactions }}</h4>
-                    </div>
-                </div>
+            <div class="col-auto">
+              <i class="fas fa-credit-card fa-2x text-gray-300"></i>
             </div>
+          </div>
         </div>
+      </div>
     </div>
 
-    <!-- Gráficos de Categorias -->
-    <div class="row">
-        <!-- Gráfico de Descrição por Categoria -->
-        <div class="col-xl-6 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Descrição por Categoria</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="expenseChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                        {% for category, total in top_expense_categories %}
-                        <span class="mr-2">
-                            <i class="fas fa-circle"
-                                style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ category }}
-                        </span>
-                        {% endfor %}
-                    </div>
-                </div>
+    <!-- Card de Saldo -->
+    <div class="col-xl-4 col-md-6 mb-2">
+      <div
+        class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow py-2"
+      >
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1"
+              >
+                Saldo do Mês
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(balance) }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- Gráfico de Receitas por Categoria -->
-        <div class="col-xl-6 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Receitas por Categoria</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="incomeChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                        {% for category, total in top_income_categories %}
-                        <span class="mr-2">
-                            <i class="fas fa-circle"
-                                style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ category }}
-                        </span>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
+  <!-- Gráficos e Estatísticas -->
+  <div class="row">
+    <!-- Gráfico de Evolução Mensal -->
+    <div class="col-xl-8 col-lg-7">
+      <div class="card shadow mb-4">
+        <div
+          class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+        >
+          <h6 class="m-0 font-weight-bold text-primary">
+            Evolução Financeira (Últimos 6 meses)
+          </h6>
         </div>
+        <div class="card-body">
+          <div class="chart-area" style="height: 300px">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Transações Recentes -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Transações Recentes</h6>
-                    <a href="{{ url_for('transaction.transactions') }}" class="btn btn-sm btn-primary">Ver
-                        Todas</a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Tipo</th>
-                                    <th>Categoria</th>
-                                    <th>Descrição</th>
-                                    <th>Valor</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for transaction in monthly_transactions %}
-                                <tr>
-                                    <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                                    <td>
-                                        {% if transaction.type == 'income' %}
-                                        <span class="badge badge-success">Receita</span>
-                                        {% else %}
-                                        <span class="badge badge-danger">Despesa</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ transaction.category.name if transaction.category else 'Sem
-                                        categoria' }}
-                                    </td>
-                                    <td>{{ transaction.expense.name }}</td>
-                                    <td class="text-right">R$ {{ "%.2f"|format(transaction.amount) }}</td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center">Nenhuma transação registrada neste mês.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <!-- Estatísticas -->
+    <div class="col-xl-4 col-lg-5">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Estatísticas do Mês</h6>
         </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <p class="mb-1 small">Média Diária de Despesas</p>
+            <h4 class="text-dark">R$ {{ "%.2f"|format(daily_avg_expense) }}</h4>
+          </div>
+          <div class="mb-3">
+            <p class="mb-1 small">Projeção de Despesas para o Mês</p>
+            <h4 class="text-dark">R$ {{ "%.2f"|format(projected_expense) }}</h4>
+          </div>
+          <div class="mb-3">
+            <p class="mb-1 small">Total de Transações</p>
+            <h4 class="text-dark">{{ total_transactions }}</h4>
+          </div>
+          <div class="mb-3">
+            <p class="mb-1 small">Transações Pendentes</p>
+            <h4 class="text-dark">{{ pending_transactions }}</h4>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Gráficos de Categorias -->
+  <div class="row">
+    <!-- Gráfico de Descrição por Categoria -->
+    <div class="col-xl-6 col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Descrição por Categoria
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-pie pt-4 pb-2">
+            <canvas id="expenseChart"></canvas>
+          </div>
+          <div class="mt-4 text-center small">
+            {% for category, total in top_expense_categories %}
+            <span class="mr-2">
+              <i
+                class="fas fa-circle"
+                style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
+              ></i>
+              {{ category }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico de Receitas por Categoria -->
+    <div class="col-xl-6 col-lg-6">
+      <div class="card shadow mb-4">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Receitas por Categoria
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="chart-pie pt-4 pb-2">
+            <canvas id="incomeChart"></canvas>
+          </div>
+          <div class="mt-4 text-center small">
+            {% for category, total in top_income_categories %}
+            <span class="mr-2">
+              <i
+                class="fas fa-circle"
+                style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
+              ></i>
+              {{ category }}
+            </span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transações Recentes -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow mb-4">
+        <div
+          class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+        >
+          <h6 class="m-0 font-weight-bold text-primary">Transações Recentes</h6>
+          <a
+            href="{{ url_for('transaction.reports') }}"
+            class="btn btn-sm btn-primary"
+            >Ver Todas</a
+          >
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Categoria</th>
+                  <th>Descrição</th>
+                  <th>Valor Original</th>
+                  <th>Desconto</th>
+                  <th>Valor Final</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for transaction in monthly_transactions %} {% set final_value
+                = (transaction.amount or 0) - (transaction.discount or 0) %}
+                <tr>
+                  <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+                  <td>
+                    {% if transaction.type == 'receita' %}
+                    <span class="badge bg-success">Receita</span>
+                    {% else %}
+                    <span class="badge bg-danger">Despesa</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ transaction.category.name }}</td>
+                  <td>
+                    {{ transaction.expense.name if transaction.expense else ''
+                    }}
+                  </td>
+                  <td
+                    class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}"
+                  >
+                    R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                  </td>
+                  <td class="text-danger">
+                    {% if transaction.discount and transaction.discount > 0 %}
+                    -R$ {{ "%.2f"|format(transaction.discount) }} {% else %} -
+                    {% endif %}
+                  </td>
+                  <td
+                    class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}"
+                  >
+                    R$ {{ "%.2f"|format(final_value) }}
+                  </td>
+                  <td>
+                    {% if transaction.paid %}
+                    <span class="badge bg-success">Pago</span>
+                    {% else %}
+                    <span class="badge bg-warning">Pendente</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-
 <script>
-    // Dados para os gráficos - Certifique-se de que os dados JSON estão sendo corretamente serializados
-    const monthlyData = {{ monthly_data_json| tojson }};
-    const expenseData = {{ expense_chart_json| tojson }};
-    const incomeData = {{ income_chart_json| tojson }};
+  // Dados para os gráficos - Certifique-se de que os dados JSON estão sendo corretamente serializados
+  const monthlyData = {{ monthly_data_json| tojson }};
+  const expenseData = {{ expense_chart_json| tojson }};
+  const incomeData = {{ income_chart_json| tojson }};
 
-    // Gráfico de Evolução Mensal
-    document.addEventListener('DOMContentLoaded', function () {
-        // Verificar se os elementos do gráfico existem antes de prosseguir
-        const monthlyChartElement = document.getElementById('monthlyChart');
-        const expenseChartElement = document.getElementById('expenseChart');
-        const incomeChartElement = document.getElementById('incomeChart');
+  // Gráfico de Evolução Mensal
+  document.addEventListener('DOMContentLoaded', function () {
+      // Verificar se os elementos do gráfico existem antes de prosseguir
+      const monthlyChartElement = document.getElementById('monthlyChart');
+      const expenseChartElement = document.getElementById('expenseChart');
+      const incomeChartElement = document.getElementById('incomeChart');
 
-        if (monthlyChartElement) {
-            const monthlyCtx = monthlyChartElement.getContext('2d');
-            new Chart(monthlyCtx, {
-                type: 'line',
-                data: {
-                    labels: monthlyData.map(item => item.month),
-                    datasets: [
-                        {
-                            label: 'Receitas',
-                            data: monthlyData.map(item => item.receita), // Verificar se a propriedade é 'income' na sua estrutura de dados
-                            borderColor: '#1cc88a',
-                            backgroundColor: 'rgba(28, 200, 138, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Despesas',
-                            data: monthlyData.map(item => item.despesa), // Verificar se a propriedade é 'expense' na sua estrutura de dados
-                            borderColor: '#e74a3b',
-                            backgroundColor: 'rgba(231, 74, 59, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Saldo',
-                            data: monthlyData.map(item => item.balance),
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
+      if (monthlyChartElement) {
+          const monthlyCtx = monthlyChartElement.getContext('2d');
+          new Chart(monthlyCtx, {
+              type: 'line',
+              data: {
+                  labels: monthlyData.map(item => item.month),
+                  datasets: [
+                      {
+                          label: 'Receitas',
+                          data: monthlyData.map(item => item.receita), // Verificar se a propriedade é 'income' na sua estrutura de dados
+                          borderColor: '#1cc88a',
+                          backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                          tension: 0.3,
+                          fill: true
+                      },
+                      {
+                          label: 'Despesas',
+                          data: monthlyData.map(item => item.despesa), // Verificar se a propriedade é 'expense' na sua estrutura de dados
+                          borderColor: '#e74a3b',
+                          backgroundColor: 'rgba(231, 74, 59, 0.1)',
+                          tension: 0.3,
+                          fill: true
+                      },
+                      {
+                          label: 'Saldo',
+                          data: monthlyData.map(item => item.balance),
+                          borderColor: '#4e73df',
+                          backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                          tension: 0.3,
+                          fill: true
+                      }
+                  ]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: {
+                          position: 'top',
+                      }
+                  },
+                  scales: {
+                      y: {
+                          beginAtZero: true
+                      }
+                  }
+              }
+          });
+      }
 
-        // Gráfico de Despesas por Categoria
-        if (expenseChartElement) {
-            const expenseCtx = expenseChartElement.getContext('2d');
-            new Chart(expenseCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: expenseData.map(item => item.name),
-                    datasets: [{
-                        data: expenseData.map(item => item.value),
-                        backgroundColor: expenseData.map((item, index) =>
-                            ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
+      // Gráfico de Despesas por Categoria
+      if (expenseChartElement) {
+          const expenseCtx = expenseChartElement.getContext('2d');
+          new Chart(expenseCtx, {
+              type: 'doughnut',
+              data: {
+                  labels: expenseData.map(item => item.name),
+                  datasets: [{
+                      data: expenseData.map(item => item.value),
+                      backgroundColor: expenseData.map((item, index) =>
+                          ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false
+              }
+          });
+      }
 
-        // Gráfico de Receitas por Categoria
-        if (incomeChartElement) {
-            const incomeCtx = incomeChartElement.getContext('2d');
-            new Chart(incomeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: incomeData.map(item => item.name),
-                    datasets: [{
-                        data: incomeData.map(item => item.value),
-                        backgroundColor: incomeData.map((item, index) =>
-                            ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-    });
+      // Gráfico de Receitas por Categoria
+      if (incomeChartElement) {
+          const incomeCtx = incomeChartElement.getContext('2d');
+          new Chart(incomeCtx, {
+              type: 'doughnut',
+              data: {
+                  labels: incomeData.map(item => item.name),
+                  datasets: [{
+                      data: incomeData.map(item => item.value),
+                      backgroundColor: incomeData.map((item, index) =>
+                          ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][index % 5]),
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false
+              }
+          });
+      }
+  });
 </script>
 {% endblock %}

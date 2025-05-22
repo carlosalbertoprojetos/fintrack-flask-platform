@@ -13,59 +13,140 @@
             <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
         </div>
         <div class="card-body">
-            <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label for="type" class="form-label">Tipo de Relatório</label>
-                    <select name="type" id="type" class="form-select" onchange="this.form.submit()">
-                        <option value="monthly" {% if report_type=='monthly' %}selected{% endif %}>Mensal</option>
-                        <option value="annual" {% if report_type=='annual' %}selected{% endif %}>Anual</option>
-                        <option value="category" {% if report_type=='category' %}selected{% endif %}>Por Categoria
-                        </option>
-                    </select>
+            <form method="GET" class="mb-4">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="type">Tipo de Relatório</label>
+                            <select name="type" id="type" class="form-select" onchange="this.form.submit()">
+                                <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Mensal</option>
+                                <option value="annual" {% if report_type == 'annual' %}selected{% endif %}>Anual</option>
+                                <option value="category" {% if report_type == 'category' %}selected{% endif %}>Por Categoria</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="payment_method">Forma de Pagamento</label>
+                            <select name="payment_method_id" id="payment_method" class="form-select">
+                                <option value="">Todas as formas</option>
+                                {% for method in payment_methods %}
+                                <option value="{{ method.id }}" {% if selected_method_id == method.id %}selected{% endif %}>
+                                    {{ method.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% if report_type != 'annual' %}
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="month">Mês</label>
+                            <select name="month" id="month" class="form-select">
+                                {% for m in range(1, 13) %}
+                                <option value="{{ m }}" {% if month == m %}selected{% endif %}>
+                                    {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][m-1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="year">Ano</label>
+                            <select name="year" id="year" class="form-select">
+                                {% for y in years %}
+                                <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="col-md-4">
-                    <label for="year" class="form-label">Ano</label>
-                    <select name="year" id="year" class="form-select" onchange="this.form.submit()">
-                        {% for y in years %}
-                        <option value="{{ y }}" {% if y==year %}selected{% endif %}>{{ y }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
                 </div>
-
-                {% if report_type == 'monthly' %}
-                <div class="col-md-4">
-                    <label for="month" class="form-label">Mês</label>
-                    <select name="month" id="month" class="form-select" onchange="this.form.submit()">
-                        <option value="1" {% if month==1 %}selected{% endif %}>Janeiro</option>
-                        <option value="2" {% if month==2 %}selected{% endif %}>Fevereiro</option>
-                        <option value="3" {% if month==3 %}selected{% endif %}>Março</option>
-                        <option value="4" {% if month==4 %}selected{% endif %}>Abril</option>
-                        <option value="5" {% if month==5 %}selected{% endif %}>Maio</option>
-                        <option value="6" {% if month==6 %}selected{% endif %}>Junho</option>
-                        <option value="7" {% if month==7 %}selected{% endif %}>Julho</option>
-                        <option value="8" {% if month==8 %}selected{% endif %}>Agosto</option>
-                        <option value="9" {% if month==9 %}selected{% endif %}>Setembro</option>
-                        <option value="10" {% if month==10 %}selected{% endif %}>Outubro</option>
-                        <option value="11" {% if month==11 %}selected{% endif %}>Novembro</option>
-                        <option value="12" {% if month==12 %}selected{% endif %}>Dezembro</option>
-                    </select>
-                </div>
-                {% endif %}
-
-                {% if report_type == 'category' %}
-                <div class="col-md-4">
-                    <label for="category_id" class="form-label">Categoria</label>
-                    <select name="category_id" id="category_id" class="form-select" onchange="this.form.submit()">
-                        <option value="">Selecione uma categoria</option>
-                        {% for category in categories %}
-                        <option value="{{ category.id }}" {% if selected_category and selected_category.id==category.id
-                            %}selected{% endif %}>{{ category.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
             </form>
+        </div>
+    </div>
+
+    <!-- Tabela de Transações -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Transações</h6>
+        </div>
+        <div class="card-body">
+            {% if transactions %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Tipo</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th>Valor Original</th>
+                            <th>Desconto</th>
+                            <th>Valor Final</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        {% set final_value = (transaction.amount or 0) - (transaction.discount or 0) %}
+                        <tr>
+                            <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if transaction.type == 'receita' %}
+                                <span class="badge bg-success">Receita</span>
+                                {% else %}
+                                <span class="badge bg-danger">Despesa</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.category.name }}</td>
+                            <td>{{ transaction.expense.name if transaction.expense else '' }}</td>
+                            <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
+                                R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                            </td>
+                            <td class="text-danger">
+                                {% if transaction.discount and transaction.discount > 0 %}
+                                -R$ {{ "%.2f"|format(transaction.discount) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}">
+                                R$ {{ "%.2f"|format(final_value) }}
+                            </td>
+                            <td>{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
+                            <td>
+                                {% if transaction.paid %}
+                                <span class="badge bg-success">Pago</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <td colspan="4"><strong>Total</strong></td>
+                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_original) }}</strong></td>
+                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
+                            <td class="text-end"><strong>R$ {{ "%.2f"|format(total_final) }}</strong></td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                Nenhuma transação encontrada para os filtros selecionados.
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -146,11 +227,12 @@
                         <canvas id="expenseChart"></canvas>
                     </div>
                     <div class="mt-4 text-center small">
-                        {% for cat, total in expense_by_category %}
+                        {% for cat, total_amount, total_discount in expense_by_category %}
+                        {% set final_value = (total_amount or 0) - (total_discount or 0) %}
                         <span class="mr-2">
                             <i class="fas fa-circle"
                                 style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ cat }}
+                            {{ cat }} (R$ {{ "%.2f"|format(final_value) }})
                         </span>
                         {% endfor %}
                     </div>

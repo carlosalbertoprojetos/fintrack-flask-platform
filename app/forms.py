@@ -101,6 +101,9 @@ class TransactionForm(FlaskForm):
         "Data de Vencimento", validators=[Optional()]
     )  # Campo opcional para data de vencimento
     amount = FloatField("Valor", validators=[DataRequired(), NumberRange(min=0.01)])
+    discount = FloatField(
+        "Desconto", validators=[Optional(), NumberRange(min=0)], default=0.0
+    )
     type = SelectField(
         "Tipo",
         choices=[("receita", "Receita"), ("despesa", "Despesa")],

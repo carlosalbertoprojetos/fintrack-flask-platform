@@ -23,6 +23,8 @@ endblock %} {% block content %}
             <th>Categoria</th>
             <th>Despesa</th>
             <th>Valor</th>
+            <th>Desconto</th>
+            <th>Valor Final</th>
             <th class="text-center">Forma</th>
             <th class="text-center">Pagamento</th>
             <th>Detalhes</th>
@@ -43,7 +45,17 @@ endblock %} {% block content %}
             <td
               class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}"
             >
-              R$ {{ "%.2f"|format(transaction.amount) }}
+              R$ {{ "%.2f"|format(transaction.amount or 0) }}
+            </td>
+            <td class="text-success">
+              {% if transaction.discount and transaction.discount > 0 %} R$ {{
+              "%.2f"|format(transaction.discount) }} {% else %} - {% endif %}
+            </td>
+            <td
+              class="{% if transaction.type == 'receita' %}text-success{% else %}text-danger{% endif %}"
+            >
+              R$ {{ "%.2f"|format((transaction.amount or 0) -
+              (transaction.discount or 0)) }}
             </td>
             <td class="text-center">
               {{ transaction.payment_method.name|default('') }}

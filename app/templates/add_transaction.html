@@ -41,6 +41,13 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
+        <div class="col-md-2" id="discountValue" style="display: none">
+          {{ form.discount.label(class="form-label") }} {{
+          form.discount(class="form-control form-control-sm") }} {% for error in
+          form.discount.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
         <div class="col-md-2" id="dueDateField" style="display: none">
           {{ form.due_date.label(class="form-label") }} {{
           form.due_date(class="form-control form-control-sm", type="date") }} {%
@@ -82,9 +89,7 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
         </div>
       </div>
       <div class="d-flex justify-content-between">
-        <a
-          href="{{ url_for('transaction.transactions') }}"
-          class="btn btn-secondary"
+        <a href="{{ url_for('transaction.reports') }}" class="btn btn-secondary"
           >Cancelar</a
         >
         {{ form.submit(class="btn btn-primary") }}
@@ -111,10 +116,16 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
     const categorySelect = document.getElementById("categorySelect");
     const expenseSelect = document.getElementById("expenseSelect");
     const dueDateField = document.getElementById("dueDateField");
+    const discountValue = document.getElementById("discountValue");
 
     // Função para mostrar/esconder o campo de data de vencimento
     function toggleDueDateField() {
+      // Mostrar o campo de vencimento se for uma despesa
       dueDateField.style.display =
+        typeSelect.value === "despesa" ? "block" : "none";
+
+      // Mostrar o campo de desconto se for uma venda
+      discountValue.style.display =
         typeSelect.value === "despesa" ? "block" : "none";
     }
 

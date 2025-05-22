@@ -101,6 +101,7 @@ class Transaction(db.Model):
     due_date = db.Column(db.DateTime, nullable=True)  # Data de vencimento para despesas
     payment_date = db.Column(db.DateTime)
     amount = db.Column(db.Float, nullable=False)
+    discount = db.Column(db.Float, nullable=True, default=0.0)  # Campo para desconto
     type = db.Column(db.String(20), nullable=False)
     paid = db.Column(db.Boolean, default=False)
     notes = db.Column(db.Text, nullable=True)
