@@ -27,6 +27,7 @@ endblock %} {% block content %}
               <th>Descrição</th>
               <th>Valor</th>
               <th>Forma de Pagamento</th>
+              <th>Data Pagamento</th>
               <th>Status</th>
               <th>Ações</th>
             </tr>
@@ -46,6 +47,10 @@ endblock %} {% block content %}
                 R$ {{ "%.2f"|format(transaction.amount or 0) }}
               </td>
               <td>{{ transaction.payment_method.name }}</td>
+              <td>
+                {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                transaction.payment_date else '-' }}
+              </td>
               <td>
                 {% if transaction.paid %}
                 <span class="badge bg-success">Pago</span>
@@ -75,7 +80,7 @@ endblock %} {% block content %}
             </tr>
             {% else %}
             <tr>
-              <td colspan="7" class="text-center">
+              <td colspan="8" class="text-center">
                 Nenhuma receita registrada no período.
               </td>
             </tr>

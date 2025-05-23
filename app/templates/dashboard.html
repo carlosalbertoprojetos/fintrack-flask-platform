@@ -32,7 +32,7 @@ endblock %} {% block content %}
     </div>
     <div class="col-md-4">
       <div
-        class="card {% if balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white"
+        class="card {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white"
       >
         <div class="card-body">
           <h5 class="card-title">Saldo do Mês</h5>
@@ -169,6 +169,7 @@ endblock %} {% block content %}
                   <th>Categoria</th>
                   <th>Descrição</th>
                   <th>Valor</th>
+                  <th>Data Pagamento</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -187,6 +188,10 @@ endblock %} {% block content %}
                     R$ {{ "%.2f"|format(transaction.amount or 0) }}
                   </td>
                   <td>
+                    {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                    transaction.payment_date else '-' }}
+                  </td>
+                  <td>
                     {% if transaction.paid %}
                     <span class="badge bg-success">Pago</span>
                     {% else %}
@@ -196,7 +201,7 @@ endblock %} {% block content %}
                 </tr>
                 {% else %}
                 <tr>
-                  <td colspan="5" class="text-center">
+                  <td colspan="6" class="text-center">
                     Nenhuma receita registrada no período.
                   </td>
                 </tr>

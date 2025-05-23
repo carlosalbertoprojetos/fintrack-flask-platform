@@ -57,25 +57,40 @@
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Receitas</h5>
-                    <h3 class="mb-0">R$ {{ "%.2f"|format(income_total) }}</h3>
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="col-auto">
+                        <h5 class="card-title">Total de Receitas</h5>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(income_total) }}</h3>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card bg-danger text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Total de Despesas</h5>
-                    <h3 class="mb-0">R$ {{ "%.2f"|format(expense_total) }}</h3>
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="col-auto">
+                        <h5 class="card-title">Total de Despesas</h5>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(expense_total) }}</h3>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-credit-card fa-2x text-gray-300"></i>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card {% if balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Saldo</h5>
-                    <h3 class="mb-0">R$ {{ "%.2f"|format(balance) }}</h3>
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div class="col-auto">
+                        <h5 class="card-title">Saldo</h5>
+                        <h3 class="mb-0">R$ {{ "%.2f"|format(balance) }}</h3>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -172,7 +187,7 @@
                             <th>Vencimento</th>
                             <th>Data Pagamento</th>
                             <th class="text-center">Forma</th>
-                            <th class="text-center">Pagamento</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -207,67 +222,7 @@
 
     {% if report_type == 'monthly' %}
 
-    <!-- Relatório Mensal -->
-    <div class="row">
-
-        <!-- Cards de Resumo -->
-        <div class="col-xl-4 col-md-6 mb-2">
-            <div class="card border-left-success shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Receitas de {{ month_name }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(income_total) }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card de Descrição -->
-        <div class="col-xl-4 col-md-6 mb-2">
-            <div class="card border-left-danger shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Despesas de {{ month_name }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(expense_total) }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card de Saldo -->
-        <div class="col-xl-4 col-md-6 mb-2">
-            <div
-                class="card {% if balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div
-                                class="text-xs font-weight-bold {% if balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
-                                Saldo de {{ month_name }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(balance) }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <!-- Gráficos -->
     <div class="row">

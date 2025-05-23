@@ -1003,6 +1003,7 @@ def edit_transaction(id):
         transaction.discount = form.discount.data or 0
         transaction.payment_method_id = form.payment_method_id.data
         transaction.paid = form.paid.data
+        transaction.payment_date = form.payment_date.data
 
         db.session.commit()
         flash("Transação atualizada com sucesso!", "success")
