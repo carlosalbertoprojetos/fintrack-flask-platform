@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block title %}Transações - {{ current_month }}{%
 endblock %} {% block content %}
-<div class="container-fluid px-4">
+<div class="container-fluid p-0">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3">Transações - {{ current_month }}</h1>
     <a
@@ -13,13 +13,13 @@ endblock %} {% block content %}
 
   {% if transactions.items %}
   <!-- Tabela de Receitas -->
-  <div class="card mb-4">
+  <div class="card shadow mb-4">
     <div class="card-header bg-success text-white">
       <h5 class="card-title mb-0">Receitas</h5>
     </div>
     <div class="card-body">
       <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover table-sm">
           <thead>
             <tr>
               <th>Data</th>
@@ -92,13 +92,13 @@ endblock %} {% block content %}
   </div>
 
   <!-- Tabela de Despesas -->
-  <div class="card">
+  <div class="card shadow">
     <div class="card-header bg-danger text-white">
       <h5 class="card-title mb-0">Despesas</h5>
     </div>
     <div class="card-body">
       <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover table-sm">
           <thead>
             <tr>
               <th>Data</th>
@@ -129,10 +129,9 @@ endblock %} {% block content %}
               <td class="text-danger">
                 R$ {{ "%.2f"|format(transaction.amount or 0) }}
               </td>
-              <td class="text-danger">
-                {% if transaction.discount and transaction.discount > 0 %} -R$
-                {{ "%.2f"|format(transaction.discount) }} {% else %} - {% endif
-                %}
+              <td class="text-success">
+                {% if transaction.discount and transaction.discount > 0 %} R$ {{
+                "%.2f"|format(transaction.discount) }} {% else %} - {% endif %}
               </td>
               <td class="text-danger">R$ {{ "%.2f"|format(final_value) }}</td>
               <td>

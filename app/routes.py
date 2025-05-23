@@ -67,6 +67,22 @@ def dashboard():
     current_month = datetime.now().month
     current_year = datetime.now().year
 
+    # Mapeamento dos meses em português
+    meses = {
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
+    }
+
     # Função auxiliar para calcular o valor final
     def get_final_value(transaction):
         amount = transaction.amount or 0
@@ -247,7 +263,7 @@ def dashboard():
         daily_avg_expense=daily_avg_expense,
         projected_expense=projected_expense,
         pending_transactions=pending_transactions,
-        current_month=datetime.now().strftime("%B %Y"),
+        current_month=f"{meses[current_month]} {current_year}",
         datetime=datetime,
         monthrange=monthrange,
     )
@@ -908,6 +924,22 @@ def transactions():
     current_month = current_date.month
     current_year = current_date.year
 
+    # Mapeamento dos meses em português
+    meses = {
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
+    }
+
     # Buscar transações do usuário atual do mês atual com paginação
     transactions = (
         Transaction.query.filter(
@@ -922,7 +954,7 @@ def transactions():
     return render_template(
         "list_transactions.html",
         transactions=transactions,
-        current_month=current_date.strftime("%B/%Y"),
+        current_month=f"{meses[current_month]}/{current_year}",
     )
 
 

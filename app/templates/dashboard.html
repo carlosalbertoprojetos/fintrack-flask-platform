@@ -9,13 +9,13 @@ endblock %} {% block content %}
   </style>
 </head>
 
-<div class="container-fluid px-4">
+<div class="container-fluid p-0">
   <h1 class="h3 mb-4 text-gray-800">Dashboard - {{ current_month }}</h1>
 
   <!-- Cards de Resumo -->
   <div class="row mb-4">
     <div class="col-md-4">
-      <div class="card bg-success text-white">
+      <div class="card shadow bg-success text-white">
         <div
           class="card-body d-flex justify-content-between align-items-center"
         >
@@ -30,7 +30,7 @@ endblock %} {% block content %}
       </div>
     </div>
     <div class="col-md-4">
-      <div class="card bg-danger text-white">
+      <div class="card shadow bg-danger text-white">
         <div
           class="card-body d-flex justify-content-between align-items-center"
         >
@@ -46,7 +46,7 @@ endblock %} {% block content %}
     </div>
     <div class="col-md-4">
       <div
-        class="card {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white"
+        class="card shadow {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white"
       >
         <div
           class="card-body d-flex justify-content-between align-items-center"
@@ -66,7 +66,7 @@ endblock %} {% block content %}
   <!-- Estatísticas do Mês -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card">
+      <div class="card shadow">
         <div class="card-header">
           <h5 class="card-title mb-0">Estatísticas do Mês</h5>
         </div>
@@ -103,7 +103,7 @@ endblock %} {% block content %}
   <!-- Gráficos -->
   <div class="row mb-4">
     <div class="col-md-6">
-      <div class="card h-100">
+      <div class="card shadow h-100">
         <div class="card-header">
           <h5 class="card-title mb-0">Receitas por Categoria</h5>
         </div>
@@ -126,7 +126,7 @@ endblock %} {% block content %}
       </div>
     </div>
     <div class="col-md-6">
-      <div class="card h-100">
+      <div class="card shadow h-100">
         <div class="card-header">
           <h5 class="card-title mb-0">Despesas por Categoria</h5>
         </div>
@@ -153,7 +153,7 @@ endblock %} {% block content %}
   <!-- Evolução Mensal -->
   <div class="row mb-4">
     <div class="col-12">
-      <div class="card">
+      <div class="card shadow">
         <div class="card-header">
           <h5 class="card-title mb-0">Evolução Financeira (Últimos 6 meses)</h5>
         </div>
@@ -170,7 +170,7 @@ endblock %} {% block content %}
   <div class="row">
     <!-- Tabela de Receitas -->
     <div class="col-12 mb-4">
-      <div class="card">
+      <div class="card shadow">
         <div
           class="card-header bg-success text-white d-flex justify-content-between align-items-center"
         >
@@ -236,7 +236,7 @@ endblock %} {% block content %}
 
     <!-- Tabela de Despesas -->
     <div class="col-12">
-      <div class="card">
+      <div class="card shadow">
         <div
           class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
         >
@@ -279,10 +279,10 @@ endblock %} {% block content %}
                   <td class="text-danger">
                     R$ {{ "%.2f"|format(transaction.amount or 0) }}
                   </td>
-                  <td class="text-danger">
+                  <td class="text-success">
                     {% if transaction.discount and transaction.discount > 0 %}
-                    -R$ {{ "%.2f"|format(transaction.discount) }} {% else %} -
-                    {% endif %}
+                    R$ {{ "%.2f"|format(transaction.discount) }} {% else %} - {%
+                    endif %}
                   </td>
                   <td class="text-danger">
                     R$ {{ "%.2f"|format(final_value) }}

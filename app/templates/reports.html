@@ -4,17 +4,17 @@
 
 {% block content %}
 
-<div class="container-fluid">
+<div class="container-fluid p-0">
     <h1 class="h3 mb-4 text-gray-800">Relatórios Financeiros</h1>
 
     <!-- Filtros -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+            <h2 class="h5 mb-0">Filtros</h2>
         </div>
         <div class="card-body">
             <form method="GET" class="row g-3">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="year" class="form-label">Ano</label>
                     <select name="year" id="year" class="form-select" onchange="this.form.submit()">
                         {% for y in years %}
@@ -22,7 +22,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="month" class="form-label">Mês</label>
                     <select name="month" id="month" class="form-select" onchange="this.form.submit()">
                         {% for m in range(1, 13) %}
@@ -30,7 +30,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="payment_method_id" class="form-label">Forma de Pagamento</label>
                     <select name="payment_method_id" id="payment_method_id" class="form-select" onchange="this.form.submit()">
                         <option value="">Todas</option>
@@ -39,14 +39,6 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" id="showDiscountOnly" onchange="filterExpenses()">
-                        <label class="form-check-label" for="showDiscountOnly">
-                            Apenas despesas com desconto
-                        </label>
-                    </div>
-                </div>
             </form>
         </div>
     </div>
@@ -54,7 +46,7 @@
     <!-- Resumo -->
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card bg-success text-white">
+            <div class="card shadow bg-success text-white">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div class="col-auto">
                         <h5 class="card-title">Total de Receitas</h5>
@@ -67,7 +59,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card bg-danger text-white">
+            <div class="card shadow bg-danger text-white">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div class="col-auto">
                         <h5 class="card-title">Total de Despesas</h5>
@@ -80,7 +72,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white">
+            <div class="card shadow {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div class="col-auto">
                         <h5 class="card-title">Saldo</h5>
@@ -94,12 +86,31 @@
         </div>
     </div>
 
+    
+    {% if report_type == 'monthly' %}
+    <!-- Evolução Diária -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h2 class="h5 mb-0">Evolução Diária - {{ month_name }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Gráficos -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card shadow">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Receitas por Categoria</h5>
+                    <h2 class="h5 mb-0">Receitas por Categoria</h2>
                 </div>
                 <div class="card-body">
                     <div class="chart-pie pt-4 pb-2">
@@ -117,9 +128,9 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
+            <div class="card shadow">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Despesas por Categoria</h5>
+                    <h2 class="h5 mb-0">Despesas por Categoria</h2>
                 </div>
                 <div class="card-body">
                     <div class="chart-pie pt-4 pb-2">
@@ -140,7 +151,7 @@
     </div>
 
     <!-- Tabela de Receitas -->
-    <div class="card mb-4">
+    <div class="card shadow mb-4">
         <div class="card-header bg-success text-white">
             <h2 class="h5 mb-0">Receitas</h2>
         </div>
@@ -186,9 +197,17 @@
     </div>
 
     <!-- Tabela de Despesas -->
-    <div class="card">
+    <div class="card shadow mb-4">
         <div class="card-header bg-danger text-white">
+            <div class="d-flex justify-content-between align-items-center">
             <h2 class="h5 mb-0">Despesas</h2>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showDiscountOnly" onchange="filterExpenses()">
+                    <label class="form-check-label" for="showDiscountOnly">
+                        Apenas com desconto
+                    </label>
+                </div>
+            </div>
         </div>
         <div class="card-body">
             {% set expense_transactions = transactions|selectattr('type', 'equalto', 'despesa')|list %}
@@ -216,7 +235,7 @@
                             <td>{{ transaction.category.name }}</td>
                             <td>{{ transaction.description }}</td>
                             <td class="text-danger">R$ {{ "%.2f"|format(transaction.amount or 0) }}</td>
-                            <td class="text-danger">R$ {{ "%.2f"|format(transaction.discount or 0) }}</td>
+                            <td class="text-success">R$ {{ "%.2f"|format(transaction.discount or 0) }}</td>
                             <td class="text-danger">R$ {{ "%.2f"|format((transaction.amount or 0) - (transaction.discount or 0)) }}</td>
                             <td>{{ transaction.due_date.strftime('%d/%m/%Y') if transaction.due_date else '-' }}</td>
                             <td>{{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '-' }}</td>
@@ -238,24 +257,6 @@
             {% endif %}
         </div>
     </div>
-
-    {% if report_type == 'monthly' %}
-    <!-- Evolução Diária -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Evolução Diária - {{ month_name }}</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area">
-                        <canvas id="dailyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     {% if report_type == 'annual' %}
     <!-- Relatório Anual -->

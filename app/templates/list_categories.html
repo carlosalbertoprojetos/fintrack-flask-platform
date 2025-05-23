@@ -54,26 +54,30 @@ content %}
           {% for category in categories %}
           <tr>
             <td>{{ category.id }}</td>
-            <td>{{ category.type }}</td>
-            <td>{{ category.name }}</td>
+            <td>{{ category.type if category.type else '---' }}</td>
+            <td>{{ category.name if category.name else '---' }}</td>
             <td>
-              {% if category.exclusive == False %} Não {% else %} Sim {% endif
-              %}
+              {% if category.exclusive == True %} Sim {% elif category.exclusive
+              == False %} Não {% else %} --- {% endif %}
             </td>
             <td class="text-center">
-              <!-- Link para editar a despesa -->
-              <a
-                href="{{ url_for('transaction.edit_category', id=category.id) }}"
-                class="btn btn-outline-primary btn-sm"
-                >Editar</a
-              >
-              <!-- Link para excluir a despesa -->
-              <a
-                href="{{ url_for('transaction.delete_category', id=category.id) }}"
-                class="btn btn-outline-danger btn-sm"
-                onclick="return confirm('Tem certeza que deseja excluir esta despesa?');"
-                >Excluir</a
-              >
+              <div class="btn-group btn-group-sm">
+                <a
+                  href="{{ url_for('transaction.edit_category', id=category.id) }}"
+                  class="btn btn-outline-primary"
+                  title="Editar"
+                >
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a
+                  href="{{ url_for('transaction.delete_category', id=category.id) }}"
+                  class="btn btn-outline-danger"
+                  title="Excluir"
+                  onclick="return confirm('Tem certeza que deseja excluir esta categoria?');"
+                >
+                  <i class="fas fa-trash"></i>
+                </a>
+              </div>
             </td>
           </tr>
           {% endfor %}
