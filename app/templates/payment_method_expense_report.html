@@ -3,162 +3,334 @@
 {% block title %}Relatório de Despesas por Forma de Pagamento - Finanças Pessoais{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">Relatório de Despesas por Forma de Pagamento</h4>
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">Relatório de Despesas por Forma de Pagamento</h1>
+
+    <!-- Filtros -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Data Inicial</label>
+                    <input
+                        type="date"
+                        class="form-control"
+                        id="start_date"
+                        name="start_date"
+                        value="{{ request.args.get('start_date', '') }}"
+                        required
+                    />
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">Data Final</label>
+                    <input
+                        type="date"
+                        class="form-control"
+                        id="end_date"
+                        name="end_date"
+                        value="{{ request.args.get('end_date', '') }}"
+                        required
+                    />
+                </div>
+                <div class="col-md-3">
+                    <label for="payment_method_id" class="form-label"
+                        >Forma de Pagamento</label
+                    >
+                    <select class="form-select" id="payment_method_id" name="payment_method_id">
+                        <option value="">Todas</option>
+                        {% for method in payment_methods %}
+                        <option
+                            value="{{ method.id }}"
+                            {% if request.args.get('payment_method_id')|int == method.id %}selected{% endif %}
+                        >
+                            {{ method.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="GET" class="mb-4">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="payment_method">Forma de Pagamento</label>
-                        <select name="payment_method_id" id="payment_method" class="form-select">
-                            <option value="">Todas as formas</option>
-                            {% for method in payment_methods %}
-                            <option value="{{ method.id }}" {% if selected_method_id == method.id %}selected{% endif %}>
-                                {{ method.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="month">Mês</label>
-                        <select name="month" id="month" class="form-select">
-                            {% for m in range(1, 13) %}
-                            <option value="{{ m }}" {% if month == m %}selected{% endif %}>
-                                {{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][m-1] }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <label for="year">Ano</label>
-                        <select name="year" id="year" class="form-select">
-                            {% for y in years %}
-                            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">Filtrar</button>
-            </div>
-        </form>
 
-        {% if payment_method_totals %}
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Resumo por Forma de Pagamento</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover">
-                        <thead>
-                            <tr>
-                                <th>Forma de Pagamento</th>
-                                <th class="text-end">Qtd. Transações</th>
-                                <th class="text-end">Valor Original</th>
-                                <th class="text-end">Descontos</th>
-                                <th class="text-end">Valor Final</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for method_id, totals in payment_method_totals.items() %}
-                            {% if totals.count > 0 %}
-                            <tr>
-                                <td>{{ totals.name }}</td>
-                                <td class="text-end">{{ totals.count }}</td>
-                                <td class="text-end text-danger">R$ {{ "%.2f"|format(totals.original) }}</td>
-                                <td class="text-end text-danger">R$ {{ "%.2f"|format(totals.discount) }}</td>
-                                <td class="text-end text-danger">R$ {{ "%.2f"|format(totals.final) }}</td>
-                            </tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-primary">
-                                <td><strong>Total Geral</strong></td>
-                                <td class="text-end"><strong>{{ transactions|length }}</strong></td>
-                                <td class="text-end"><strong>R$ {{ "%.2f"|format(total_original) }}</strong></td>
-                                <td class="text-end"><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
-                                <td class="text-end"><strong>R$ {{ "%.2f"|format(total_amount) }}</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+    <!-- Resumo -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div
+                                class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+                            >
+                                Total Despesas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ total_expenses|currency }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        {% endif %}
 
-        {% if transactions %}
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Categoria</th>
-                        <th>Descrição</th>
-                        <th>Valor Original</th>
-                        <th>Desconto</th>
-                        <th>Valor Final</th>
-                        <th>Forma de Pagamento</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for transaction in transactions %}
-                    {% set final_value = (transaction.amount or 0) - (transaction.discount or 0) %}
-                    <tr>
-                        <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ transaction.category.name }}</td>
-                        <td>{{ transaction.expense.name if transaction.expense else '' }}</td>
-                        <td class="text-danger">
-                            R$ {{ "%.2f"|format(transaction.amount or 0) }}
-                        </td>
-                        <td class="text-danger">
-                            {% if transaction.discount and transaction.discount > 0 %}
-                            -R$ {{ "%.2f"|format(transaction.discount) }}
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td class="text-danger">
-                            R$ {{ "%.2f"|format(final_value) }}
-                        </td>
-                        <td>{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
-                        <td>
-                            {% if transaction.paid %}
-                            <span class="badge bg-success">Pago</span>
-                            {% else %}
-                            <span class="badge bg-warning">Pendente</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="table-primary">
-                        <td colspan="3"><strong>Total</strong></td>
-                        <td class="text-end"><strong>R$ {{ "%.2f"|format(total_original) }}</strong></td>
-                        <td class="text-end"><strong>R$ {{ "%.2f"|format(total_discount) }}</strong></td>
-                        <td class="text-end"><strong>R$ {{ "%.2f"|format(total_amount) }}</strong></td>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
-            </table>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div
+                                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                            >
+                                Total Descontos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ total_discounts|currency }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <div class="alert alert-info">
-            Nenhuma despesa encontrada para os filtros selecionados.
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div
+                                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                            >
+                                Valor Final
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                R$ {{ (total_expenses - total_discounts)|currency }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div
+                                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+                            >
+                                Total de Transações
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_transactions }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Despesas -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Detalhamento de Despesas</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Categoria</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Desconto</th>
+                            <th>Valor Final</th>
+                            <th>Vencimento</th>
+                            <th>Data Pagamento</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ transaction.category.name }}</td>
+                            <td>
+                                {{ transaction.expense.name if transaction.expense else
+                                transaction.description }}
+                            </td>
+                            <td class="text-danger">
+                                R$ {{ transaction.amount|currency }}
+                            </td>
+                            <td class="text-success">
+                                {% if transaction.discount and transaction.discount > 0 %}
+                                R$ {{ transaction.discount|currency }} {% else %} - {% endif %}
+                            </td>
+                            <td class="text-danger">
+                                R$ {{ (transaction.amount - transaction.discount)|currency }}
+                            </td>
+                            <td>
+                                {{ transaction.due_date.strftime('%d/%m/%Y') if
+                                transaction.due_date else '-' }}
+                            </td>
+                            <td>
+                                {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                                transaction.payment_date else '-' }}
+                            </td>
+                            <td>{{ transaction.payment_method.name }}</td>
+                            <td>
+                                {% if transaction.paid %}
+                                <span class="badge bg-success">Pago</span>
+                                {% else %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <td colspan="3"><strong>Total</strong></td>
+                            <td class="text-danger">
+                                <strong>R$ {{ total_expenses|currency }}</strong>
+                            </td>
+                            <td class="text-success">
+                                <strong>R$ {{ total_discounts|currency }}</strong>
+                            </td>
+                            <td class="text-danger">
+                                <strong>R$ {{ (total_expenses - total_discounts)|currency }}</strong>
+                            </td>
+                            <td colspan="4"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Gráfico</h6>
+        </div>
+        <div class="card-body">
+            <canvas id="expenseChart"></canvas>
+        </div>
     </div>
 </div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Dados para o gráfico
+    const ctx = document.getElementById("expenseChart").getContext("2d");
+    const data = {
+        labels: [
+            {% for method in payment_methods %}
+            "{{ method.name }}",
+            {% endfor %}
+        ],
+        datasets: [
+            {
+                label: "Valor Total",
+                data: [
+                    {% for method in payment_methods %}
+                    {{ method.total_amount }},
+                    {% endfor %}
+                ],
+                backgroundColor: "rgba(220, 53, 69, 0.2)",
+                borderColor: "rgba(220, 53, 69, 1)",
+                borderWidth: 1,
+            },
+            {
+                label: "Descontos",
+                data: [
+                    {% for method in payment_methods %}
+                    {{ method.total_discount }},
+                    {% endfor %}
+                ],
+                backgroundColor: "rgba(40, 167, 69, 0.2)",
+                borderColor: "rgba(40, 167, 69, 1)",
+                borderWidth: 1,
+            },
+            {
+                label: "Valor Final",
+                data: [
+                    {% for method in payment_methods %}
+                    {{ method.total_amount - method.total_discount }},
+                    {% endfor %}
+                ],
+                backgroundColor: "rgba(23, 162, 184, 0.2)",
+                borderColor: "rgba(23, 162, 184, 1)",
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    // Configuração do gráfico
+    const config = {
+        type: "bar",
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return "R$ " + value.toLocaleString("pt-BR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            });
+                        },
+                    },
+                },
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.dataset.label || "";
+                            if (label) {
+                                label += ": ";
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                }).format(context.parsed.y);
+                            }
+                            return label;
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    // Criar o gráfico
+    new Chart(ctx, config);
+</script>
+{% endblock %}
 {% endblock %} 

@@ -11,6 +11,88 @@ endblock %} {% block content %}
     </a>
   </div>
 
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+    </div>
+    <div class="card-body">
+      <form method="GET" class="row g-3">
+        <div class="col-md-2">
+          <label for="start_date" class="form-label">Data Inicial</label>
+          <input
+            type="date"
+            class="form-control"
+            id="start_date"
+            name="start_date"
+            value="{{ request.args.get('start_date', '') }}"
+          />
+        </div>
+        <div class="col-md-2">
+          <label for="end_date" class="form-label">Data Final</label>
+          <input
+            type="date"
+            class="form-control"
+            id="end_date"
+            name="end_date"
+            value="{{ request.args.get('end_date', '') }}"
+          />
+        </div>
+        <div class="col-md-2">
+          <label for="type" class="form-label">Tipo</label>
+          <select class="form-select" id="type" name="type">
+            <option value="">Todos</option>
+            <option
+              value="receita"
+              {% if request.args.get('type') == 'receita' %}selected{% endif %}
+            >
+              Receita
+            </option>
+            <option
+              value="despesa"
+              {% if request.args.get('type') == 'despesa' %}selected{% endif %}
+            >
+              Despesa
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="category_id" class="form-label">Categoria</label>
+          <select class="form-select" id="category_id" name="category_id">
+            <option value="">Todas</option>
+            {% for category in categories %}
+            <option
+              value="{{ category.id }}"
+              {% if request.args.get('category_id')|int == category.id %}selected{% endif %}
+            >
+              {{ category.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="payment_method_id" class="form-label"
+            >Forma de Pagamento</label
+          >
+          <select class="form-select" id="payment_method_id" name="payment_method_id">
+            <option value="">Todas</option>
+            {% for method in payment_methods %}
+            <option
+              value="{{ method.id }}"
+              {% if request.args.get('payment_method_id')|int == method.id %}selected{% endif %}
+            >
+              {{ method.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   {% if transactions.items %}
   <!-- Tabela de Receitas -->
   <div class="card shadow mb-4">
@@ -44,7 +126,7 @@ endblock %} {% block content %}
                 transaction.description }}
               </td>
               <td class="text-success">
-                R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                R$ {{ transaction.amount|currency }}
               </td>
               <td>{{ transaction.payment_method.name }}</td>
               <td>
@@ -127,13 +209,15 @@ endblock %} {% block content %}
                 transaction.description }}
               </td>
               <td class="text-danger">
-                R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                R$ {{ transaction.amount|currency }}
               </td>
               <td class="text-success">
-                {% if transaction.discount and transaction.discount > 0 %} R$ {{
-                "%.2f"|format(transaction.discount) }} {% else %} - {% endif %}
+                {% if transaction.discount and transaction.discount > 0 %}
+                R$ {{ transaction.discount|currency }} {% else %} - {% endif %}
               </td>
-              <td class="text-danger">R$ {{ "%.2f"|format(final_value) }}</td>
+              <td class="text-danger">
+                R$ {{ final_value|currency }}
+              </td>
               <td>
                 {{ transaction.due_date.strftime('%d/%m/%Y') if
                 transaction.due_date else '-' }}
@@ -190,7 +274,7 @@ endblock %} {% block content %}
       <li class="page-item">
         <a
           class="page-link"
-          href="{{ url_for('transaction.transactions', page=transactions.prev_num) }}"
+          href="{{ url_for('transaction.transactions', page=transactions.prev_num, **request.args) }}"
           >Anterior</a
         >
       </li>
@@ -208,7 +292,7 @@ endblock %} {% block content %}
       <li class="page-item">
         <a
           class="page-link"
-          href="{{ url_for('transaction.transactions', page=page_num) }}"
+          href="{{ url_for('transaction.transactions', page=page_num, **request.args) }}"
           >{{ page_num }}</a
         >
       </li>
@@ -220,7 +304,7 @@ endblock %} {% block content %}
       <li class="page-item">
         <a
           class="page-link"
-          href="{{ url_for('transaction.transactions', page=transactions.next_num) }}"
+          href="{{ url_for('transaction.transactions', page=transactions.next_num, **request.args) }}"
           >Próxima</a
         >
       </li>

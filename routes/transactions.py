@@ -17,7 +17,7 @@ def login_required(f):
     return decorated_function
 
 
-@transactions.route("/transactions")
+@transactions.route("/")
 @login_required
 def index():
     user_id = session.get("user_id")

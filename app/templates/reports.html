@@ -50,7 +50,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div class="col-auto">
                         <h5 class="card-title">Total de Receitas</h5>
-                        <h3 class="mb-0">R$ {{ "%.2f"|format(income_total) }}</h3>
+                        <h3 class="mb-0">R$ {{ income_total|currency }}</h3>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -63,7 +63,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div class="col-auto">
                         <h5 class="card-title">Total de Despesas</h5>
-                        <h3 class="mb-0">R$ {{ "%.2f"|format(expense_total) }}</h3>
+                        <h3 class="mb-0">R$ {{ expense_total|currency }}</h3>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-credit-card fa-2x text-gray-300"></i>
@@ -76,7 +76,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div class="col-auto">
                         <h5 class="card-title">Saldo</h5>
-                        <h3 class="mb-0">R$ {{ "%.2f"|format(balance) }}</h3>
+                        <h3 class="mb-0">R$ {{ balance|currency }}</h3>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
@@ -120,7 +120,7 @@
                         {% for cat, total in income_by_category %}
                         <span class="mr-2">
                             <i class="fas fa-circle" style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ cat }} (R$ {{ "%.2f"|format(total) }})
+                            {{ cat }} (R$ {{ total|currency }})
                         </span>
                         {% endfor %}
                     </div>
@@ -141,7 +141,7 @@
                         {% set final_value = (total_amount or 0) - (total_discount or 0) %}
                         <span class="mr-2">
                             <i class="fas fa-circle" style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ cat }} (R$ {{ "%.2f"|format(final_value) }})
+                            {{ cat }} (R$ {{ final_value|currency }})
                         </span>
                         {% endfor %}
                     </div>
@@ -176,7 +176,7 @@
                             <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
                             <td>{{ transaction.category.name }}</td>
                             <td>{{ transaction.description }}</td>
-                            <td class="text-success">R$ {{ "%.2f"|format(transaction.amount or 0) }}</td>
+                            <td class="text-success">R$ {{ transaction.amount|currency }}</td>
                             <td class="text-center">{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
                             <td class="text-center">
                                 {% if transaction.paid == 'True' %}
@@ -234,9 +234,9 @@
                             <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
                             <td>{{ transaction.category.name }}</td>
                             <td>{{ transaction.description }}</td>
-                            <td class="text-danger">R$ {{ "%.2f"|format(transaction.amount or 0) }}</td>
-                            <td class="text-success">R$ {{ "%.2f"|format(transaction.discount or 0) }}</td>
-                            <td class="text-danger">R$ {{ "%.2f"|format((transaction.amount or 0) - (transaction.discount or 0)) }}</td>
+                            <td class="text-danger">R$ {{ transaction.amount|currency }}</td>
+                            <td class="text-success">R$ {{ transaction.discount|currency }}</td>
+                            <td class="text-danger">R$ {{ (transaction.amount - transaction.discount)|currency }}</td>
                             <td>{{ transaction.due_date.strftime('%d/%m/%Y') if transaction.due_date else '-' }}</td>
                             <td>{{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '-' }}</td>
                             <td class="text-center">{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
@@ -269,8 +269,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                                 Receitas de {{ year }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(annual_income) }}
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_income|currency }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -287,8 +286,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
                                 Despesas de {{ year }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(annual_expense) }}
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_expense|currency }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-credit-card fa-2x text-gray-300"></i>
@@ -307,8 +305,7 @@
                             <div
                                 class="text-xs font-weight-bold {% if annual_balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
                                 Saldo de {{ year }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(annual_balance) }}
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_balance|currency }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
@@ -397,8 +394,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total em {{ selected_category.name }} ({{ year }})</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(annual_total) }}
-                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_total|currency }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-folder fa-2x text-gray-300"></i>
@@ -450,7 +446,7 @@
                                 <tr>
                                     <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
                                     <td>{{ transaction.description }}</td>
-                                    <td class="text-right">R$ {{ "%.2f"|format(transaction.amount) }}</td>
+                                    <td class="text-right">R$ {{ transaction.amount|currency }}</td>
                                     <td>
                                         {% if transaction.type == 'income' %}
                                         <span class="badge badge-success">Receita</span>

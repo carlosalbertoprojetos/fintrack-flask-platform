@@ -21,7 +21,7 @@ endblock %} {% block content %}
         >
           <div class="col-auto">
             <h5 class="card-title">Total de Receitas</h5>
-            <h3 class="mb-0">R$ {{ "%.2f"|format(income_total) }}</h3>
+            <h3 class="mb-0">R$ {{ income_total|currency }}</h3>
           </div>
           <div class="col-auto">
             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -36,7 +36,7 @@ endblock %} {% block content %}
         >
           <div class="col-auto">
             <h5 class="card-title">Total de Despesas</h5>
-            <h3 class="mb-0">R$ {{ "%.2f"|format(expense_total) }}</h3>
+            <h3 class="mb-0">R$ {{ expense_total|currency }}</h3>
           </div>
           <div class="col-auto">
             <i class="fas fa-credit-card fa-2x text-gray-300"></i>
@@ -53,7 +53,7 @@ endblock %} {% block content %}
         >
           <div class="col-auto">
             <h5 class="card-title">Saldo</h5>
-            <h3 class="mb-0">R$ {{ "%.2f"|format(balance) }}</h3>
+            <h3 class="mb-0">R$ {{ balance|currency }}</h3>
           </div>
           <div class="col-auto">
             <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
@@ -74,15 +74,11 @@ endblock %} {% block content %}
           <div class="row text-center">
             <div class="col-md-3">
               <p class="mb-1 small">Média Diária de Despesas</p>
-              <h4 class="text-dark">
-                R$ {{ "%.2f"|format(daily_avg_expense) }}
-              </h4>
+              <h4 class="text-dark">R$ {{ daily_avg_expense|currency }}</h4>
             </div>
             <div class="col-md-3">
               <p class="mb-1 small">Projeção de Despesas</p>
-              <h4 class="text-dark">
-                R$ {{ "%.2f"|format(projected_expense) }}
-              </h4>
+              <h4 class="text-dark">R$ {{ projected_expense|currency }}</h4>
             </div>
             <div class="col-md-3">
               <p class="mb-1 small">Total de Transações</p>
@@ -118,7 +114,7 @@ endblock %} {% block content %}
                 class="fas fa-circle"
                 style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
               ></i>
-              {{ category }} (R$ {{ "%.2f"|format(total) }})
+              {{ category }} (R$ {{ total|currency }})
             </span>
             {% endfor %}
           </div>
@@ -141,7 +137,7 @@ endblock %} {% block content %}
                 class="fas fa-circle"
                 style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
               ></i>
-              {{ category }} (R$ {{ "%.2f"|format(total) }})
+              {{ category }} (R$ {{ total|currency }})
             </span>
             {% endfor %}
           </div>
@@ -206,7 +202,7 @@ endblock %} {% block content %}
                     transaction.description }}
                   </td>
                   <td class="text-success">
-                    R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                    R$ {{ transaction.amount|currency }}
                   </td>
                   <td>
                     {{ transaction.payment_date.strftime('%d/%m/%Y') if
@@ -277,16 +273,14 @@ endblock %} {% block content %}
                     transaction.description }}
                   </td>
                   <td class="text-danger">
-                    R$ {{ "%.2f"|format(transaction.amount or 0) }}
+                    R$ {{ transaction.amount|currency }}
                   </td>
                   <td class="text-success">
                     {% if transaction.discount and transaction.discount > 0 %}
-                    R$ {{ "%.2f"|format(transaction.discount) }} {% else %} - {%
-                    endif %}
+                    R$ {{ transaction.discount|currency }} {% else %} - {% endif
+                    %}
                   </td>
-                  <td class="text-danger">
-                    R$ {{ "%.2f"|format(final_value) }}
-                  </td>
+                  <td class="text-danger">R$ {{ final_value|currency }}</td>
                   <td>
                     {{ transaction.due_date.strftime('%d/%m/%Y') if
                     transaction.due_date else '-' }}

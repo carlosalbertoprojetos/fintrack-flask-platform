@@ -488,7 +488,7 @@ def delete_payment_method(id):
     return redirect(url_for("list_payment_methods"))
 
 
-@transaction_bp.route("/")
+@transaction_bp.route("/reports")
 @login_required
 def reports():
     report_type = request.args.get("type", "monthly")
