@@ -998,7 +998,7 @@ def add_transaction():
         flash("Transação adicionada com sucesso!", "success")
         return redirect(url_for("transaction.transactions"))
 
-    return render_template("add_transaction.html", form=form)
+    return render_template("add_edit_transaction.html", form=form, edit=False)
 
 
 @transaction_bp.route("/transactions/edit/<int:id>", methods=["GET", "POST"])
@@ -1041,7 +1041,9 @@ def edit_transaction(id):
         flash("Transação atualizada com sucesso!", "success")
         return redirect(url_for("transaction.transactions"))
 
-    return render_template("edit_transaction.html", form=form, transaction=transaction)
+    return render_template(
+        "add_edit_transaction.html", form=form, transaction=transaction, edit=True
+    )
 
 
 @transaction_bp.route("/transactions/delete/<int:id>")

@@ -1,13 +1,22 @@
 {% extends "base.html" %} {% block title %}{% if edit %}Editar{% else %}Nova{%
 endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
-
 <div class="card">
   <div class="card-header d-flex justify-content-between bg-primary text-white">
     <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
     <h4>{{ form.date }}</h4>
   </div>
   <div class="card-body">
-    <form method="POST" id="transactionForm">
+    <form
+      method="POST"
+      id="transactionForm"
+      {%
+      if
+      edit
+      %}action="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
+      {%
+      endif
+      %}
+    >
       {{ form.hidden_tag() }}
       <div class="row mb-3">
         <div class="col-md-4">
@@ -36,15 +45,19 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
       <div class="row mb-3">
         <div class="col-md-2">
           {{ form.amount.label(class="form-label") }} {{
-          form.amount(class="form-control form-control-sm") }} {% for error in
-          form.amount.errors %}
+          form.amount(class="form-control form-control-sm currency-input",
+          type="text", inputmode="decimal", pattern="[0-9]*[.,]?[0-9]*",
+          value=form.amount.data|string|replace('.', ',') if form.amount.data
+          else '') }} {% for error in form.amount.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
         <div class="col-md-2" id="discountValue" style="display: none">
           {{ form.discount.label(class="form-label") }} {{
-          form.discount(class="form-control form-control-sm") }} {% for error in
-          form.discount.errors %}
+          form.discount(class="form-control form-control-sm currency-input",
+          type="text", inputmode="decimal", pattern="[0-9]*[.,]?[0-9]*",
+          value=form.discount.data|string|replace('.', ',') if
+          form.discount.data else '') }} {% for error in form.discount.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
@@ -80,13 +93,13 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-        <div class="mb-3">
-          {{ form.details.label(class="form-label") }} {{
-          form.details(class="form-control form-control-sm", rows=3,
-          id="details") }} {% for error in form.details.errors %}
-          <div class="text-danger">{{ error }}</div>
-          {% endfor %}
-        </div>
+      </div>
+      <div class="mb-3">
+        {{ form.details.label(class="form-label") }} {{
+        form.details(class="form-control form-control-sm", rows=3, id="details")
+        }} {% for error in form.details.errors %}
+        <div class="text-danger">{{ error }}</div>
+        {% endfor %}
       </div>
       <div class="d-flex justify-content-between">
         <a href="{{ url_for('transaction.reports') }}" class="btn btn-secondary"
@@ -97,9 +110,7 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
     </form>
   </div>
 </div>
-
 {% endblock %} {% block extra_js %}
-
 <script>
   // URLs para buscar categorias e despesas
   const getCategoriesUrlTemplate =
@@ -111,20 +122,87 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
   const selectedCategoryId = "{{ form.category_id.data or '' }}";
   const selectedExpenseId = "{{ form.expense_id.data or '' }}";
 
+  // Função para formatar valor monetário
+  function formatCurrency(value) {
+    if (!value) return "";
+
+    // Remove tudo que não é número ou vírgula/ponto
+    value = value.toString().replace(/[^\d,.-]/g, "");
+
+    // Substitui ponto por vírgula se houver mais de uma vírgula
+    const parts = value.split(/[.,]/);
+    if (parts.length > 2) {
+      value = parts.slice(0, -1).join("") + "," + parts.slice(-1);
+    }
+
+    // Garante que só há uma vírgula
+    value = value.replace(/,/g, (match, offset, string) => {
+      return string.indexOf(",") === offset ? "," : "";
+    });
+
+    // Formata o número com separadores de milhar
+    const parts2 = value.split(",");
+    parts2[0] = parts2[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    value = parts2.join(",");
+
+    return value;
+  }
+
+  // Função para converter valor formatado para número
+  function parseCurrency(value) {
+    if (!value) return "";
+    // Remove pontos de milhar e substitui vírgula por ponto para envio ao servidor
+    return value.replace(/\./g, "").replace(",", ".");
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     const typeSelect = document.getElementById("transactionType");
     const categorySelect = document.getElementById("categorySelect");
     const expenseSelect = document.getElementById("expenseSelect");
     const dueDateField = document.getElementById("dueDateField");
     const discountValue = document.getElementById("discountValue");
+    const currencyInputs = document.querySelectorAll(".currency-input");
+
+    // Configurar inputs de moeda
+    currencyInputs.forEach((input) => {
+      // Formatar valor ao carregar
+      if (input.value) {
+        input.value = formatCurrency(input.value);
+      }
+
+      // Formatar valor ao digitar
+      input.addEventListener("input", function (e) {
+        let value = e.target.value;
+        e.target.value = formatCurrency(value);
+      });
+
+      // Formatar valor ao perder foco
+      input.addEventListener("blur", function (e) {
+        let value = e.target.value;
+        if (value) {
+          // Adiciona zeros após a vírgula se necessário
+          const parts = value.split(",");
+          if (parts.length === 1) {
+            value = value + ",00";
+          } else if (parts[1].length === 1) {
+            value = value + "0";
+          }
+          e.target.value = formatCurrency(value);
+        }
+      });
+
+      // Converter valor para número antes de enviar o formulário
+      input.form.addEventListener("submit", function (e) {
+        input.value = parseCurrency(input.value);
+      });
+    });
 
     // Função para mostrar/esconder o campo de data de vencimento
     function toggleDueDateField() {
       // Mostrar o campo de vencimento se for uma despesa
       dueDateField.style.display =
         typeSelect.value === "despesa" ? "block" : "none";
-
-      // Mostrar o campo de desconto se for uma venda
+      // Mostrar o campo de desconto se for uma despesa
       discountValue.style.display =
         typeSelect.value === "despesa" ? "block" : "none";
     }
@@ -218,5 +296,4 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block content %}
     typeSelect.dispatchEvent(new Event("change"));
   });
 </script>
-
 {% endblock %}
