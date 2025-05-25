@@ -1,131 +1,368 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html
+  lang="pt-br"
+  class="light-style layout-menu-fixed"
+  dir="ltr"
+  data-theme="theme-default"
+>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}Finanças Pessoais{% endblock %}</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <title>{% block title %}{% endblock %} - Finanças Pessoais</title>
 
-    <!-- Font -->
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='img/favicon/favicon.ico') }}"
+    />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css"
+    />
 
+    <!-- Core CSS -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
     />
     <link
       rel="stylesheet"
+      href="{{ url_for('static', filename='css/core.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/theme-default.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/demo.css') }}"
+    />
+    <link
+      rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
     />
     {% block extra_css %}{% endblock %}
+
+    <!-- Vendors CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='vendor/libs/perfect-scrollbar/perfect-scrollbar.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='vendor/libs/apex-charts/apex-charts.css') }}"
+    />
+
+    <!-- Helpers -->
+    <script src="{{ url_for('static', filename='vendor/js/helpers.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
   </head>
 
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-      <div class="container">
-        <a class="navbar-brand" href="{{ url_for('main.index') }}"
-          >Finanças Pessoais</a
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+      <div class="layout-container">
+        <!-- Menu -->
+        <aside
+          id="layout-menu"
+          class="layout-menu menu-vertical menu bg-menu-theme"
         >
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto">
+          <div class="app-brand demo">
+            <a href="{{ url_for('main.index') }}" class="app-brand-link">
+              <span class="app-brand-logo demo">
+                <i class="bx bx-wallet-alt"></i>
+              </span>
+              <span class="app-brand-text demo menu-text fw-bold ms-2"
+                >Finanças Pessoais</span
+              >
+            </a>
+
+            <!-- Toggle button for mobile -->
+            <a
+              href="javascript:void(0);"
+              class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none"
+            >
+              <i class="bx bx-x align-middle"></i>
+            </a>
+
+            <!-- Toggle button for desktop -->
+            <a
+              href="javascript:void(0);"
+              class="layout-menu-toggle menu-link text-large ms-auto d-none d-xl-block"
+            >
+              <i class="bx bx-chevron-left align-middle"></i>
+            </a>
+          </div>
+
+          <div class="menu-inner-shadow"></div>
+
+          <ul class="menu-inner py-1">
             {% if current_user.is_authenticated %}
-            <li class="nav-item">
-              <a class="nav-link" href="">Dashboard</a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link"
-                href="{{ url_for('transaction.transactions') }}"
-                >Transações</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('transaction.reports') }}"
-                >Relatórios</a
-              >
-            </li>
-            <!-- Link para listar categorias -->
-            <li>
-              <a class="nav-link" href="{{ url_for('transaction.categories') }}"
-                >Categorias</a
-              >
-            </li>
-            <!-- Link para listar Descrição -->
-            <li>
-              <a class="nav-link" href="{{ url_for('transaction.expenses') }}"
-                >Descrições</a
-              >
-            </li>
-            {% endif %}
-          </ul>
-          <ul class="navbar-nav">
-            {% if current_user.is_authenticated %}
-            <li class="nav-item">
-              <span class="nav-link">Olá, {{ current_user.username }}</span>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.logout') }}">Sair</a>
-            </li>
-            {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.login') }}">Entrar</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('auth.register') }}"
-                >Cadastrar</a
-              >
-            </li>
-            {% endif %}
-            <li class="nav-item">
-              <a
-                class="nav-link text-danger"
-                href="/shutdown"
-                title="Desligar servidor"
-                onclick="return confirm('Deseja encerrar o sistema?')"
-              >
-                <i class="fas fa-power-off fa-lg"></i>
+            <!-- Dashboard -->
+            <li
+              class="menu-item {% if request.endpoint == 'main.index' %}active{% endif %}"
+            >
+              <a href="{{ url_for('main.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-home-circle"></i>
+                <div>Dashboard</div>
               </a>
             </li>
+
+            <!-- Transações -->
+            <li
+              class="menu-item {% if request.endpoint == 'transaction.transactions' %}active{% endif %}"
+            >
+              <a
+                href="{{ url_for('transaction.transactions') }}"
+                class="menu-link"
+              >
+                <i class="menu-icon tf-icons bx bx-transfer"></i>
+                <div>Transações</div>
+              </a>
+            </li>
+
+            <!-- Relatórios -->
+            <li
+              class="menu-item {% if request.endpoint == 'transaction.reports' %}active{% endif %}"
+            >
+              <a href="{{ url_for('transaction.reports') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+                <div>Relatórios</div>
+              </a>
+            </li>
+
+            <!-- Categorias -->
+            <li
+              class="menu-item {% if request.endpoint == 'transaction.categories' %}active{% endif %}"
+            >
+              <a
+                href="{{ url_for('transaction.categories') }}"
+                class="menu-link"
+              >
+                <i class="menu-icon tf-icons bx bx-category"></i>
+                <div>Categorias</div>
+              </a>
+            </li>
+
+            <!-- Descrições -->
+            <li
+              class="menu-item {% if request.endpoint == 'transaction.expenses' %}active{% endif %}"
+            >
+              <a href="{{ url_for('transaction.expenses') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-list-ul"></i>
+                <div>Descrições</div>
+              </a>
+            </li>
+            {% endif %}
           </ul>
+        </aside>
+        <!-- / Menu -->
+
+        <!-- Layout container -->
+        <div class="layout-page">
+          <!-- Navbar -->
+          <nav
+            class="layout-navbar container-fluid navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+            id="layout-navbar"
+          >
+            <div
+              class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none"
+            >
+              <a
+                class="nav-item nav-link px-0 me-xl-4"
+                href="javascript:void(0);"
+              >
+                <i class="bx bx-menu bx-sm"></i>
+              </a>
+            </div>
+
+            <div
+              class="navbar-nav-right d-flex align-items-center"
+              id="navbar-collapse"
+            >
+              <!-- Search -->
+              <div class="navbar-nav align-items-center">
+                <div class="nav-item d-flex align-items-center">
+                  <i class="bx bx-search fs-4 lh-0"></i>
+                  <input
+                    type="text"
+                    class="form-control border-0 shadow-none"
+                    placeholder="Pesquisar..."
+                    aria-label="Pesquisar..."
+                  />
+                </div>
+              </div>
+              <!-- /Search -->
+
+              <ul class="navbar-nav flex-row align-items-center ms-auto">
+                <!-- User -->
+                <li class="nav-item navbar-dropdown dropdown-user dropdown">
+                  <a
+                    class="nav-link dropdown-toggle hide-arrow"
+                    href="javascript:void(0);"
+                    data-bs-toggle="dropdown"
+                  >
+                    <div class="avatar avatar-online">
+                      <i class="bx bx-user-circle fs-2"></i>
+                    </div>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    {% if current_user.is_authenticated %}
+                    <li>
+                      <a class="dropdown-item" href="#">
+                        <div class="d-flex">
+                          <div class="flex-shrink-0 me-3">
+                            <div class="avatar avatar-online">
+                              <i class="bx bx-user-circle fs-2"></i>
+                            </div>
+                          </div>
+                          <div class="flex-grow-1">
+                            <span class="fw-semibold d-block"
+                              >{{ current_user.username }}</span
+                            >
+                            <small class="text-muted">Usuário</small>
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                    <li>
+                      <div class="dropdown-divider"></div>
+                    </li>
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{{ url_for('auth.logout') }}"
+                      >
+                        <i class="bx bx-power-off me-2"></i>
+                        <span class="align-middle">Sair</span>
+                      </a>
+                    </li>
+                    {% else %}
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{{ url_for('auth.login') }}"
+                      >
+                        <i class="bx bx-log-in me-2"></i>
+                        <span class="align-middle">Entrar</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        class="dropdown-item"
+                        href="{{ url_for('auth.register') }}"
+                      >
+                        <i class="bx bx-user-plus me-2"></i>
+                        <span class="align-middle">Cadastrar</span>
+                      </a>
+                    </li>
+                    {% endif %}
+                    <li>
+                      <div class="dropdown-divider"></div>
+                    </li>
+                    <li>
+                      <a
+                        class="dropdown-item text-danger"
+                        href="/shutdown"
+                        onclick="return confirm('Deseja encerrar o sistema?')"
+                      >
+                        <i class="bx bx-power-off me-2"></i>
+                        <span class="align-middle">Desligar Sistema</span>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                <!--/ User -->
+              </ul>
+            </div>
+          </nav>
+          <!-- / Navbar -->
+
+          <!-- Content wrapper -->
+          <div class="content-wrapper">
+            <!-- Content -->
+            <div class="container-fluid flex-grow-1 container-p-y">
+              {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %} {% for category, message in messages %}
+              <div
+                class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show"
+                role="alert"
+              >
+                {{ message }}
+                <button
+                  type="button"
+                  class="btn-close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                ></button>
+              </div>
+              {% endfor %} {% endif %} {% endwith %} {% block content %}{%
+              endblock %}
+            </div>
+            <!-- / Content -->
+
+            <!-- Footer -->
+            <footer class="content-footer footer bg-footer-theme">
+              <div
+                class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column"
+              >
+                <div class="mb-2 mb-md-0">
+                  ©
+                  <script>
+                    document.write(new Date().getFullYear());
+                  </script>
+                  <a href="#" class="footer-link fw-bolder"
+                    >Finanças Pessoais</a
+                  >
+                </div>
+              </div>
+            </footer>
+            <!-- / Footer -->
+
+            <div class="content-backdrop fade"></div>
+          </div>
+          <!-- Content wrapper -->
         </div>
+        <!-- / Layout page -->
       </div>
-    </nav>
 
-    <div class="container mt-4">
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
-      <div
-        class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show"
-      >
-        {{ message }}
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-        ></button>
-      </div>
-      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+      <!-- Overlay -->
+      <div class="layout-overlay layout-menu-toggle"></div>
+
+      <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+      <div class="drag-target"></div>
     </div>
+    <!-- / Layout wrapper -->
 
-    <footer class="mt-5 py-3 bg-light text-center">
-      <div class="container">
-        <p class="mb-0">Sistema de Finanças Pessoais &copy; {{ now.year }}</p>
-      </div>
-    </footer>
-
+    <!-- Core JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/libs/jquery/jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/libs/popper/popper.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/bootstrap.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/menu.js') }}"></script>
+
+    <!-- Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     <script>
       function fecharJanela() {
@@ -133,10 +370,98 @@
           .then((response) => response.text())
           .then((data) => {
             console.log(data);
-            window.close(); // Tenta fechar a aba
+            window.close();
           })
           .catch((error) => console.error("Erro ao fechar janela:", error));
       }
+    </script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Menu Toggle Functionality
+        const menuToggles = document.querySelectorAll(".layout-menu-toggle");
+        const menu = document.querySelector("#layout-menu");
+        const overlay = document.querySelector(".layout-overlay");
+        const dragTarget = document.querySelector(".drag-target");
+        const layoutWrapper = document.querySelector(".layout-wrapper");
+        const layoutPage = document.querySelector(".layout-page");
+
+        // Função para alternar o menu colapsado (desktop)
+        function toggleMenuCollapsed() {
+          layoutWrapper.classList.toggle("layout-menu-collapsed");
+          menu.classList.toggle("layout-menu-collapsed");
+          layoutPage.classList.toggle("layout-menu-collapsed");
+
+          // Salvar o estado no localStorage
+          const isCollapsed = layoutWrapper.classList.contains(
+            "layout-menu-collapsed"
+          );
+          localStorage.setItem("layout-menu-collapsed", isCollapsed);
+        }
+
+        // Função para alternar o menu mobile
+        function toggleMenuMobile() {
+          menu.classList.toggle("layout-menu-expanded");
+          overlay.classList.toggle("layout-menu-expanded");
+        }
+
+        // Restaurar estado do menu
+        const menuCollapsed =
+          localStorage.getItem("layout-menu-collapsed") === "true";
+        if (menuCollapsed) {
+          layoutWrapper.classList.add("layout-menu-collapsed");
+          menu.classList.add("layout-menu-collapsed");
+          layoutPage.classList.add("layout-menu-collapsed");
+        }
+
+        // Adicionar eventos aos botões de toggle
+        menuToggles.forEach((toggle) => {
+          toggle.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (window.innerWidth >= 1200) {
+              // Desktop: alternar menu colapsado
+              toggleMenuCollapsed();
+            } else {
+              // Mobile: alternar menu expandido
+              toggleMenuMobile();
+            }
+          });
+        });
+
+        // Evento de clique no overlay (mobile)
+        if (overlay) {
+          overlay.addEventListener("click", function () {
+            if (window.innerWidth < 1200) {
+              toggleMenuMobile();
+            }
+          });
+        }
+
+        // Evento de clique no drag target (mobile)
+        if (dragTarget) {
+          dragTarget.addEventListener("click", function () {
+            if (window.innerWidth < 1200) {
+              toggleMenuMobile();
+            }
+          });
+        }
+
+        // Ajustar menu em redimensionamento da janela
+        let resizeTimer;
+        window.addEventListener("resize", function () {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(function () {
+            if (window.innerWidth >= 1200) {
+              menu.classList.remove("layout-menu-expanded");
+              overlay.classList.remove("layout-menu-expanded");
+            } else {
+              layoutWrapper.classList.remove("layout-menu-collapsed");
+              menu.classList.remove("layout-menu-collapsed");
+              layoutPage.classList.remove("layout-menu-collapsed");
+            }
+          }, 250);
+        });
+      });
     </script>
 
     {% block extra_js %}{% endblock %}
