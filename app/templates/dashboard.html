@@ -13,15 +13,15 @@ endblock %} {% block content %}
   <h1 class="h3 mb-4 text-gray-800">Dashboard - {{ current_month }}</h1>
 
   <!-- Cards de Resumo -->
-  <div class="row mb-4">
+  <div class="row">
     <div class="col-md-4">
-      <div class="card shadow bg-success text-white">
+      <div class="card shadow bg-success opacity-50 text-white m-0">
         <div
-          class="card-body d-flex justify-content-between align-items-center"
+          class="card-body d-flex justify-content-between align-items-center p-2 px-4"
         >
           <div class="col-auto">
             <h5 class="card-title">Total de Receitas</h5>
-            <h3 class="mb-0">R$ {{ income_total|currency }}</h3>
+            <h4 class="mb-0">R$ {{ income_total|currency }}</h4>
           </div>
           <div class="col-auto">
             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -30,13 +30,13 @@ endblock %} {% block content %}
       </div>
     </div>
     <div class="col-md-4">
-      <div class="card shadow bg-danger text-white">
+      <div class="card shadow bg-danger opacity-50 text-white m-0">
         <div
-          class="card-body d-flex justify-content-between align-items-center"
+          class="card-body d-flex justify-content-between align-items-center p-2 px-4"
         >
           <div class="col-auto">
             <h5 class="card-title">Total de Despesas</h5>
-            <h3 class="mb-0">R$ {{ expense_total|currency }}</h3>
+            <h4 class="mb-0">R$ {{ expense_total|currency }}</h4>
           </div>
           <div class="col-auto">
             <i class="fas fa-credit-card fa-2x text-gray-300"></i>
@@ -46,14 +46,14 @@ endblock %} {% block content %}
     </div>
     <div class="col-md-4">
       <div
-        class="card shadow {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white"
+        class="card shadow {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} opacity-50 text-white"
       >
         <div
-          class="card-body d-flex justify-content-between align-items-center"
+          class="card-body d-flex justify-content-between align-items-center p-2 px-4"
         >
           <div class="col-auto">
             <h5 class="card-title">Saldo</h5>
-            <h3 class="mb-0">R$ {{ balance|currency }}</h3>
+            <h4 class="mb-0">R$ {{ balance|currency }}</h4>
           </div>
           <div class="col-auto">
             <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
@@ -64,32 +64,186 @@ endblock %} {% block content %}
   </div>
 
   <!-- Estatísticas do Mês -->
-  <div class="row mb-4">
+  <div class="row">
     <div class="col-12">
       <div class="card shadow">
         <div class="card-header">
-          <h5 class="card-title mb-0">Estatísticas do Mês</h5>
+          <h6 class="m-0 font-weight-bold text-primary">Estatísticas do Mês</h6>
         </div>
-        <div class="card-body">
+        <div class="card-body py-2">
           <div class="row text-center">
             <div class="col-md-3">
               <p class="mb-1 small">Média Diária de Despesas</p>
-              <h4 class="text-dark">R$ {{ daily_avg_expense|currency }}</h4>
+              <h5 class="text-dark">R$ {{ daily_avg_expense|currency }}</h5>
             </div>
             <div class="col-md-3">
               <p class="mb-1 small">Projeção de Despesas</p>
-              <h4 class="text-dark">R$ {{ projected_expense|currency }}</h4>
+              <h5 class="text-dark">R$ {{ projected_expense|currency }}</h5>
             </div>
             <div class="col-md-3">
               <p class="mb-1 small">Total de Transações</p>
-              <h4 class="text-dark">{{ total_transactions }}</h4>
+              <h5 class="text-dark">{{ total_transactions }}</h5>
             </div>
             <div class="col-md-3">
               <p class="mb-1 small">Dias no Mês</p>
-              <h4 class="text-dark">
+              <h5 class="text-dark">
                 {{ monthrange(datetime.now().year, datetime.now().month)[1] }}
-              </h4>
+              </h5>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transações Recentes -->
+  <div class="row">
+    <!-- Tabela de Receitas -->
+    <div class="col-12">
+      <div class="card shadow">
+        <div
+          class="card-header bg-success opacity-50 text-white d-flex justify-content-between align-items-center py-1"
+        >
+          <h5 class="card-title mb-0">Receitas Recentes</h5>
+          <a
+            href="{{ url_for('transaction.transactions') }}"
+            class="btn btn-sm btn-light py-1"
+            >Ver Todas</a
+          >
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm m-0">
+              <thead>
+                <tr>
+                  <th class="text-center">Data</th>
+                  <th class="text-center">Categoria</th>
+                  <th class="text-center">Descrição</th>
+                  <th class="ps-1">Valor</th>
+                  <th class="text-center">Data Pagamento</th>
+                  <th class="text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set income_transactions =
+                monthly_transactions|selectattr('type', 'equalto',
+                'receita')|list %} {% for transaction in income_transactions %}
+                <tr>
+                  <td class="text-center">
+                    {{ transaction.date.strftime('%d/%m/%Y') }}
+                  </td>
+                  <td class="text-center">{{ transaction.category.name }}</td>
+                  <td class="text-center">
+                    {{ transaction.expense.name if transaction.expense else
+                    transaction.description }}
+                  </td>
+                  <td class="text-success">
+                    R$ {{ transaction.amount|currency }}
+                  </td>
+                  <td class="text-center">
+                    {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                    transaction.payment_date else '-' }}
+                  </td>
+                  <td class="text-center">
+                    {% if transaction.paid %}
+                    <span class="badge bg-success">Pago</span>
+                    {% else %}
+                    <span class="badge bg-warning">Pendente</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="6" class="text-center">
+                    Nenhuma receita registrada no período.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Despesas -->
+    <div class="col-12">
+      <div class="card shadow">
+        <div
+          class="card-header bg-danger opacity-50 text-white d-flex justify-content-between align-items-center py-1"
+        >
+          <h5 class="card-title mb-0">Despesas Recentes</h5>
+          <a
+            href="{{ url_for('transaction.transactions') }}"
+            class="btn btn-sm btn-light py-1"
+            >Ver Todas</a
+          >
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm m-0">
+              <thead>
+                <tr>
+                  <th class="text-center">Data</th>
+                  <th class="text-center">Categoria</th>
+                  <th class="text-center">Descrição</th>
+                  <th class="ps-1">Valor</th>
+                  <th class="ps-1">Desconto</th>
+                  <th class="ps-1">Valor Final</th>
+                  <th class="text-center">Vencimento</th>
+                  <th class="text-center">Data Pagamento</th>
+                  <th class="text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set expense_transactions =
+                monthly_transactions|selectattr('type', 'equalto',
+                'despesa')|list %} {% for transaction in expense_transactions %}
+                {% set final_value = (transaction.amount or 0) -
+                (transaction.discount or 0) %}
+                <tr>
+                  <td class="text-center">
+                    {{ transaction.date.strftime('%d/%m/%Y') }}
+                  </td>
+                  <td class="text-center">{{ transaction.category.name }}</td>
+                  <td class="text-center">
+                    {{ transaction.expense.name if transaction.expense else
+                    transaction.description }}
+                  </td>
+                  <td class="text-danger">
+                    R$ {{ transaction.amount|currency }}
+                  </td>
+                  <td class="text-success">
+                    {% if transaction.discount and transaction.discount > 0 %}
+                    R$ {{ transaction.discount|currency }} {% else %} - {% endif
+                    %}
+                  </td>
+                  <td class="text-danger">R$ {{ final_value|currency }}</td>
+                  <td class="text-center">
+                    {{ transaction.due_date.strftime('%d/%m/%Y') if
+                    transaction.due_date else '-' }}
+                  </td>
+                  <td class="text-center">
+                    {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                    transaction.payment_date else '-' }}
+                  </td>
+                  <td class="text-center">
+                    {% if transaction.paid %}
+                    <span class="badge bg-success">Pago</span>
+                    {% else %}
+                    <span class="badge bg-warning">Pendente</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="9" class="text-center">
+                    Nenhuma despesa registrada no período.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -101,7 +255,9 @@ endblock %} {% block content %}
     <div class="col-md-6">
       <div class="card shadow h-100">
         <div class="card-header">
-          <h5 class="card-title mb-0">Receitas por Categoria</h5>
+          <h6 class="m-0 font-weight-bold text-primary">
+            Receitas por Categoria
+          </h6>
         </div>
         <div class="card-body">
           <div class="chart-pie pt-4 pb-2">
@@ -124,7 +280,9 @@ endblock %} {% block content %}
     <div class="col-md-6">
       <div class="card shadow h-100">
         <div class="card-header">
-          <h5 class="card-title mb-0">Despesas por Categoria</h5>
+          <h6 class="m-0 font-weight-bold text-primary">
+            Despesas por Categoria
+          </h6>
         </div>
         <div class="card-body">
           <div class="chart-pie pt-4 pb-2">
@@ -151,161 +309,13 @@ endblock %} {% block content %}
     <div class="col-12">
       <div class="card shadow">
         <div class="card-header">
-          <h5 class="card-title mb-0">Evolução Financeira (Últimos 6 meses)</h5>
+          <h6 class="m-0 font-weight-bold text-primary">
+            Evolução Financeira (Últimos 6 meses)
+          </h6>
         </div>
         <div class="card-body">
           <div class="chart-area">
             <canvas id="monthlyChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Transações Recentes -->
-  <div class="row">
-    <!-- Tabela de Receitas -->
-    <div class="col-12 mb-4">
-      <div class="card shadow">
-        <div
-          class="card-header bg-success text-white d-flex justify-content-between align-items-center"
-        >
-          <h5 class="card-title mb-0">Receitas Recentes</h5>
-          <a
-            href="{{ url_for('transaction.transactions') }}"
-            class="btn btn-sm btn-light"
-            >Ver Todas</a
-          >
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover table-sm">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Categoria</th>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Data Pagamento</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% set income_transactions =
-                monthly_transactions|selectattr('type', 'equalto',
-                'receita')|list %} {% for transaction in income_transactions %}
-                <tr>
-                  <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                  <td>{{ transaction.category.name }}</td>
-                  <td>
-                    {{ transaction.expense.name if transaction.expense else
-                    transaction.description }}
-                  </td>
-                  <td class="text-success">
-                    R$ {{ transaction.amount|currency }}
-                  </td>
-                  <td>
-                    {{ transaction.payment_date.strftime('%d/%m/%Y') if
-                    transaction.payment_date else '-' }}
-                  </td>
-                  <td>
-                    {% if transaction.paid %}
-                    <span class="badge bg-success">Pago</span>
-                    {% else %}
-                    <span class="badge bg-warning">Pendente</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% else %}
-                <tr>
-                  <td colspan="6" class="text-center">
-                    Nenhuma receita registrada no período.
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabela de Despesas -->
-    <div class="col-12">
-      <div class="card shadow">
-        <div
-          class="card-header bg-danger text-white d-flex justify-content-between align-items-center"
-        >
-          <h5 class="card-title mb-0">Despesas Recentes</h5>
-          <a
-            href="{{ url_for('transaction.transactions') }}"
-            class="btn btn-sm btn-light"
-            >Ver Todas</a
-          >
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-hover table-sm">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Categoria</th>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Desconto</th>
-                  <th>Valor Final</th>
-                  <th>Vencimento</th>
-                  <th>Data Pagamento</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% set expense_transactions =
-                monthly_transactions|selectattr('type', 'equalto',
-                'despesa')|list %} {% for transaction in expense_transactions %}
-                {% set final_value = (transaction.amount or 0) -
-                (transaction.discount or 0) %}
-                <tr>
-                  <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                  <td>{{ transaction.category.name }}</td>
-                  <td>
-                    {{ transaction.expense.name if transaction.expense else
-                    transaction.description }}
-                  </td>
-                  <td class="text-danger">
-                    R$ {{ transaction.amount|currency }}
-                  </td>
-                  <td class="text-success">
-                    {% if transaction.discount and transaction.discount > 0 %}
-                    R$ {{ transaction.discount|currency }} {% else %} - {% endif
-                    %}
-                  </td>
-                  <td class="text-danger">R$ {{ final_value|currency }}</td>
-                  <td>
-                    {{ transaction.due_date.strftime('%d/%m/%Y') if
-                    transaction.due_date else '-' }}
-                  </td>
-                  <td>
-                    {{ transaction.payment_date.strftime('%d/%m/%Y') if
-                    transaction.payment_date else '-' }}
-                  </td>
-                  <td>
-                    {% if transaction.paid %}
-                    <span class="badge bg-success">Pago</span>
-                    {% else %}
-                    <span class="badge bg-warning">Pendente</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% else %}
-                <tr>
-                  <td colspan="9" class="text-center">
-                    Nenhuma despesa registrada no período.
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>

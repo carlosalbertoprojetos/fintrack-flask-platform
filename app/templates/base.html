@@ -90,17 +90,9 @@
               <span class="app-brand-logo demo">
                 <i class="bx bx-wallet-alt"></i>
               </span>
-              <span class="app-brand-text demo menu-text fw-bold ms-2"
+              <span class="app-brand-text demo menu-text fw-bold"
                 >Finanças Pessoais</span
               >
-            </a>
-
-            <!-- Toggle button for mobile -->
-            <a
-              href="javascript:void(0);"
-              class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none"
-            >
-              <i class="bx bx-x align-middle"></i>
             </a>
 
             <!-- Toggle button for desktop -->
@@ -118,7 +110,7 @@
             {% if current_user.is_authenticated %}
             <!-- Dashboard -->
             <li
-              class="menu-item {% if request.endpoint == 'main.index' %}active{% endif %}"
+              class="menu-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}"
             >
               <a href="{{ url_for('main.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-circle"></i>
@@ -184,7 +176,7 @@
             id="layout-navbar"
           >
             <div
-              class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none"
+              class="layout-menu-toggle navbar-nav align-items-xl-center fixed-top m-3 me-xl-0 d-xl-none"
             >
               <a
                 class="nav-item nav-link px-0 me-xl-4"
@@ -198,20 +190,6 @@
               class="navbar-nav-right d-flex align-items-center"
               id="navbar-collapse"
             >
-              <!-- Search -->
-              <div class="navbar-nav align-items-center">
-                <div class="nav-item d-flex align-items-center">
-                  <i class="bx bx-search fs-4 lh-0"></i>
-                  <input
-                    type="text"
-                    class="form-control border-0 shadow-none"
-                    placeholder="Pesquisar..."
-                    aria-label="Pesquisar..."
-                  />
-                </div>
-              </div>
-              <!-- /Search -->
-
               <ul class="navbar-nav flex-row align-items-center ms-auto">
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -235,7 +213,7 @@
                             </div>
                           </div>
                           <div class="flex-grow-1">
-                            <span class="fw-semibold d-block"
+                            <span class="fw-semibold d-none"
                               >{{ current_user.username }}</span
                             >
                             <small class="text-muted">Usuário</small>
@@ -329,9 +307,7 @@
                   <script>
                     document.write(new Date().getFullYear());
                   </script>
-                  <a href="#" class="footer-link fw-bolder"
-                    >Finanças Pessoais</a
-                  >
+                  <a href="" class="footer-link fw-bolder">Finanças Pessoais</a>
                 </div>
               </div>
             </footer>
@@ -345,7 +321,7 @@
       </div>
 
       <!-- Overlay -->
-      <div class="layout-overlay layout-menu-toggle"></div>
+      <div class="layout-overlay layout-menu-toggle d-none"></div>
 
       <!-- Drag Target Area To SlideIn Menu On Small Screens -->
       <div class="drag-target"></div>
@@ -385,40 +361,6 @@
         const dragTarget = document.querySelector(".drag-target");
         const layoutWrapper = document.querySelector(".layout-wrapper");
         const layoutPage = document.querySelector(".layout-page");
-        const contentWrapper = document.querySelector(".content-wrapper");
-
-        // Função para carregar conteúdo via AJAX
-        function loadContent(url) {
-          fetch(url)
-            .then((response) => response.text())
-            .then((html) => {
-              // Extrair apenas o conteúdo dentro do container-p-y
-              const parser = new DOMParser();
-              const doc = parser.parseFromString(html, "text/html");
-              const newContent = doc.querySelector(".container-p-y");
-
-              if (newContent) {
-                // Atualizar apenas o conteúdo
-                const currentContent =
-                  contentWrapper.querySelector(".container-p-y");
-                if (currentContent) {
-                  currentContent.innerHTML = newContent.innerHTML;
-                }
-
-                // Atualizar a URL sem recarregar a página
-                window.history.pushState({}, "", url);
-
-                // Atualizar o título da página
-                const newTitle = doc.querySelector("title");
-                if (newTitle) {
-                  document.title = newTitle.textContent;
-                }
-              }
-            })
-            .catch((error) =>
-              console.error("Erro ao carregar conteúdo:", error)
-            );
-        }
 
         // Função para alternar o menu colapsado (desktop)
         function toggleMenuCollapsed() {
@@ -439,31 +381,24 @@
           overlay.classList.toggle("layout-menu-expanded");
         }
 
-        // Função para restaurar o estado do menu
-        function restoreMenuState() {
-          const menuCollapsed =
-            localStorage.getItem("layout-menu-collapsed") === "true";
-          if (menuCollapsed && window.innerWidth >= 1200) {
-            layoutWrapper.classList.add("layout-menu-collapsed");
-            menu.classList.add("layout-menu-collapsed");
-            layoutPage.classList.add("layout-menu-collapsed");
-          } else {
-            layoutWrapper.classList.remove("layout-menu-collapsed");
-            menu.classList.remove("layout-menu-collapsed");
-            layoutPage.classList.remove("layout-menu-collapsed");
-          }
+        // Restaurar estado do menu
+        const menuCollapsed =
+          localStorage.getItem("layout-menu-collapsed") === "true";
+        if (menuCollapsed) {
+          layoutWrapper.classList.add("layout-menu-collapsed");
+          menu.classList.add("layout-menu-collapsed");
+          layoutPage.classList.add("layout-menu-collapsed");
         }
-
-        // Restaurar estado inicial do menu
-        restoreMenuState();
 
         // Adicionar eventos aos botões de toggle
         menuToggles.forEach((toggle) => {
           toggle.addEventListener("click", function (e) {
             e.preventDefault();
             if (window.innerWidth >= 1200) {
+              // Desktop: alternar menu colapsado
               toggleMenuCollapsed();
             } else {
+              // Mobile: alternar menu expandido
               toggleMenuMobile();
             }
           });
@@ -495,41 +430,12 @@
             if (window.innerWidth >= 1200) {
               menu.classList.remove("layout-menu-expanded");
               overlay.classList.remove("layout-menu-expanded");
-              restoreMenuState();
             } else {
               layoutWrapper.classList.remove("layout-menu-collapsed");
               menu.classList.remove("layout-menu-collapsed");
               layoutPage.classList.remove("layout-menu-collapsed");
             }
           }, 250);
-        });
-
-        // Manipular cliques nos links do menu
-        const menuLinks = document.querySelectorAll(".menu-link");
-        menuLinks.forEach((link) => {
-          link.addEventListener("click", function (e) {
-            e.preventDefault(); // Prevenir navegação padrão
-            const url = this.getAttribute("href");
-
-            // Atualizar classe active
-            menuLinks.forEach((l) =>
-              l.parentElement.classList.remove("active")
-            );
-            this.parentElement.classList.add("active");
-
-            // Carregar conteúdo via AJAX
-            loadContent(url);
-
-            // Fechar menu em mobile após clicar
-            if (window.innerWidth < 1200) {
-              toggleMenuMobile();
-            }
-          });
-        });
-
-        // Manipular navegação do histórico
-        window.addEventListener("popstate", function () {
-          loadContent(window.location.href);
         });
       });
     </script>

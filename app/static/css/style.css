@@ -1,23 +1,13 @@
-/* Manter footer na base da tela */
-/* html, body {
-    height: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-} */
-
-.container {
-    flex: 1;
-}
-
- 
-/* Estilos personalizados para o sistema de finanças pessoais */
 
 body {
     background-color: #f8f9fa;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+.container {
+    flex: 1;
 }
 
 .navbar {
@@ -35,6 +25,10 @@ body {
     background-color: #f8f9fa;
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
     padding: 1rem 1.25rem;
+}
+
+.color-card {
+    background-color: #696cff29;
 }
 
 footer {
@@ -58,6 +52,13 @@ footer {
 .card-dashboard:hover {
     transform: translateY(-5px);
 }
+
+td {
+    padding: 5px !important;
+    font-size: 13px;
+}
+  
+  
 
 /* Estilos para os gráficos */
 canvas {
