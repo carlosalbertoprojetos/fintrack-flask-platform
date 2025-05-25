@@ -259,8 +259,8 @@
                     <li>
                       <a
                         class="dropdown-item text-danger"
-                        href="/shutdown"
-                        onclick="return confirm('Deseja encerrar o sistema?')"
+                        href="javascript:void(0);"
+                        onclick="shutdownSystem()"
                       >
                         <i class="bx bx-power-off me-2"></i>
                         <span class="align-middle">Desligar Sistema</span>
@@ -340,16 +340,74 @@
     <!-- Main JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
+    {% block extra_js %}{% endblock %}
     <script>
-      function fecharJanela() {
-        fetch("/shutdown", { method: "POST" })
-          .then((response) => response.text())
-          .then((data) => {
-            console.log(data);
-            window.close();
-          })
-          .catch((error) => console.error("Erro ao fechar janela:", error));
+      function shutdownSystem() {
+        if (confirm("Deseja encerrar o sistema?")) {
+          // Mostra uma mensagem de encerramento
+          const shutdownMsg = document.createElement("div");
+          shutdownMsg.style.position = "fixed";
+          shutdownMsg.style.top = "50%";
+          shutdownMsg.style.left = "50%";
+          shutdownMsg.style.transform = "translate(-50%, -50%)";
+          shutdownMsg.style.padding = "20px";
+          shutdownMsg.style.background = "rgba(0, 0, 0, 0.8)";
+          shutdownMsg.style.color = "white";
+          shutdownMsg.style.borderRadius = "5px";
+          shutdownMsg.style.zIndex = "9999";
+          shutdownMsg.textContent = "Encerrando o sistema...";
+          document.body.appendChild(shutdownMsg);
+
+          // Primeiro redireciona para logout
+          window.location.href = "{{ url_for('auth.logout') }}?shutdown=true";
+        }
       }
+
+      // Verifica se deve encerrar o sistema após o logout
+      document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("shutdown") === "true") {
+          // Aguarda um momento para garantir que o logout foi processado
+          setTimeout(() => {
+            fetch("/shutdown", {
+              method: "GET",
+              headers: {
+                Accept: "application/json",
+              },
+            })
+              .then((response) => {
+                if (response.ok) {
+                  // Aguarda um momento para o servidor encerrar
+                  setTimeout(() => {
+                    // Tenta fechar a janela do navegador
+                    window.close();
+                    // Se não conseguir fechar a janela, redireciona para uma página de encerramento
+                    window.location.href = "about:blank";
+                  }, 1000);
+                }
+              })
+              .catch((error) => {
+                console.error("Erro ao encerrar o sistema:", error);
+                const shutdownMsg = document.createElement("div");
+                shutdownMsg.style.position = "fixed";
+                shutdownMsg.style.top = "50%";
+                shutdownMsg.style.left = "50%";
+                shutdownMsg.style.transform = "translate(-50%, -50%)";
+                shutdownMsg.style.padding = "20px";
+                shutdownMsg.style.background = "rgba(255, 0, 0, 0.8)";
+                shutdownMsg.style.color = "white";
+                shutdownMsg.style.borderRadius = "5px";
+                shutdownMsg.style.zIndex = "9999";
+                shutdownMsg.textContent =
+                  "Erro ao encerrar o sistema. Por favor, tente novamente.";
+                document.body.appendChild(shutdownMsg);
+                setTimeout(() => {
+                  document.body.removeChild(shutdownMsg);
+                }, 3000);
+              });
+          }, 1000);
+        }
+      });
     </script>
 
     <script>
@@ -439,7 +497,5 @@
         });
       });
     </script>
-
-    {% block extra_js %}{% endblock %}
   </body>
 </html>

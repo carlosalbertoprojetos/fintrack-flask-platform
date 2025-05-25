@@ -1,7 +1,10 @@
 import os
+import signal
+import sys
+import threading
 from app import create_app, db
 from app.models import Category, PaymentMethod, Expense
-from flask import Flask, request, abort
+from flask import Flask, request, abort, jsonify
 from flask_migrate import Migrate
 
 app = create_app()
@@ -21,15 +24,26 @@ def init_db():
 
 
 def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        abort(500, 'Servidor não está rodando com o Werkzeug')
-    func()
+    """Função para encerrar o servidor Flask e o processo Python"""
+    print("Encerrando o servidor...")
+    # Encerra o processo Python imediatamente
+    os._exit(0)
 
-@app.route('/shutdown')
+
+@app.route("/shutdown", methods=["GET"])
 def shutdown():
-    shutdown_server()
-    return 'Servidor encerrado com sucesso.'
+    """Rota para encerrar o servidor"""
+    try:
+        # Encerra o servidor imediatamente
+        shutdown_server()
+        return jsonify({"message": "Encerrando o servidor..."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    try:
+        app.run(debug=True)
+    except KeyboardInterrupt:
+        print("\nEncerrando o servidor...")
+        sys.exit(0)

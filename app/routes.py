@@ -298,6 +298,9 @@ def login():
 @login_required
 def logout():
     logout_user()
+    # Verifica se o logout foi chamado como parte do processo de shutdown
+    if request.args.get("shutdown") == "true":
+        return redirect(url_for("shutdown"))
     return redirect(url_for("main.index"))
 
 
