@@ -6,13 +6,10 @@ content %}
 </div>
 
 <div class="card">
-  <div class="card-header bg-primary text-white">
-    <h4 class="mb-0">Insira Nova Descrição</h4>
-  </div>
-  <div class="card-body">
+  <div class="card-body p-0">
     <form method="POST">
       {{ form.hidden_tag() }}
-      <div class="row mb-2">
+      <div class="row align-items-center p-2 pb-0">
         <div class="col-md-6">
           {{ form.category_id.label(class="form-label") }} {{
           form.category_id(class="form-select", id="categorySelect",
@@ -28,17 +25,16 @@ content %}
           {% endfor %}
         </div>
       </div>
-      <div class="d-flex justify-content-end">
+      <div class="col col-md-1 text-end m-2 mt-lg-4">
         {{ form.submit(class="btn btn-primary btn-sm") }}
       </div>
     </form>
 
     {% if expenses %}
     <div class="table-responsive">
-      <table class="table table-hover table-sm">
+      <table class="table table-hover table-sm m-0">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Nome</th>
             <th>Categoria</th>
             <th class="text-center">Ações</th>
@@ -47,24 +43,25 @@ content %}
         <tbody>
           {% for expense in expenses %}
           <tr>
-            <td>{{ expense.id }}</td>
             <td>{{ expense.name if expense.name else '---' }}</td>
             <td>
               {{ expense.category.name if expense.category and
               expense.category.name else '---' }}
             </td>
             <td class="text-center">
-              <div class="btn-group btn-group-sm">
+              <div class="btn-group btn-group-sm d-flex justify-content-center">
                 <a
                   href="{{ url_for('transaction.edit_expense', id=expense.id) }}"
-                  class="btn btn-outline-primary"
+                  class="btn btn-outline-primary p-0"
+                  style="max-width: 50px"
                   title="Editar"
                 >
                   <i class="fas fa-edit"></i>
                 </a>
                 <a
                   href="{{ url_for('transaction.delete_expense', id=expense.id) }}"
-                  class="btn btn-outline-danger"
+                  class="btn btn-outline-danger p-0"
+                  style="max-width: 50px"
                   title="Excluir"
                   onclick="return confirm('Tem certeza que deseja excluir esta descrição?');"
                 >

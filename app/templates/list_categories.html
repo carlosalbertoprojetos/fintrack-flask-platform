@@ -6,33 +6,30 @@ content %}
 </div>
 
 <div class="card">
-  <div class="card-header bg-primary text-white">
-    <h4 class="mb-0">Nova Categoria</h4>
-  </div>
-  <div class="card-body">
+  <div class="card-body p-0">
     <form method="POST">
       {{ form.hidden_tag() }}
-      <div class="row mb-2">
-        <div class="col-md-5">
+      <div class="row align-items-center p-2 mb-2">
+        <div class="col-md-4">
           {{ form.type.label(class="form-label") }} {{
           form.type(class="form-select") }} {% for error in form.type.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-        <div class="col-md-6">
+        <div class="col-md-5">
           {{ form.name.label(class="form-label") }} {{
           form.name(class="form-control") }} {% for error in form.name.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-        <div class="col-md-1">
+        <div class="col col-md-1">
           {{ form.exclusive.label(class="form-label") }}
           <div>{{ form.exclusive(class="form-check-input") }}</div>
           {% for error in form.exclusive.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-        <div class="d-flex justify-content-end">
+        <div class="col col-md-1 text-end mt-1 mt-lg-4">
           {{ form.submit(class="btn btn-primary btn-sm") }}
         </div>
       </div>
@@ -40,10 +37,9 @@ content %}
 
     {% if categories %}
     <div class="table-responsive">
-      <table class="table table-hover table-sm">
+      <table class="table table-hover table-sm m-0">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Tipo</th>
             <th>Nome</th>
             <th>Exclusivo</th>
@@ -53,7 +49,6 @@ content %}
         <tbody>
           {% for category in categories %}
           <tr>
-            <td>{{ category.id }}</td>
             <td>{{ category.type if category.type else '---' }}</td>
             <td>{{ category.name if category.name else '---' }}</td>
             <td>
@@ -61,19 +56,21 @@ content %}
               == False %} Não {% else %} --- {% endif %}
             </td>
             <td class="text-center">
-              <div class="btn-group btn-group-sm">
+              <div class="btn-group btn-group-sm d-flex justify-content-center">
                 <a
                   href="{{ url_for('transaction.edit_category', id=category.id) }}"
-                  class="btn btn-outline-primary"
+                  class="btn btn-outline-primary p-0"
+                  style="max-width: 50px"
                   title="Editar"
                 >
                   <i class="fas fa-edit"></i>
                 </a>
                 <a
                   href="{{ url_for('transaction.delete_category', id=category.id) }}"
-                  class="btn btn-outline-danger"
+                  class="btn btn-outline-danger p-0"
+                  style="max-width: 50px"
                   title="Excluir"
-                  onclick="return confirm('Tem certeza que deseja excluir esta categoria?');"
+                  onclick="return confirm('Tem certeza que deseja excluir esta transação?')"
                 >
                   <i class="fas fa-trash"></i>
                 </a>

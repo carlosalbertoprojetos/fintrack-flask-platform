@@ -73,7 +73,7 @@
                 Total Receitas
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ total_income|currency }}
+                R$ {{ total_amount|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -95,7 +95,7 @@
                 Total Despesas
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ total_expenses|currency }}
+                R$ {{ total_discount|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -117,7 +117,7 @@
                 Saldo
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ (total_income - total_expenses)|currency }}
+                R$ {{ total_final|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -176,20 +176,20 @@
             <tr>
               <td>{{ method.name }}</td>
               <td class="text-success">
-                R$ {{ method.total_income|currency }}
+                R$ {{ payment_method_totals[method.id].total_income|currency }}
               </td>
               <td class="text-danger">
-                R$ {{ method.total_expenses|currency }}
+                R$ {{ payment_method_totals[method.id].total_expenses|currency }}
               </td>
               <td
-                class="{% if method.total_income - method.total_expenses >= 0 %}text-success{% else %}text-danger{% endif %}"
+                class="{% if ((payment_method_totals[method.id].total_income or 0)|float - (payment_method_totals[method.id].total_expenses or 0)|float) >= 0 %}text-success{% else %}text-danger{% endif %}"
               >
-                R$ {{ (method.total_income - method.total_expenses)|currency }}
+                R$ {{ ((payment_method_totals[method.id].total_income or 0)|float - (payment_method_totals[method.id].total_expenses or 0)|float)|currency }}
               </td>
-              <td>{{ method.count }}</td>
+              <td>{{ payment_method_totals[method.id].count }}</td>
               <td>
                 {% if total_transactions > 0 %} {{
-                "%.1f"|format(method.count / total_transactions * 100) }}% {% else
+                "%.1f"|format(payment_method_totals[method.id].count / total_transactions * 100) }}% {% else
                 %} 0% {% endif %}
               </td>
             </tr>
@@ -227,7 +227,7 @@
         label: "Receitas",
         data: [
           {% for method in payment_methods %}
-          {{ method.total_income }},
+          {{ payment_method_totals[method.id].total_income|default(0)|float }},
           {% endfor %}
         ],
         backgroundColor: "rgba(40, 167, 69, 0.2)",
@@ -238,7 +238,7 @@
         label: "Despesas",
         data: [
           {% for method in payment_methods %}
-          {{ method.total_expenses }},
+          {{ payment_method_totals[method.id].total_expenses|default(0)|float }},
           {% endfor %}
         ],
         backgroundColor: "rgba(220, 53, 69, 0.2)",

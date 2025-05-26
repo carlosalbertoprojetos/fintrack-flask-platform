@@ -69,7 +69,7 @@
                 Total Despesas
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ total_expenses|currency }}
+                R$ {{ total_amount|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -91,7 +91,7 @@
                 Total Descontos
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ total_discounts|currency }}
+                R$ {{ total_discount|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -113,7 +113,7 @@
                 Valor Final
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ (total_expenses - total_discounts)|currency }}
+                R$ {{ total_final|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -187,11 +187,11 @@
                 R$ {{ transaction.discount|currency }} {% else %} - {% endif %}
               </td>
               <td class="text-danger">
-                R$ {{ (transaction.amount - transaction.discount)|currency }}
+                R$ {{ ((transaction.amount or 0)|float - (transaction.discount or 0)|float)|currency }}
               </td>
               <td>
-                {% if transaction.amount and transaction.amount > 0 %} {{
-                "%.1f"|format(transaction.discount / transaction.amount * 100) }}% {%
+                {% if (transaction.amount or 0)|float > 0 %} {{
+                "%.1f"|format(((transaction.discount or 0)|float / (transaction.amount or 0)|float) * 100) }}% {%
                 else %} - {% endif %}
               </td>
               <td>
@@ -217,17 +217,17 @@
             <tr class="table-primary">
               <td colspan="3"><strong>Total</strong></td>
               <td class="text-danger">
-                <strong>R$ {{ total_expenses|currency }}</strong>
+                <strong>R$ {{ total_amount|currency }}</strong>
               </td>
               <td class="text-success">
-                <strong>R$ {{ total_discounts|currency }}</strong>
+                <strong>R$ {{ total_discount|currency }}</strong>
               </td>
               <td class="text-danger">
-                <strong>R$ {{ (total_expenses - total_discounts)|currency }}</strong>
+                <strong>R$ {{ total_final|currency }}</strong>
               </td>
               <td>
-                {% if total_expenses and total_expenses > 0 %}
-                <strong>{{ "%.1f"|format(total_discounts / total_expenses * 100) }}%</strong>
+                {% if (total_amount or 0)|float > 0 %}
+                <strong>{{ "%.1f"|format(((total_discount or 0)|float / (total_amount or 0)|float) * 100) }}%</strong>
                 {% else %}
                 <strong>-</strong>
                 {% endif %}
@@ -267,7 +267,7 @@
         label: "Valor Total",
         data: [
           {% for category in categories %}
-          {{ category.total_amount }},
+          {{ (category.total_amount or 0)|float }},
           {% endfor %}
         ],
         backgroundColor: "rgba(220, 53, 69, 0.2)",
@@ -278,7 +278,7 @@
         label: "Descontos",
         data: [
           {% for category in categories %}
-          {{ category.total_discount }},
+          {{ (category.total_discount or 0)|float }},
           {% endfor %}
         ],
         backgroundColor: "rgba(40, 167, 69, 0.2)",
@@ -289,7 +289,7 @@
         label: "Valor Final",
         data: [
           {% for category in categories %}
-          {{ category.total_amount - category.total_discount }},
+          {{ ((category.total_amount or 0)|float - (category.total_discount or 0)|float) }},
           {% endfor %}
         ],
         backgroundColor: "rgba(23, 162, 184, 0.2)",

@@ -72,14 +72,14 @@ class CategoryForm(FlaskForm):
     )
     icon = StringField("Ícone", validators=[Optional(), Length(max=50)])
     color = StringField("Cor", validators=[Optional(), Length(max=20)])
-    exclusive = BooleanField(default=False)
-    submit = SubmitField("Salvar")
+    exclusive = BooleanField("Exclusivo", default=False)
+    submit = SubmitField("Cadastrar")
 
 
 class ExpenseForm(FlaskForm):
     name = StringField("Nome", validators=[DataRequired(), Length(max=64)])
     category_id = SelectField("Categoria", coerce=int, validators=[Optional()])
-    submit = SubmitField("Salvar")
+    submit = SubmitField("Cadastrar")
 
 
 class PaymentMethodForm(FlaskForm):

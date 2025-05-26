@@ -12,7 +12,7 @@ endblock %} {% block content %}
   </div>
 
   <!-- Filtros -->
-  <div class="card shadow mb-4 hidden">
+  <div class="card shadow mb-4 d-none">
     <div class="card-header py-3">
       <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
     </div>
@@ -96,22 +96,24 @@ endblock %} {% block content %}
   {% if transactions.items %}
   <!-- Tabela de Receitas -->
   <div class="card shadow mb-4">
-    <div class="card-header bg-success text-white">
-      <h5 class="card-title mb-0">Receitas</h5>
+    <div
+    class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-1"
+  >
+    <h5 class="card-title mb-0">Receitas</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover table-sm">
+        <table class="table table-hover table-sm m-0">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Categoria</th>
-              <th>Descrição</th>
-              <th>Valor</th>
-              <th>Forma de Pagamento</th>
-              <th>Data Pagamento</th>
-              <th>Status</th>
-              <th>Ações</th>
+              <th class="text-center">Data</th>
+              <th class="text-center">Categoria</th>
+              <th class="text-center">Descrição</th>
+              <th class="ps-1">Valor</th>
+              <th class="text-center">Forma de Pagamento</th>
+              <th class="text-center">Data Pagamento</th>
+              <th class="text-center">Status</th>
+              <th class="text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -119,21 +121,21 @@ endblock %} {% block content %}
             'equalto', 'receita')|list %} {% for transaction in
             income_transactions %}
             <tr>
-              <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-              <td>{{ transaction.category.name }}</td>
-              <td>
+              <td class="text-center">{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+              <td class="text-center">{{ transaction.category.name }}</td>
+              <td class="text-center">
                 {{ transaction.expense.name if transaction.expense else
                 transaction.description }}
               </td>
               <td class="text-success">
                 R$ {{ transaction.amount|currency }}
               </td>
-              <td>{{ transaction.payment_method.name }}</td>
-              <td>
+              <td class="text-center">{{ transaction.payment_method.name }}</td>
+              <td class="text-center">
                 {{ transaction.payment_date.strftime('%d/%m/%Y') if
                 transaction.payment_date else '-' }}
-              </td>
-              <td>
+              </td class="text-center">
+              <td class="text-center">
                 {% if transaction.paid %}
                 <span class="badge bg-success">Pago</span>
                 {% else %}
@@ -141,17 +143,17 @@ endblock %} {% block content %}
                 {% endif %}
               </td>
               <td>
-                <div class="btn-group btn-group-sm">
+                <div class="btn-group btn-group-sm d-flex">
                   <a
                     href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
-                    class="btn btn-outline-primary"
+                    class="btn btn-outline-primary p-0"
                     title="Editar"
                   >
                     <i class="fas fa-edit"></i>
                   </a>
                   <a
                     href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
-                    class="btn btn-outline-danger"
+                    class="btn btn-outline-danger p-0"
                     title="Excluir"
                     onclick="return confirm('Tem certeza que deseja excluir esta transação?')"
                   >
@@ -175,24 +177,26 @@ endblock %} {% block content %}
 
   <!-- Tabela de Despesas -->
   <div class="card shadow">
-    <div class="card-header bg-danger text-white">
+    <div
+        class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-1"
+      >
       <h5 class="card-title mb-0">Despesas</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover table-sm">
+        <table class="table table-hover table-sm m-0">
           <thead>
             <tr>
-              <th>Data</th>
-              <th>Categoria</th>
-              <th>Descrição</th>
-              <th>Valor</th>
-              <th>Desconto</th>
-              <th>Valor Final</th>
-              <th>Vencimento</th>
-              <th>Data Pagamento</th>
-              <th>Forma de Pagamento</th>
-              <th>Status</th>
+              <th class="text-center">Data</th>
+              <th class="text-center">Categoria</th>
+              <th class="text-center">Descrição</th>
+              <th class="ps-1">Valor</th>
+              <th class="ps-1">Desconto</th>
+              <th class="ps-1">Valor Final</th>
+              <th class="text-center">Vencimento</th>
+              <th class="text-center">Data Pagamento</th>
+              <th class="text-center">Forma de Pagamento</th>
+              <th class="text-center">Status</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -202,9 +206,9 @@ endblock %} {% block content %}
             expense_transactions %} {% set final_value = (transaction.amount or
             0) - (transaction.discount or 0) %}
             <tr>
-              <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-              <td>{{ transaction.category.name }}</td>
-              <td>
+              <td class="text-center">{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+              <td class="text-center">{{ transaction.category.name }}</td>
+              <td class="text-center">
                 {{ transaction.expense.name if transaction.expense else
                 transaction.description }}
               </td>
@@ -218,34 +222,34 @@ endblock %} {% block content %}
               <td class="text-danger">
                 R$ {{ final_value|currency }}
               </td>
-              <td>
+              <td class="text-center">
                 {{ transaction.due_date.strftime('%d/%m/%Y') if
                 transaction.due_date else '-' }}
               </td>
-              <td>
+              <td class="text-center">
                 {{ transaction.payment_date.strftime('%d/%m/%Y') if
                 transaction.payment_date else '-' }}
               </td>
-              <td>{{ transaction.payment_method.name }}</td>
-              <td>
+              <td class="text-center">{{ transaction.payment_method.name }}</td>
+              <td class="text-center">
                 {% if transaction.paid %}
                 <span class="badge bg-success">Pago</span>
                 {% else %}
                 <span class="badge bg-warning">Pendente</span>
                 {% endif %}
               </td>
-              <td>
-                <div class="btn-group btn-group-sm">
+              <td class="text-center">
+                <div class="btn-group btn-group-sm d-flex">
                   <a
                     href="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
-                    class="btn btn-outline-primary"
+                    class="btn btn-outline-primary p-0"
                     title="Editar"
                   >
                     <i class="fas fa-edit"></i>
                   </a>
                   <a
                     href="{{ url_for('transaction.delete_transaction', id=transaction.id) }}"
-                    class="btn btn-outline-danger"
+                    class="btn btn-outline-danger p-0"
                     title="Excluir"
                     onclick="return confirm('Tem certeza que deseja excluir esta transação?')"
                   >

@@ -89,6 +89,32 @@ def dashboard():
         discount = transaction.discount or 0
         return amount - discount
 
+    # Buscar transações recentes de receita do mês atual
+    recent_income = (
+        Transaction.query.filter(
+            Transaction.user_id == current_user.id,
+            Transaction.type == "receita",
+            extract("month", Transaction.date) == current_month,
+            extract("year", Transaction.date) == current_year,
+        )
+        .order_by(Transaction.date.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Buscar transações recentes de despesa do mês atual
+    recent_expenses = (
+        Transaction.query.filter(
+            Transaction.user_id == current_user.id,
+            Transaction.type == "despesa",
+            extract("month", Transaction.date) == current_month,
+            extract("year", Transaction.date) == current_year,
+        )
+        .order_by(Transaction.date.desc())
+        .limit(5)
+        .all()
+    )
+
     # Buscar transações do mês atual
     monthly_transactions = (
         Transaction.query.filter(
@@ -222,6 +248,16 @@ def dashboard():
         {"name": cat, "value": float(total)} for cat, total in top_income_categories
     ]
 
+    # Serializar os dados para JSON usando json.dumps
+    expense_chart_json = json.dumps(expense_chart_data, ensure_ascii=False)
+    income_chart_json = json.dumps(income_chart_data, ensure_ascii=False)
+    monthly_data_json = json.dumps(monthly_data, ensure_ascii=False)
+
+    # Debug: Verificar os dados antes de enviar para o template
+    print("Monthly Data JSON:", monthly_data_json)
+    print("Expense Chart JSON:", expense_chart_json)
+    print("Income Chart JSON:", income_chart_json)
+
     # Calcular estatísticas adicionais
     total_transactions = Transaction.query.filter(
         Transaction.user_id == current_user.id,
@@ -244,13 +280,11 @@ def dashboard():
         Transaction.user_id == current_user.id, Transaction.paid == "False"
     ).count()
 
-    expense_chart_json = expense_chart_data
-    income_chart_json = income_chart_data
-    monthly_data_json = monthly_data
-
     return render_template(
         "dashboard.html",
         monthly_transactions=monthly_transactions,
+        recent_income=recent_income,
+        recent_expenses=recent_expenses,
         income_total=income_total,
         expense_total=expense_total,
         balance=balance,
@@ -498,12 +532,13 @@ def reports():
     year = request.args.get("year", datetime.now().year, type=int)
     month = request.args.get("month", datetime.now().month, type=int)
     payment_method_id = request.args.get("payment_method_id", type=int)
+    show_discount_only = request.args.get("show_discount_only", type=bool)
     years = range(datetime.now().year - 5, datetime.now().year + 1)
 
     # Função auxiliar para calcular o valor final
     def get_final_value(transaction):
-        amount = transaction.amount or 0
-        discount = transaction.discount or 0
+        amount = float(transaction.amount or 0)
+        discount = float(transaction.discount or 0)
         return amount - discount
 
     # Obter todas as formas de pagamento para o select
@@ -525,10 +560,14 @@ def reports():
     if payment_method_id:
         query = query.filter(Transaction.payment_method_id == payment_method_id)
 
+    # Aplicar filtro de descontos se especificado
+    if show_discount_only:
+        query = query.filter(Transaction.discount > 0)
+
     # Executar a consulta e calcular totais
     transactions = query.order_by(Transaction.date.desc()).all()
-    total_original = sum((t.amount or 0) for t in transactions)
-    total_discount = sum((t.discount or 0) for t in transactions)
+    total_original = sum(float(t.amount or 0) for t in transactions)
+    total_discount = sum(float(t.discount or 0) for t in transactions)
     total_final = sum(get_final_value(t) for t in transactions)
 
     if report_type == "monthly":
@@ -573,9 +612,9 @@ def reports():
         expense_by_category = expense_by_category.group_by(Category.name).all()
 
         # Calcular totais finais por categoria
-        income_total = sum(Decimal(total or 0) for _, total in income_by_category)
+        income_total = sum(float(total or 0) for _, total in income_by_category)
         expense_total = sum(
-            Decimal((total_amount or 0) - (total_discount or 0))
+            float(total_amount or 0) - float(total_discount or 0)
             for _, total_amount, total_discount in expense_by_category
         )
         balance = float(income_total - expense_total)
@@ -586,7 +625,10 @@ def reports():
             for name, total in income_by_category
         ]
         expense_chart_data = [
-            {"name": name, "value": float((total_amount or 0) - (total_discount or 0))}
+            {
+                "name": name,
+                "value": float(total_amount or 0) - float(total_discount or 0),
+            }
             for name, total_amount, total_discount in expense_by_category
         ]
 
@@ -604,7 +646,7 @@ def reports():
 
             # Calcular receitas do dia
             receita_dia = sum(
-                (t.amount or 0)
+                float(t.amount or 0)
                 for t in income_transactions
                 if t.date.date() == current_date
             )
@@ -638,6 +680,7 @@ def reports():
             years=years,
             payment_methods=payment_methods,
             selected_method_id=payment_method_id,
+            show_discount_only=show_discount_only,
             income_total=float(income_total),
             expense_total=float(expense_total),
             balance=balance,
@@ -787,25 +830,80 @@ def payment_method_report():
     # Executar a consulta
     transactions = query.order_by(Transaction.date.desc()).all()
 
+    # Função auxiliar para calcular o valor final
+    def get_final_value(transaction):
+        amount = float(transaction.amount or 0)
+        discount = float(transaction.discount or 0)
+        return amount - discount
+
     # Calcular totais
-    total_amount = sum(t.amount for t in transactions)
-    total_discount = sum(t.discount for t in transactions)
-    total_final = total_amount - total_discount
+    total_amount = sum(float(t.amount or 0) for t in transactions)
+    total_discount = sum(float(t.discount or 0) for t in transactions)
+    total_final = sum(get_final_value(t) for t in transactions)
 
     # Obter todas as formas de pagamento para o select
     payment_methods = PaymentMethod.query.all()
 
+    # Função auxiliar para garantir valor float
+    def safe_float(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    # Calcular totais por forma de pagamento
+    payment_method_totals = {}
+    for method in payment_methods:
+        method_transactions = [
+            t for t in transactions if t.payment_method_id == method.id
+        ]
+        method_income = sum(
+            safe_float(t.amount) for t in method_transactions if t.type == "receita"
+        )
+        method_expenses = sum(
+            safe_float(t.amount) for t in method_transactions if t.type == "despesa"
+        )
+        method_discount = sum(safe_float(t.discount) for t in method_transactions)
+        payment_method_totals[method.id] = {
+            "name": method.name,
+            "total_income": method_income,
+            "total_expenses": method_expenses,
+            "total_discount": method_discount,
+            "count": len(method_transactions),
+        }
+
+    # Preparar transações para o template
+    transactions_for_template = []
+    for t in transactions:
+        transactions_for_template.append(
+            {
+                "date": t.date,
+                "category": t.category,
+                "expense": t.expense,
+                "description": t.description,
+                "amount": safe_float(t.amount),
+                "discount": safe_float(t.discount),
+                "due_date": t.due_date,
+                "payment_date": t.payment_date,
+                "payment_method": t.payment_method,
+                "paid": t.paid,
+                "type": t.type,
+            }
+        )
+
     return render_template(
         "payment_method_report.html",
-        transactions=transactions,
+        transactions=transactions_for_template,
         payment_methods=payment_methods,
         selected_method_id=payment_method_id,
         month=month,
         year=year,
         years=years,
-        total_amount=total_amount,
-        total_discount=total_discount,
-        total_final=total_final,
+        total_amount=safe_float(total_amount),
+        total_discount=safe_float(total_discount),
+        total_final=safe_float(total_final),
+        payment_method_totals=payment_method_totals,
+        total_transactions=len(transactions),
     )
 
 
@@ -829,20 +927,70 @@ def discount_report():
         .all()
     )
 
+    # Função auxiliar para calcular o valor final
+    def get_final_value(transaction):
+        amount = float(transaction.amount or 0)
+        discount = float(transaction.discount or 0)
+        return amount - discount
+
     # Calcular totais
-    total_amount = sum(t.amount for t in transactions)
-    total_discount = sum(t.discount for t in transactions)
-    total_final = total_amount - total_discount
+    total_expenses = sum(float(t.amount or 0) for t in transactions)
+    total_discounts = sum(float(t.discount or 0) for t in transactions)
+    total_final = sum(get_final_value(t) for t in transactions)
+
+    # Função auxiliar para garantir valor float
+    def safe_float(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    # Preparar transações para o template
+    transactions_for_template = []
+    for t in transactions:
+        transactions_for_template.append(
+            {
+                "date": t.date,
+                "category": t.category,
+                "expense": t.expense,
+                "description": t.description,
+                "amount": safe_float(t.amount),
+                "discount": safe_float(t.discount),
+                "due_date": t.due_date,
+                "payment_date": t.payment_date,
+                "payment_method": t.payment_method,
+                "paid": t.paid,
+            }
+        )
+
+    # Calcular totais por categoria
+    category_totals = {}
+    for transaction in transactions:
+        category_id = transaction.category_id
+        if category_id not in category_totals:
+            category_totals[category_id] = {
+                "name": transaction.category.name,
+                "total_amount": 0.0,
+                "total_discount": 0.0,
+            }
+        category_totals[category_id]["total_amount"] += safe_float(transaction.amount)
+        category_totals[category_id]["total_discount"] += safe_float(
+            transaction.discount
+        )
+
+    categories = list(category_totals.values())
 
     return render_template(
         "discount_report.html",
-        transactions=transactions,
+        transactions=transactions_for_template,
         month=month,
         year=year,
         years=years,
-        total_amount=total_amount,
-        total_discount=total_discount,
-        total_final=total_final,
+        total_amount=safe_float(total_expenses),
+        total_discount=safe_float(total_discounts),
+        total_final=safe_float(total_final),
+        total_transactions=len(transactions),
+        categories=categories,
     )
 
 
@@ -872,27 +1020,54 @@ def payment_method_expense_report():
 
     # Função auxiliar para calcular o valor final
     def get_final_value(transaction):
-        amount = transaction.amount or 0
-        discount = transaction.discount or 0
+        amount = float(transaction.amount or 0)
+        discount = float(transaction.discount or 0)
         return amount - discount
+
+    # Função auxiliar para garantir valor float
+    def safe_float(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
 
     # Calcular totais usando valores finais
     total_amount = sum(get_final_value(t) for t in transactions)
-    total_discount = sum((t.discount or 0) for t in transactions)
-    total_original = sum((t.amount or 0) for t in transactions)
+    total_discount = sum(float(t.discount or 0) for t in transactions)
+    total_original = sum(float(t.amount or 0) for t in transactions)
 
     # Obter todas as formas de pagamento para o select
     payment_methods = PaymentMethod.query.filter_by(is_active=True).all()
 
-    # Calcular totais por forma de pagamento usando valores finais
+    # Preparar transações para o template
+    transactions_for_template = []
+    for t in transactions:
+        transactions_for_template.append(
+            {
+                "date": t.date,
+                "category": t.category,
+                "expense": t.expense,
+                "description": t.description,
+                "amount": safe_float(t.amount),
+                "discount": safe_float(t.discount),
+                "due_date": t.due_date,
+                "payment_date": t.payment_date,
+                "payment_method": t.payment_method,
+                "paid": t.paid,
+            }
+        )
+
+    # Calcular totais por forma de pagamento
     payment_method_totals = {}
     for method in payment_methods:
         method_transactions = [
             t for t in transactions if t.payment_method_id == method.id
         ]
-        method_original = sum((t.amount or 0) for t in method_transactions)
-        method_discount = sum((t.discount or 0) for t in method_transactions)
-        method_final = sum(get_final_value(t) for t in method_transactions)
+        method_original = sum(safe_float(t.amount) for t in method_transactions)
+        method_discount = sum(safe_float(t.discount) for t in method_transactions)
+        method_final = sum(
+            safe_float(t.amount) - safe_float(t.discount) for t in method_transactions
+        )
         payment_method_totals[method.id] = {
             "name": method.name,
             "original": method_original,
@@ -903,16 +1078,17 @@ def payment_method_expense_report():
 
     return render_template(
         "payment_method_expense_report.html",
-        transactions=transactions,
+        transactions=transactions_for_template,
         payment_methods=payment_methods,
         selected_method_id=payment_method_id,
         month=month,
         year=year,
         years=years,
-        total_original=total_original,
-        total_discount=total_discount,
-        total_amount=total_amount,  # Este agora é o total final (original - desconto)
+        total_original=safe_float(total_original),
+        total_discount=safe_float(total_discount),
+        total_amount=safe_float(total_amount),
         payment_method_totals=payment_method_totals,
+        total_transactions=len(transactions),
     )
 
 
