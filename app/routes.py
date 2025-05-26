@@ -40,7 +40,7 @@ transaction_bp = Blueprint("transaction", __name__)
 def index():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
-    return render_template("index.html")
+    return render_template("home.html")
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -480,25 +480,18 @@ def delete_expense(id):
 @transaction_bp.route("/payment_methods", methods=["GET", "POST"])
 @login_required
 def list_payment_methods():
-    methods = PaymentMethod.query.all()
-    return render_template("list_payment_method.html", methods=methods)
-
-
-@transaction_bp.route("/payment_method/add", methods=["GET", "POST"])
-@login_required
-def add_payment_method():
     form = PaymentMethodForm()
-
     if form.validate_on_submit():
         payment_method = PaymentMethod(
             name=form.name.data, is_active=form.is_active.data
         )
         db.session.add(payment_method)
         db.session.commit()
-        flash("Método de pagamento adicionado com sucesso!", "success")
-        return redirect(url_for("payment_methods"))
+        flash("Forma de pagamento adicionada com sucesso!", "success")
+        return redirect(url_for("transaction.list_payment_methods"))
 
-    return render_template("add_payment_method.html", form=form)
+    methods = PaymentMethod.query.all()
+    return render_template("list_payment_method.html", form=form, methods=methods)
 
 
 @transaction_bp.route("/payment_methods/edit/<int:id>", methods=["GET", "POST"])
@@ -511,7 +504,7 @@ def edit_payment_method(id):
         method.is_active = form.is_active.data
         db.session.commit()
         flash("Método de pagamento atualizado!", "success")
-        return redirect(url_for("list_payment_methods"))
+        return redirect(url_for("transaction.list_payment_methods"))
     return render_template("payment_method_form.html", form=form)
 
 
@@ -522,7 +515,7 @@ def delete_payment_method(id):
     db.session.delete(method)
     db.session.commit()
     flash("Método de pagamento removido!", "danger")
-    return redirect(url_for("list_payment_methods"))
+    return redirect(url_for("transaction.list_payment_methods"))
 
 
 @transaction_bp.route("/reports")
@@ -540,6 +533,13 @@ def reports():
         amount = float(transaction.amount or 0)
         discount = float(transaction.discount or 0)
         return amount - discount
+
+    # Função auxiliar para garantir valor float
+    def safe_float(value):
+        try:
+            return float(value or 0)
+        except (TypeError, ValueError):
+            return 0.0
 
     # Obter todas as formas de pagamento para o select
     payment_methods = PaymentMethod.query.filter_by(is_active=True).all()
@@ -566,179 +566,143 @@ def reports():
 
     # Executar a consulta e calcular totais
     transactions = query.order_by(Transaction.date.desc()).all()
-    total_original = sum(float(t.amount or 0) for t in transactions)
-    total_discount = sum(float(t.discount or 0) for t in transactions)
-    total_final = sum(get_final_value(t) for t in transactions)
+
+    # Inicializar totais
+    income_total = 0.0
+    expense_total = 0.0
+    total_discount = 0.0
+
+    # Calcular totais por tipo de transação
+    for t in transactions:
+        amount = safe_float(t.amount)
+        discount = safe_float(t.discount)
+        if t.type == "receita":
+            income_total += amount
+        else:  # despesa
+            expense_total += amount
+            total_discount += discount
+
+    # Calcular saldo
+    balance = income_total - (expense_total - total_discount)
+
+    # Inicializar dados dos gráficos
+    expense_chart_data = []
+    income_chart_data = []
+    monthly_data = []
 
     if report_type == "monthly":
         # Filtrar transações por tipo para cálculos específicos
         income_transactions = [t for t in transactions if t.type == "receita"]
         expense_transactions = [t for t in transactions if t.type == "despesa"]
 
-        income_by_category = (
-            db.session.query(Category.name, func.sum(Transaction.amount))
-            .join(Transaction)
-            .filter(
-                Transaction.user_id == current_user.id,
-                Transaction.type == "receita",
-                extract("month", Transaction.date) == month,
-                extract("year", Transaction.date) == year,
-            )
-        )
-        if payment_method_id:
-            income_by_category = income_by_category.filter(
-                Transaction.payment_method_id == payment_method_id
-            )
-        income_by_category = income_by_category.group_by(Category.name).all()
+        # Calcular totais por categoria para receitas
+        income_by_category = []
+        income_category_totals = {}
+        for t in income_transactions:
+            amount = safe_float(t.amount)
+            if t.category.name not in income_category_totals:
+                income_category_totals[t.category.name] = 0.0
+            income_category_totals[t.category.name] += amount
 
-        expense_by_category = (
-            db.session.query(
-                Category.name,
-                func.sum(Transaction.amount).label("total_amount"),
-                func.sum(Transaction.discount).label("total_discount"),
-            )
-            .join(Transaction)
-            .filter(
-                Transaction.user_id == current_user.id,
-                Transaction.type == "despesa",
-                extract("month", Transaction.date) == month,
-                extract("year", Transaction.date) == year,
-            )
-        )
-        if payment_method_id:
-            expense_by_category = expense_by_category.filter(
-                Transaction.payment_method_id == payment_method_id
-            )
-        expense_by_category = expense_by_category.group_by(Category.name).all()
-
-        # Calcular totais finais por categoria
-        income_total = sum(float(total or 0) for _, total in income_by_category)
-        expense_total = sum(
-            float(total_amount or 0) - float(total_discount or 0)
-            for _, total_amount, total_discount in expense_by_category
-        )
-        balance = float(income_total - expense_total)
-
-        # Preparar dados para os gráficos
+        income_by_category = [
+            (name, total) for name, total in income_category_totals.items()
+        ]
         income_chart_data = [
-            {"name": name, "value": float(total or 0)}
-            for name, total in income_by_category
+            {"name": name, "value": float(total)} for name, total in income_by_category
+        ]
+
+        # Calcular totais por categoria para despesas
+        expense_by_category = []
+        expense_category_totals = {}
+        for t in expense_transactions:
+            amount = safe_float(t.amount)
+            discount = safe_float(t.discount)
+            final_value = amount - discount
+            if t.category.name not in expense_category_totals:
+                expense_category_totals[t.category.name] = {
+                    "total_amount": 0.0,
+                    "total_discount": 0.0,
+                }
+            expense_category_totals[t.category.name]["total_amount"] += amount
+            expense_category_totals[t.category.name]["total_discount"] += discount
+
+        expense_by_category = [
+            (name, data["total_amount"], data["total_discount"])
+            for name, data in expense_category_totals.items()
         ]
         expense_chart_data = [
             {
                 "name": name,
-                "value": float(total_amount or 0) - float(total_discount or 0),
+                "value": float(data["total_amount"] - data["total_discount"]),
             }
-            for name, total_amount, total_discount in expense_by_category
+            for name, data in expense_category_totals.items()
         ]
 
-        # Calcular dados diários
-        days_in_month = monthrange(year, month)[1]
-        daily_data = []
-        receita_acumulada = 0
-        despesa_acumulada = 0
-        saldo = 0
+        return render_template(
+            "reports.html",
+            transactions=transactions,
+            income_transactions=income_transactions,
+            expense_transactions=expense_transactions,
+            income_by_category=income_by_category,
+            expense_by_category=expense_by_category,
+            income_total=income_total,
+            expense_total=expense_total,
+            total_discount=total_discount,
+            balance=balance,
+            payment_methods=payment_methods,
+            selected_method_id=payment_method_id,
+            show_discount_only=show_discount_only,
+            years=years,
+            selected_year=year,
+            selected_month=month,
+            report_type=report_type,
+            expense_chart_data=json.dumps(expense_chart_data),
+            income_chart_data=json.dumps(income_chart_data),
+        )
+    else:  # annual report
+        # Agrupar transações por mês
+        for m in range(1, 13):
+            month_income = 0.0
+            month_expense = 0.0
+            month_discount = 0.0
 
-        for day in range(1, days_in_month + 1):
-            current_date = datetime(year, month, day).date()
-            if current_date > datetime.now().date():
-                break
+            # Filtrar transações do mês
+            month_transactions = [t for t in transactions if t.date.month == m]
 
-            # Calcular receitas do dia
-            receita_dia = sum(
-                float(t.amount or 0)
-                for t in income_transactions
-                if t.date.date() == current_date
-            )
+            for t in month_transactions:
+                amount = safe_float(t.amount)
+                discount = safe_float(t.discount)
+                if t.type == "receita":
+                    month_income += amount
+                else:  # despesa
+                    month_expense += amount
+                    month_discount += discount
 
-            # Calcular despesas do dia (usando valores finais)
-            despesa_dia = sum(
-                get_final_value(t)
-                for t in expense_transactions
-                if t.date.date() == current_date
-            )
-
-            receita_acumulada += float(receita_dia)
-            despesa_acumulada += float(despesa_dia)
-            saldo = receita_acumulada - despesa_acumulada
-
-            daily_data.append(
+            monthly_data.append(
                 {
-                    "day": f"{day:02d}",
-                    "receita": receita_acumulada,
-                    "despesa": despesa_acumulada,
-                    "balance": saldo,
+                    "month": datetime(year, m, 1).strftime("%b"),
+                    "receita": float(month_income),
+                    "despesa": float(month_expense - month_discount),
+                    "balance": float(month_income - (month_expense - month_discount)),
                 }
             )
 
         return render_template(
             "reports.html",
             transactions=transactions,
-            report_type=report_type,
-            year=year,
-            month=month,
-            years=years,
+            monthly_data=json.dumps(monthly_data),
+            income_total=income_total,
+            expense_total=expense_total,
+            total_discount=total_discount,
+            balance=balance,
             payment_methods=payment_methods,
             selected_method_id=payment_method_id,
             show_discount_only=show_discount_only,
-            income_total=float(income_total),
-            expense_total=float(expense_total),
-            balance=balance,
-            income_by_category=income_by_category,
-            expense_by_category=expense_by_category,
-            income_chart_data=json.dumps(income_chart_data),
-            expense_chart_data=json.dumps(expense_chart_data),
-            daily_data=daily_data,
-            month_name=datetime(year, month, 1).strftime("%B"),
-            total_original=total_original,
-            total_discount=total_discount,
-            total_final=total_final,
-        )
-
-    elif report_type == "annual":
-        # ... rest of the annual report code ...
-        return render_template(
-            "reports.html",
-            report_type=report_type,
-            transactions=transactions,
-            year=year,
             years=years,
-            payment_methods=payment_methods,
-            selected_method_id=payment_method_id,
-            monthly_data=json.dumps(monthly_data),
-            annual_income=annual_income,
-            annual_expense=annual_expense,
-            annual_balance=annual_balance,
-            top_expense_categories=top_expense_categories,
-            top_income_categories=top_income_categories,
-            top_expense_chart_data=json.dumps(top_expense_chart_data),
-            top_income_chart_data=json.dumps(top_income_chart_data),
-            total_original=total_original,
-            total_discount=total_discount,
-            total_final=total_final,
-        )
-
-    elif report_type == "category":
-        # ... rest of the category report code ...
-        return render_template(
-            "reports.html",
+            selected_year=year,
+            selected_month=month,
             report_type=report_type,
-            year=year,
-            years=years,
-            payment_methods=payment_methods,
-            selected_method_id=payment_method_id,
-            categories=categories,
-            selected_category=category,
-            transactions=transactions,
-            monthly_data=json.dumps(monthly_data),
-            annual_total=annual_total,
-            total_original=total_original,
-            total_discount=total_discount,
-            total_final=total_final,
         )
-
-    # Tipo de relatório inválido
-    return redirect(url_for("transaction.reports", type="monthly"))
 
 
 @transaction_bp.route("/export")

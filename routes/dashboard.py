@@ -78,7 +78,7 @@ def index():
             category_breakdown[cat.name] = cat_total
 
     return render_template(
-        "dashboard/index.html",
+        "dashboard/home.html",
         total_income=total_income,
         total_expenses=total_expenses,
         balance=balance,

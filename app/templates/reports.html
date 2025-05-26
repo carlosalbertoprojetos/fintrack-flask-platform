@@ -1,8 +1,8 @@
-{% extends "base.html" %}
+{% extends "index.html" %}
 
 {% block title %}Relatórios - Finanças Pessoais{% endblock %}
 
-{% block content %}
+{% block index %}
 
 <div class="container-fluid p-0">
     <h1 class="h3 mb-4 text-gray-800">Relatórios Financeiros</h1>
@@ -14,22 +14,40 @@
         </div>
         <div class="card-body">
             <form method="GET" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label for="type" class="form-label">Tipo de Relatório</label>
+                    <select name="type" id="type" class="form-select" onchange="this.form.submit()">
+                        <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Mensal</option>
+                        <option value="annual" {% if report_type == 'annual' %}selected{% endif %}>Anual</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label for="year" class="form-label">Ano</label>
                     <select name="year" id="year" class="form-select" onchange="this.form.submit()">
                         {% for y in years %}
-                        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4">
+                {% if report_type == 'monthly' %}
+                <div class="col-md-2">
                     <label for="month" class="form-label">Mês</label>
                     <select name="month" id="month" class="form-select" onchange="this.form.submit()">
-                        {% for m in range(1, 13) %}
-                        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][m-1] }}</option>
-                        {% endfor %}
+                        <option value="1" {% if selected_month == 1 %}selected{% endif %}>Janeiro</option>
+                        <option value="2" {% if selected_month == 2 %}selected{% endif %}>Fevereiro</option>
+                        <option value="3" {% if selected_month == 3 %}selected{% endif %}>Março</option>
+                        <option value="4" {% if selected_month == 4 %}selected{% endif %}>Abril</option>
+                        <option value="5" {% if selected_month == 5 %}selected{% endif %}>Maio</option>
+                        <option value="6" {% if selected_month == 6 %}selected{% endif %}>Junho</option>
+                        <option value="7" {% if selected_month == 7 %}selected{% endif %}>Julho</option>
+                        <option value="8" {% if selected_month == 8 %}selected{% endif %}>Agosto</option>
+                        <option value="9" {% if selected_month == 9 %}selected{% endif %}>Setembro</option>
+                        <option value="10" {% if selected_month == 10 %}selected{% endif %}>Outubro</option>
+                        <option value="11" {% if selected_month == 11 %}selected{% endif %}>Novembro</option>
+                        <option value="12" {% if selected_month == 12 %}selected{% endif %}>Dezembro</option>
                     </select>
                 </div>
+                {% endif %}
                 <div class="col-md-4">
                     <label for="payment_method_id" class="form-label">Forma de Pagamento</label>
                     <select name="payment_method_id" id="payment_method_id" class="form-select" onchange="this.form.submit()">
@@ -39,6 +57,14 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% if report_type == 'monthly' %}
+                <div class="col-md-2">
+                    <div class="form-check mt-4">
+                        <input type="checkbox" name="show_discount_only" id="show_discount_only" class="form-check-input" {% if show_discount_only %}checked{% endif %} onchange="this.form.submit()">
+                        <label for="show_discount_only" class="form-check-label">Apenas com Desconto</label>
+                    </div>
+                </div>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -47,11 +73,10 @@
     <div class="row">
         <div class="col-md-4">
             <div class="card shadow bg-primary text-white m-0">
-                <div class="card-body d-flex justify-content-between align-items-center p-2 px-4"
-                >
+                <div class="card-body d-flex justify-content-between align-items-center p-2 px-4">
                     <div class="col-auto">
                         <h5 class="card-title text">Total de Receitas</h5>
-                        <h4 class="fw-bold mb-0">R$ {{ income_total|currency }}</h3>
+                        <h4 class="fw-bold mb-0">R$ {{ income_total|currency }}</h4>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -61,12 +86,10 @@
         </div>
         <div class="col-md-4">
             <div class="card shadow bg-primary text-white m-0">
-                <div
-                class="card-body d-flex justify-content-between align-items-center p-2 px-4"
-              >
+                <div class="card-body d-flex justify-content-between align-items-center p-2 px-4">
                     <div class="col-auto">
                         <h5 class="card-title">Total de Despesas</h5>
-                        <h4 class="fw-bold mb-0">R$ {{ expense_total|currency }}</h3>
+                        <h4 class="fw-bold mb-0">R$ {{ expense_total|currency }}</h4>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-credit-card fa-2x text-gray-300"></i>
@@ -76,12 +99,10 @@
         </div>
         <div class="col-md-4">
             <div class="card shadow {% if balance >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white">
-                <div
-                class="card-body d-flex justify-content-between align-items-center p-2 px-4"
-              >
+                <div class="card-body d-flex justify-content-between align-items-center p-2 px-4">
                     <div class="col-auto">
                         <h5 class="card-title">Saldo</h5>
-                        <h4 class="fw-bold mb-0">R$ {{ balance|currency }}</h3>
+                        <h4 class="fw-bold mb-0">R$ {{ balance|currency }}</h4>
                     </div>
                     <div class="col-auto">
                         <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
@@ -92,25 +113,23 @@
     </div>
 
     <!-- Tabela de Receitas -->
-    <div class="card shadow">
-        <div
-        class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-1"
-      >
-        <h5 class="card-title mb-0">Receitas</h5>
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-1">
+            <h5 class="card-title mb-0">Receitas</h5>
         </div>
         <div class="card-body p-0">
             {% set income_transactions = transactions|selectattr('type', 'equalto', 'receita')|list %}
             {% if income_transactions %}
-                <div class="table-responsive">
-                  <table class="table table-hover table-sm m-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm m-0">
                     <thead>
-                      <tr>
-                        <th class="text-center">Lançamento</th>
-                        <th class="text-center">Categoria</th>
-                        <th class="text-center">Descrição</th>
-                        <th class="ps-1">Valor</th>
-                        <th class="text-center">Data Pagamento</th>
-                        <th class="text-center">Status</th>
+                        <tr>
+                            <th class="text-center">Lançamento</th>
+                            <th class="text-center">Categoria</th>
+                            <th class="text-center">Descrição</th>
+                            <th class="ps-1">Valor</th>
+                            <th class="text-center">Forma de Pagamento</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,40 +159,27 @@
     </div>
 
     <!-- Tabela de Despesas -->
-    <div class="card shadow">
+    <div class="card shadow mb-4">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-1">
-            <h5 class="card-title mb-0">Despesas Recentes</h5>
-            <form method="GET" class="d-flex align-items-center">
-                <input type="hidden" name="year" value="{{ year }}">
-                <input type="hidden" name="month" value="{{ month }}">
-                <input type="hidden" name="payment_method_id" value="{{ selected_method_id }}">
-                <input type="hidden" name="type" value="{{ report_type }}">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="showDiscountOnly" name="show_discount_only" 
-                           {% if show_discount_only %}checked{% endif %} onchange="this.form.submit()">
-                    <label class="form-check-label" for="showDiscountOnly">
-                        Apenas com desconto
-                    </label>
-                </div>
-            </form>
+            <h5 class="card-title mb-0">Despesas</h5>
         </div>
         <div class="card-body p-0">
             {% set expense_transactions = transactions|selectattr('type', 'equalto', 'despesa')|list %}
             {% if expense_transactions %}
-                <div class="table-responsive">
-                  <table class="table table-hover table-sm m-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm m-0">
                     <thead>
-                      <tr>
-                        <th class="text-center">Lançamento</th>
-                        <th class="text-center">Categoria</th>
-                        <th class="text-center">Descrição</th>
-                        <th class="ps-1">Valor</th>
-                        <th class="ps-1">Desconto</th>
-                        <th class="ps-1">Valor Final</th>
-                        <th class="text-center">Vencimento</th>
-                        <th class="text-center">Data Pagamento</th>
-                        <th class="text-center">Forma</th>
-                        <th class="text-center">Status</th>
+                        <tr>
+                            <th class="text-center">Lançamento</th>
+                            <th class="text-center">Categoria</th>
+                            <th class="text-center">Descrição</th>
+                            <th class="ps-1">Valor</th>
+                            <th class="ps-1">Desconto</th>
+                            <th class="ps-1">Valor Final</th>
+                            <th class="text-center">Vencimento</th>
+                            <th class="text-center">Data Pagamento</th>
+                            <th class="text-center">Forma</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -208,25 +214,7 @@
         </div>
     </div>
 
-    
     {% if report_type == 'monthly' %}
-    <!-- Evolução Diária -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Evolução Diária - {{ month_name }}</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area">
-                        <canvas id="dailyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Gráficos -->
     <div class="row mb-4">
         <div class="col-md-6">
@@ -271,124 +259,19 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     {% if report_type == 'annual' %}
-    <!-- Relatório Anual -->
-    <div class="row">
-        <!-- Cards de Resumo -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Receitas de {{ year }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_income|currency }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Despesas de {{ year }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_expense|currency }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div
-                class="card {% if annual_balance >= 0 %}border-left-primary{% else %}border-left-warning{% endif %} shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div
-                                class="text-xs font-weight-bold {% if annual_balance >= 0 %}text-primary{% else %}text-warning{% endif %} text-uppercase mb-1">
-                                Saldo de {{ year }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ annual_balance|currency }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Evolução Mensal -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Evolução Mensal - {{ year }}</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Evolução Mensal - {{ selected_year }}</h6>
                 </div>
                 <div class="card-body">
                     <div class="chart-area">
                         <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Top Categorias -->
-    <div class="row">
-        <!-- Top Despesas -->
-        <div class="col-xl-6 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Top Categorias de Despesas</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="topExpenseChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                        {% for cat, total in top_expense_categories %}
-                        <span class="mr-2">
-                            <i class="fas fa-circle"
-                                style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ cat }}
-                        </span>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Receitas -->
-        <div class="col-xl-6 col-lg-6">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Top Categorias de Receitas</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="topIncomeChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                        {% for cat, total in top_income_categories %}
-                        <span class="mr-2">
-                            <i class="fas fa-circle"
-                                style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ cat }}
-                        </span>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -495,17 +378,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    var categoryChartData = {{ category_chart_json | default ([]) | tojson }};
-</script>
-
-<script>
     // Função para criar os gráficos
     function createCharts() {
         {% if report_type == 'monthly' %}
         // Dados para os gráficos do relatório mensal
-        const expenseData = {{ expense_chart_data | safe }};
-        const incomeData = {{ income_chart_data | safe }};
-        const dailyData = {{ daily_data | tojson | safe }};
+        const expenseData = JSON.parse('{{ expense_chart_data | safe }}');
+        const incomeData = JSON.parse('{{ income_chart_data | safe }}');
 
         // Gráfico de Despesas por Categoria
         const expenseCtx = document.getElementById('expenseChart');
@@ -562,64 +440,11 @@
                 }
             });
         }
-
-        // Gráfico de Evolução Diária
-        const dailyCtx = document.getElementById('dailyChart');
-        if (dailyCtx && dailyData && dailyData.length > 0) {
-            new Chart(dailyCtx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: dailyData.map(item => item.day),
-                    datasets: [
-                        {
-                            label: 'Receitas',
-                            data: dailyData.map(item => item.receita),
-                            borderColor: '#1cc88a',
-                            backgroundColor: 'rgba(28, 200, 138, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Despesas',
-                            data: dailyData.map(item => item.despesa),
-                            borderColor: '#e74a3b',
-                            backgroundColor: 'rgba(231, 74, 59, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Saldo',
-                            data: dailyData.map(item => item.balance),
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
         {% endif %}
 
         {% if report_type == 'annual' %}
         // Dados para os gráficos do relatório anual
-        const monthlyData = {{ monthly_data | safe }};
-        const topExpenseData = {{ top_expense_chart_data | safe }};
-        const topIncomeData = {{ top_income_chart_data | safe }};
+        const monthlyData = JSON.parse('{{ monthly_data | safe }}');
 
         // Gráfico de Evolução Mensal
         const monthlyCtx = document.getElementById('monthlyChart');
@@ -631,7 +456,7 @@
                     datasets: [
                         {
                             label: 'Receitas',
-                            data: monthlyData.map(item => item.income),
+                            data: monthlyData.map(item => item.receita),
                             borderColor: '#1cc88a',
                             backgroundColor: 'rgba(28, 200, 138, 0.1)',
                             tension: 0.3,
@@ -639,7 +464,7 @@
                         },
                         {
                             label: 'Despesas',
-                            data: monthlyData.map(item => item.expense),
+                            data: monthlyData.map(item => item.despesa),
                             borderColor: '#e74a3b',
                             backgroundColor: 'rgba(231, 74, 59, 0.1)',
                             tension: 0.3,
@@ -665,100 +490,15 @@
                     },
                     scales: {
                         y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        // Gráfico de Top Despesas por Categoria
-        const topExpenseCtx = document.getElementById('topExpenseChart');
-        if (topExpenseCtx && topExpenseData && topExpenseData.length > 0) {
-            new Chart(topExpenseCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: topExpenseData.map(item => item.name),
-                    datasets: [{
-                        data: topExpenseData.map(item => item.value),
-                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                        hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                        hoverBorderColor: "rgba(234, 236, 244, 1)",
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            display: false
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-
-        // Gráfico de Top Receitas por Categoria
-        const topIncomeCtx = document.getElementById('topIncomeChart');
-        if (topIncomeCtx && topIncomeData && topIncomeData.length > 0) {
-            new Chart(topIncomeCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: topIncomeData.map(item => item.name),
-                    datasets: [{
-                        data: topIncomeData.map(item => item.value),
-                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                        hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                        hoverBorderColor: "rgba(234, 236, 244, 1)",
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            display: false
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-        {% endif %}
-
-        {% if report_type == 'category' and selected_category %}
-        // Dados para os gráficos do relatório por categoria
-        const categoryMonthlyData = {{ monthly_data | safe }};
-
-        // Gráfico de Evolução Mensal da Categoria
-        const categoryMonthlyCtx = document.getElementById('categoryMonthlyChart');
-        if (categoryMonthlyCtx && categoryMonthlyData && categoryMonthlyData.length > 0) {
-            new Chart(categoryMonthlyCtx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: categoryMonthlyData.map(item => item.month),
-                    datasets: [{
-                        label: '{{ selected_category.name }}',
-                        data: categoryMonthlyData.map(item => item.total),
-                        backgroundColor: '{{ "#4e73df" if selected_category.type == "expense" else "#1cc88a" }}',
-                        borderColor: '{{ "#2e59d9" if selected_category.type == "expense" else "#17a673" }}',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toLocaleString('pt-BR', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
                         }
                     }
                 }
@@ -769,8 +509,8 @@
 
     // Função para filtrar as despesas com base no checkbox
     function filterExpenses() {
-        const showDiscountOnly = document.getElementById('showDiscountOnly').checked;
-        const rows = document.querySelectorAll('#expensesTable tbody tr.expense-row');
+        const showDiscountOnly = document.getElementById('show_discount_only').checked;
+        const rows = document.querySelectorAll('.expense-row');
         
         rows.forEach(row => {
             const hasDiscount = row.getAttribute('data-has-discount') === 'true';
@@ -783,12 +523,6 @@
         // Criar os gráficos
         createCharts();
         // Inicializar o filtro de despesas
-        filterExpenses();
-    });
-
-    // Recriar os gráficos quando a página for carregada via AJAX
-    document.addEventListener('contentLoaded', function() {
-        createCharts();
         filterExpenses();
     });
 </script>

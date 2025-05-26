@@ -1,6 +1,5 @@
-{% extends "base.html" %} {% block title %}Dashboard - Finanças Pessoais{%
-endblock %} {% block content %}
-
+{% extends "index.html" %} {% block title %}Dashboard - Finanças Pessoais{%
+endblock %} {% block index %}
 <head>
   <style>
     .chart-area {
@@ -197,7 +196,7 @@ endblock %} {% block content %}
                 transaction.description }}
               </td>
               <td class="text-danger">R$ {{ transaction.amount|currency }}</td>
-              <td class="text-danger">
+              <td class="text-success">
                 R$ {{ transaction.discount|currency }}
               </td>
               <td class="text-danger">

@@ -1,69 +1,234 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block content %}
 
-{% block title %}Finanças Pessoais - Início{% endblock %}
+<!-- Layout wrapper -->
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <!-- Menu -->
+    <aside
+      id="layout-menu"
+      class="layout-menu menu-vertical menu bg-menu-theme"
+    >
+      <div class="app-brand demo">
+        <a href="{{ url_for('main.index') }}" class="app-brand-link">
+          <span class="app-brand-logo demo">
+            <i class="bx bx-wallet-alt"></i>
+          </span>
+          <span class="app-brand-text demo menu-text fw-bold"
+            >Finanças Pessoais</span
+          >
+        </a>
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 text-center">
-        <h1 class="display-4 mb-4">Bem-vindo ao Sistema de Finanças Pessoais</h1>
-        <p class="lead">Gerencie suas finanças de forma simples e eficiente.</p>
+        <!-- Toggle button for desktop -->
+        <a
+          href="javascript:void(0);"
+          class="layout-menu-toggle menu-link text-large ms-auto d-none d-xl-block"
+        >
+          <i class="bx bx-chevron-left align-middle"></i>
+        </a>
+      </div>
 
-        <div class="mt-5">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Já possui uma conta?</h5>
-                            <p class="card-text">Faça login para acessar seu painel financeiro.</p>
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Novo por aqui?</h5>
-                            <p class="card-text">Crie uma conta gratuita e comece a controlar suas finanças.</p>
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-success">Cadastre-se</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="menu-inner-shadow"></div>
+
+      <ul class="menu-inner py-1">
+        {% if current_user.is_authenticated %}
+        <!-- Dashboard -->
+        <li
+          class="menu-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}"
+        >
+          <a href="{{ url_for('main.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-home-circle"></i>
+            <div>Dashboard</div>
+          </a>
+        </li>
+
+        <!-- Transações -->
+        <li
+          class="menu-item {% if request.endpoint == 'transaction.transactions' %}active{% endif %}"
+        >
+          <a href="{{ url_for('transaction.transactions') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-transfer"></i>
+            <div>Transações</div>
+          </a>
+        </li>
+
+        <!-- Relatórios -->
+        <li
+          class="menu-item {% if request.endpoint == 'transaction.reports' %}active{% endif %}"
+        >
+          <a href="{{ url_for('transaction.reports') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+            <div>Relatórios</div>
+          </a>
+        </li>
+
+        <!-- Categorias -->
+        <li
+          class="menu-item {% if request.endpoint == 'transaction.categories' %}active{% endif %}"
+        >
+          <a href="{{ url_for('transaction.categories') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-category"></i>
+            <div>Categorias</div>
+          </a>
+        </li>
+
+        <!-- Descrições -->
+        <li
+          class="menu-item {% if request.endpoint == 'transaction.expenses' %}active{% endif %}"
+        >
+          <a href="{{ url_for('transaction.expenses') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-list-ul"></i>
+            <div>Descrições</div>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </aside>
+    <!-- / Menu -->
+
+    <!-- Layout container -->
+    <div class="layout-page">
+      <!-- Navbar -->
+      <nav
+        class="layout-navbar container-fluid navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+        id="layout-navbar"
+      >
+        <div
+          class="layout-menu-toggle navbar-nav align-items-xl-center fixed-top m-3 me-xl-0 d-xl-none"
+        >
+          <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0);">
+            <i class="bx bx-menu bx-sm"></i>
+          </a>
         </div>
 
-        <div class="mt-5">
-            <h2>Recursos</h2>
-            <div class="row mt-4">
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Controle de Despesas</h5>
-                            <p class="card-text">Registre e categorize todas as suas despesas para saber exatamente para
-                                onde vai seu dinheiro.</p>
-                        </div>
-                    </div>
+        <div
+          class="navbar-nav-right d-flex align-items-center"
+          id="navbar-collapse"
+        >
+          <ul class="navbar-nav flex-row align-items-center ms-auto">
+            <!-- User -->
+            <li class="nav-item navbar-dropdown dropdown-user dropdown">
+              <a
+                class="nav-link dropdown-toggle hide-arrow"
+                href="javascript:void(0);"
+                data-bs-toggle="dropdown"
+              >
+                <div class="avatar avatar-online bg-primary opacity-50">
+                  <i class="bx bx-user-circle fs-2"></i>
                 </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Acompanhamento de Receitas</h5>
-                            <p class="card-text">Registre todos os seus ganhos e tenha uma visão clara de suas fontes de
-                                renda.</p>
-                        </div>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                {% if current_user.is_authenticated %}
+                <li>
+                  <a class="dropdown-item" href="#">
+                    <div class="d-flex">
+                      <div class="flex-shrink-0 me-3"></div>
+                      <div class="flex-grow-1">
+                        <span class="fw-semibold d-none"
+                          >{{ current_user.username }}</span
+                        >
+                        <small class="text-muted">Usuário</small>
+                      </div>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Relatórios Detalhados</h5>
-                            <p class="card-text">Visualize gráficos e relatórios para entender melhor seus hábitos
-                                financeiros.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                  </a>
+                </li>
+                <li>
+                  <div class="dropdown-divider"></div>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                    <i class="bx bx-power-off me-2"></i>
+                    <span class="align-middle">Sair</span>
+                  </a>
+                </li>
+                {% else %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.login') }}">
+                    <i class="bx bx-log-in me-2"></i>
+                    <span class="align-middle">Entrar</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('auth.register') }}"
+                  >
+                    <i class="bx bx-user-plus me-2"></i>
+                    <span class="align-middle">Cadastrar</span>
+                  </a>
+                </li>
+                {% endif %}
+                <li>
+                  <div class="dropdown-divider"></div>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item text-danger"
+                    href="javascript:void(0);"
+                    onclick="shutdownSystem()"
+                  >
+                    <i class="bx bx-power-off me-2"></i>
+                    <span class="align-middle">Desligar Sistema</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <!--/ User -->
+          </ul>
         </div>
+      </nav>
+      <!-- / Navbar -->
+
+      <!-- Content wrapper -->
+      <div class="content-wrapper">
+        <!-- Content -->
+        <div class="container-fluid flex-grow-1 container-p-y">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %} {% for category, message in messages %}
+          <div
+            class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"
+            ></button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %} {% block index %} {% endblock
+          %}
+        </div>
+        <!-- / Content -->
+
+        <!-- Footer -->
+        <footer class="content-footer footer bg-footer-theme">
+          <div
+            class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column"
+          >
+            <div class="mb-2 mb-md-0">
+              ©
+              <script>
+                document.write(new Date().getFullYear());
+              </script>
+              <a href="" class="footer-link fw-bolder">Finanças Pessoais</a>
+            </div>
+          </div>
+        </footer>
+        <!-- / Footer -->
+
+        <div class="content-backdrop fade"></div>
+      </div>
+      <!-- Content wrapper -->
     </div>
+    <!-- / Layout page -->
+  </div>
+
+  <!-- Overlay -->
+  <div class="layout-overlay layout-menu-toggle d-none"></div>
+
+  <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+  <div class="drag-target"></div>
 </div>
 
 {% endblock %}
