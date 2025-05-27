@@ -9,8 +9,8 @@ index %}
   <div class="card-body p-0">
     <form method="POST">
       {{ form.hidden_tag() }}
-      <div class="row align-items-center p-2 pb-0">
-        <div class="col-md-6">
+      <div class="row align-items-center p-2 mb-2">
+        <div class="col-md-5">
           {{ form.category_id.label(class="form-label") }} {{
           form.category_id(class="form-select", id="categorySelect",
           **{'data-preselected': form.category_id.data if form.category_id.data
@@ -18,15 +18,15 @@ index %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-        <div class="col-md-6">
+        <div class="col-md-5">
           {{ form.name.label(class="form-label") }} {{
           form.name(class="form-control") }} {% for error in form.name.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-      </div>
-      <div class="col col-md-1 text-end m-2 mt-lg-4">
-        {{ form.submit(class="btn btn-primary btn-sm") }}
+        <div class="col col-md-1 pt-4 mt-1">
+          {{ form.submit(class="btn btn-primary btn-sm") }}
+        </div>
       </div>
     </form>
 

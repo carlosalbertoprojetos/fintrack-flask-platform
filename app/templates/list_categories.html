@@ -1,6 +1,5 @@
 {% extends 'index.html' %} {% block title %}Categorias{% endblock %} {% block
-index
- %}
+index %}
 
 <div class="d-flex justify-content-between align-items-center">
   <h1 class="h3 text-gray-800">Categorias</h1>
@@ -17,7 +16,7 @@ index
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
         </div>
-        <div class="col-md-5">
+        <div class="col-md-4">
           {{ form.name.label(class="form-label") }} {{
           form.name(class="form-control") }} {% for error in form.name.errors %}
           <div class="text-danger">{{ error }}</div>

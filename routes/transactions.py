@@ -26,7 +26,7 @@ def index():
         .order_by(Transaction.date.desc())
         .all()
     )
-    return render_template("transactions/home.html", transactions=transactions)
+    return render_template("home.html", transactions=transactions)
 
 
 @transactions.route("/transactions/new", methods=["GET", "POST"])
