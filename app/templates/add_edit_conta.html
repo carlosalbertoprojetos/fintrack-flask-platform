@@ -33,7 +33,11 @@
       </div>
       <div class="d-flex justify-content-between">
         <a href="{{ url_for('conta.listar_contas') }}" class="btn btn-secondary btn-sm">Cancelar</a>
-        {{ form.submit(class="btn btn-primary btn-sm") }}
+        {% if 'Editar' in title %}
+        <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+        {% endif %}
       </div>
     </form>
   </div>

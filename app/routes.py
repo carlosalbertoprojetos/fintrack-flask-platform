@@ -694,7 +694,7 @@ def add_category():
             flash("Erro ao adicionar categoria. Verifique os campos.", "danger")
             print(form.errors)
 
-    return render_template("add_category.html", form=form, edit=False)
+    return render_template("add_edit_category.html", form=form, category=None, title="Adicionar Categoria")
 
 
 @transaction_bp.route("/category/edit/<int:id>", methods=["GET", "POST"])
@@ -713,7 +713,7 @@ def edit_category(id):
         flash("Categoria atualizada com sucesso!", "success")
         return redirect(url_for("transaction.categories"))
 
-    return render_template("add_category.html", form=form, edit=True)
+    return render_template("add_edit_category.html", form=form, category=category, title=f"Editar Categoria: {category.name}")
 
 
 @transaction_bp.route("/category/delete/<int:id>")
@@ -782,7 +782,7 @@ def add_expense():
     else:
         print(form.errors)  # Isso ajudará a encontrar os erros de validação
 
-    return render_template("add_expense.html", form=form, edit=False)
+    return render_template("add_edit_expense.html", form=form, expense=None, title="Adicionar Descrição")
 
 
 @transaction_bp.route("/expenses/edit/<int:id>", methods=["GET", "POST"])
@@ -809,7 +809,7 @@ def edit_expense(id):
         flash("Descrição predefinida atualizada com sucesso!", "success")
         return redirect(url_for("transaction.expenses"))
 
-    return render_template("add_expense.html", form=form, edit=True)
+    return render_template("add_edit_expense.html", form=form, expense=expense, title=f"Editar Descrição: {expense.name}")
 
 
 @transaction_bp.route("/expenses/delete/<int:id>")

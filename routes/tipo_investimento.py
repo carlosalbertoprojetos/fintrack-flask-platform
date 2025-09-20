@@ -29,7 +29,7 @@ def novo_tipo_investimento():
         flash('Tipo de investimento criado com sucesso!', 'success')
         return redirect(url_for('tipo_investimento.listar_tipos_investimento'))
     
-    return render_template('add_edit_tipo_investimento.html', form=form, title='Novo Tipo de Investimento')
+    return render_template('add_edit_tipo_investimento.html', form=form, title='Adicionar Tipo de Investimento')
 
 @tipo_investimento_bp.route('/tipo-investimento/editar/<int:tipo_id>', methods=['GET', 'POST'])
 @login_required
@@ -50,7 +50,7 @@ def editar_tipo_investimento(tipo_id):
         flash('Tipo de investimento atualizado com sucesso!', 'success')
         return redirect(url_for('tipo_investimento.listar_tipos_investimento'))
     
-    return render_template('add_edit_tipo_investimento.html', form=form, title='Editar Tipo de Investimento')
+    return render_template('add_edit_tipo_investimento.html', form=form, title=f'Editar Tipo de Investimento: {tipo_investimento.nome}')
 
 @tipo_investimento_bp.route('/tipo-investimento/editar-nome/<int:tipo_id>', methods=['POST'])
 @login_required

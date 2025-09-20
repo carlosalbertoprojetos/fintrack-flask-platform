@@ -29,7 +29,7 @@ def novo_tipo_conta():
         flash('Tipo de conta criado com sucesso!', 'success')
         return redirect(url_for('tipo_conta.listar_tipos_conta'))
     
-    return render_template('add_edit_tipo_conta.html', form=form, title='Novo Tipo de Conta')
+    return render_template('add_edit_tipo_conta.html', form=form, title='Adicionar Tipo de Conta')
 
 @tipo_conta_bp.route('/tipo-conta/editar/<int:tipo_id>', methods=['GET', 'POST'])
 @login_required
@@ -50,7 +50,7 @@ def editar_tipo_conta(tipo_id):
         flash('Tipo de conta atualizado com sucesso!', 'success')
         return redirect(url_for('tipo_conta.listar_tipos_conta'))
     
-    return render_template('add_edit_tipo_conta.html', form=form, title='Editar Tipo de Conta')
+    return render_template('add_edit_tipo_conta.html', form=form, title=f'Editar Tipo de Conta: {tipo_conta.nome}')
 
 @tipo_conta_bp.route('/tipo-conta/excluir/<int:tipo_id>', methods=['POST'])
 @login_required

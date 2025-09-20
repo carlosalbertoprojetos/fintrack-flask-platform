@@ -42,7 +42,7 @@ def add_conta():
         flash('Conta criada com sucesso!', 'success')
         return redirect(url_for('conta.listar_contas'))
     
-    return render_template('add_edit_conta.html', form=form, title='Nova Conta')
+    return render_template('add_edit_conta.html', form=form, title='Adicionar Conta')
 
 @conta_bp.route('/conta/editar/<int:conta_id>', methods=['GET', 'POST'])
 @login_required
@@ -68,7 +68,7 @@ def editar_conta(conta_id):
     if conta.tipo:
         form.tipo_id.data = conta.tipo_id
     
-    return render_template('add_edit_conta.html', form=form, title='Editar Conta', conta=conta)
+    return render_template('add_edit_conta.html', form=form, title=f'Editar Conta: {conta.nome}', conta=conta)
 
 @conta_bp.route('/conta/editar-nome/<int:conta_id>', methods=['POST'])
 @login_required

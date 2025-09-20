@@ -105,7 +105,11 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
         <a href="{% if edit %}{{ url_for('transaction.reports') }}{% else %}{{ url_for('main.dashboard') }}{% endif %}" class="btn btn-secondary btn-sm"
           >Cancelar</a
         >
-        {{ form.submit(class="btn btn-primary btn-sm") }}
+        {% if edit %}
+        <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+        {% endif %}
       </div>
     </form>
   </div>
