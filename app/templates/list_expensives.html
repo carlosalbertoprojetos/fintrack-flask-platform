@@ -6,7 +6,7 @@
 
 <div class="col p-lg-0">
   <div class="d-flex justify-content-between align-items-center">
-    <h1 class="h3 text-gray-800">Descrições Predefinidas</h1>
+    <h1 class="h3 text-gray-800">Descrições</h1>
     <a href="{{ url_for('transaction.add_expense') }}" class="btn btn-primary btn-sm">
       <i class="fas fa-plus"></i> Adicionar
     </a>
@@ -69,29 +69,26 @@
                   <span class="text-muted">-</span>
                 {% endif %}
               </td>
-              <td class="text-center">
-                <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
-                  
-                  <!-- Botões de Ação (Editar/Excluir) -->
-                  <div class="btn-group btn-group-sm d-flex justify-content-center">
-                    <a
-                      href="{{ url_for('transaction.edit_expense', id=expense.id) }}"
-                      class="btn btn-sm text-primary p-0"
-                      style="max-width: 50px"
-                      title="Editar {{ expense.name }}"
-                    >
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    <a
-                      href="{{ url_for('transaction.delete_expense', id=expense.id) }}"
-                      class="btn btn-sm text-danger p-0"
-                      style="max-width: 50px"
-                      title="Excluir {{ expense.name }}"
-                      onclick="return confirm('Tem certeza que deseja excluir a descrição {{ expense.name }}?')"
-                    >
-                      <i class="fas fa-trash"></i>
-                    </a>
-                  </div>
+              <td class="text-center">                  
+                <!-- Botões de Ação (Editar/Excluir) -->
+                <div class="btn-group btn-group-sm d-flex justify-content-center">
+                  <a
+                    href="{{ url_for('transaction.edit_expense', id=expense.id) }}"
+                    class="btn btn-sm text-primary p-0"
+                    style="max-width: 25px"
+                    title="Editar {{ expense.name }}"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a
+                    href="{{ url_for('transaction.delete_expense', id=expense.id) }}"
+                    class="btn btn-sm text-danger p-0"
+                    style="max-width: 25px"
+                    title="Excluir {{ expense.name }}"
+                    onclick="return confirm('Tem certeza que deseja excluir a descrição {{ expense.name }}?')"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
                 </div>
               </td>
             </tr>

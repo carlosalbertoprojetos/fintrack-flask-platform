@@ -40,13 +40,14 @@
                 {% endif %}
               </td>
               <td class="text-center">
+                <!-- Botões de Ação (Editar/Excluir) -->
                 <div
                   class="btn-group btn-group-sm d-flex justify-content-center"
                 >
                   <a
                     href="{{ url_for('transaction.edit_payment_method', id=method.id) }}"
                     class="btn btn-sm text-primary p-0"
-                    style="max-width: 50px"
+                    style="max-width: 25px"
                     title="Editar"
                   >
                     <i class="fas fa-edit"></i>
@@ -60,7 +61,7 @@
                     <button
                       type="button"
                       class="btn btn-sm text-danger p-0"
-                      style="max-width: 50px"
+                      style="max-width: 25px"
                       title="Excluir"
                       onclick="showDeleteConfirmation('Tem certeza que deseja excluir esta forma de pagamento?', 'deleteForm_{{ method.id }}')"
                     >

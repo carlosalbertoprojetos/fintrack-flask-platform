@@ -71,48 +71,45 @@
                   {# <span class="d-none d-md-inline">Investir</span> #}
                 </a>
               </td>
-              <td class="text-center">
-                <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
-                  
-                  <!-- Botões de Ação (Editar/Excluir) -->
-                  <div class="btn-group btn-group-sm d-flex justify-content-center">
-                    <a
-                      href="{{ url_for('conta.editar_conta', conta_id=conta.id) }}"
-                      class="btn btn-sm text-primary p-0"
-                      style="max-width: 50px"
-                      title="Editar {{ conta.nome }}"
-                    >
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    {% if not conta.tem_lancamentos %}
-                    <form
-                      id="deleteForm_{{ conta.id }}"
-                      action="{{ url_for('conta.excluir_conta', conta_id=conta.id) }}"
-                      method="POST"
-                      style="display: inline"
-                    >
-                      <button
-                        type="button"
-                        class="btn btn-sm text-danger p-0"
-                        style="max-width: 50px"
-                        title="Excluir {{ conta.nome }}"
-                        onclick="showDeleteConfirmation('Tem certeza que deseja excluir a conta {{ conta.nome }}?', 'deleteForm_{{ conta.id }}')"
-                      >
-                        <i class="fas fa-trash"></i>
-                      </button>
-                    </form>
-                    {% else %}
+              <td class="text-center">                 
+                <!-- Botões de Ação (Editar/Excluir) -->
+                <div class="btn-group btn-group-sm d-flex justify-content-center">
+                  <a
+                    href="{{ url_for('conta.editar_conta', conta_id=conta.id) }}"
+                    class="btn btn-sm text-primary p-0"
+                    style="max-width: 25px"
+                    title="Editar {{ conta.nome }}"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {% if not conta.tem_lancamentos %}
+                  <form
+                    id="deleteForm_{{ conta.id }}"
+                    action="{{ url_for('conta.excluir_conta', conta_id=conta.id) }}"
+                    method="POST"
+                    style="display: inline"
+                  >
                     <button
                       type="button"
-                      class="btn btn-sm text-muted p-0"
-                      style="max-width: 50px"
-                      title="Não é possível excluir {{ conta.nome }} - possui lançamentos"
-                      disabled
+                      class="btn btn-sm text-danger p-0"
+                      style="max-width: 25px"
+                      title="Excluir {{ conta.nome }}"
+                      onclick="showDeleteConfirmation('Tem certeza que deseja excluir a conta {{ conta.nome }}?', 'deleteForm_{{ conta.id }}')"
                     >
-                      <i class="fas fa-lock"></i>
+                      <i class="fas fa-trash"></i>
                     </button>
-                    {% endif %}
-                  </div>
+                  </form>
+                  {% else %}
+                  <button
+                    type="button"
+                    class="btn btn-sm text-muted p-0"
+                    style="max-width: 50px"
+                    title="Não é possível excluir {{ conta.nome }} - possui lançamentos"
+                    disabled
+                  >
+                    <i class="fas fa-lock"></i>
+                  </button>
+                  {% endif %}
                 </div>
               </td>
             </tr>

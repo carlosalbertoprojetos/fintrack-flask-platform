@@ -25,10 +25,10 @@
           </select>
         </div>
         <div class="col-md-4 d-flex align-items-end">
-          <button type="submit" class="btn btn-outline-primary btn-sm me-2">
+          <button type="submit" class="btn btn-primary btn-sm me-2">
             <i class="fas fa-filter"></i> Filtrar
           </button>
-          <a href="{{ url_for('transaction.categories') }}" class="btn btn-outline-secondary btn-sm">
+          <a href="{{ url_for('transaction.categories') }}" class="btn btn-secondary btn-sm">
             <i class="fas fa-times"></i> Limpar
           </a>
         </div>
@@ -70,29 +70,26 @@
                 <span class="badge bg-secondary">Não</span>
                 {% endif %}
               </td>
-              <td class="text-center">
-                <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
-                  
-                  <!-- Botões de Ação (Editar/Excluir) -->
-                  <div class="btn-group btn-group-sm d-flex justify-content-center">
-                    <a
-                      href="{{ url_for('transaction.edit_category', id=category.id) }}"
-                      class="btn btn-sm text-primary p-0"
-                      style="max-width: 50px"
-                      title="Editar {{ category.name }}"
-                    >
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    <a
-                      href="{{ url_for('transaction.delete_category', id=category.id) }}"
-                      class="btn btn-sm text-danger p-0"
-                      style="max-width: 50px"
-                      title="Excluir {{ category.name }}"
-                      onclick="return confirm('Tem certeza que deseja excluir a categoria {{ category.name }}?')"
-                    >
-                      <i class="fas fa-trash"></i>
-                    </a>
-                  </div>
+              <td class="text-center">                  
+                <!-- Botões de Ação (Editar/Excluir) -->
+                <div class="btn-group btn-group-sm d-flex justify-content-center">
+                  <a
+                    href="{{ url_for('transaction.edit_category', id=category.id) }}"
+                    class="btn btn-sm text-primary p-0"
+                    style="max-width: 25px"
+                    title="Editar {{ category.name }}"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a
+                    href="{{ url_for('transaction.delete_category', id=category.id) }}"
+                    class="btn btn-sm text-danger p-0"
+                    style="max-width: 25px"
+                    title="Excluir {{ category.name }}"
+                    onclick="return confirm('Tem certeza que deseja excluir a categoria {{ category.name }}?')"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
                 </div>
               </td>
             </tr>
