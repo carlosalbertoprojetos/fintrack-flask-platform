@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Descontos - Finanças Pessoais{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Relatório de Descontos</h1>
+
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+    </div>
+    <div class="card-body">
+      <form method="GET" class="row g-3">
+        <div class="col-md-3">
+          <label for="start_date" class="form-label">Data Inicial</label>
+          <input
+            type="date"
+            class="form-control"
+            id="start_date"
+            name="start_date"
+            value="{{ request.args.get('start_date', '') }}"
+            required
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="end_date" class="form-label">Data Final</label>
+          <input
+            type="date"
+            class="form-control"
+            id="end_date"
+            name="end_date"
+            value="{{ request.args.get('end_date', '') }}"
+            required
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="category_id" class="form-label">Categoria</label>
+          <select class="form-select" id="category_id" name="category_id">
+            <option value="">Todas</option>
+            {% for category in categories %}
+            <option
+              value="{{ category.id }}"
+              {% if request.args.get('category_id')|int == category.id %}selected{% endif %}
+            >
+              {{ category.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumo -->
+  <div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+              >
+                Total Despesas
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(total_amount|float) }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Total Descontos
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(total_discount|float) }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Valor Final
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(total_final|float) }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Total de Transações
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_transactions }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Descontos -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Detalhamento de Descontos</h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Vencimento</th>
+              <th>Categoria</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Desconto</th>
+              <th>Valor Final</th>
+              <th>% Desconto</th>
+              <th>Data Pagamento</th>
+              <th>Forma de Pagamento</th>
+              <th>Status</th>
+              <th>Lançamento</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for transaction in transactions|sort(attribute='due_date') %}
+            <tr>
+              <td>{{ transaction.due_date.strftime('%d/%m/%Y') if transaction.due_date else '-' }}</td>
+              <td>{{ transaction.category.name }}</td>
+              <td>
+                {{ transaction.expense.name if transaction.expense else transaction.description }}
+              </td>
+              <td class="text-danger">
+                R$ {{ "%.2f"|format(transaction.amount|float) }}
+              </td>
+              <td class="text-success">
+                {% if transaction.discount and transaction.discount > 0 %}
+                                  R$ {{ "%.2f"|format(transaction.discount|float) }} {% else %} - {% endif %}
+              </td>
+              <td class="text-danger">
+                R$ {{ "%.2f"|format((transaction.amount or 0)|float - (transaction.discount or 0)|float) }}
+              </td>
+              <td>
+                {% if (transaction.amount or 0)|float > 0 %} {{
+                "%.1f"|format(((transaction.discount or 0)|float / (transaction.amount or 0)|float) * 100) }}% {%
+                else %} - {% endif %}
+              </td>
+              <td>
+                {{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '-' }}
+              </td>
+              <td>{{ transaction.payment_method.name }}</td>
+              <td>
+                {% if transaction.paid %}
+                <span class="badge bg-success">Pago</span>
+                {% else %}
+                <span class="badge bg-warning">Pendente</span>
+                {% endif %}
+              </td>
+              <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="table-primary">
+              <td colspan="3"><strong>Total</strong></td>
+              <td class="text-danger">
+                <strong>R$ {{ "%.2f"|format(total_amount|float) }}</strong>
+              </td>
+              <td class="text-success">
+                <strong>R$ {{ "%.2f"|format(total_discount|float) }}</strong>
+              </td>
+              <td class="text-danger">
+                <strong>R$ {{ "%.2f"|format(total_final|float) }}</strong>
+              </td>
+              <td>
+                {% if (total_amount or 0)|float > 0 %}
+                <strong>{{ "%.1f"|format(((total_discount or 0)|float / (total_amount or 0)|float) * 100) }}%</strong>
+                {% else %}
+                <strong>-</strong>
+                {% endif %}
+              </td>
+              <td colspan="5"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Gráfico</h6>
+    </div>
+    <div class="card-body">
+      <canvas id="discountChart"></canvas>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Dados para o gráfico
+  const ctx = document.getElementById("discountChart").getContext("2d");
+  const data = {
+    labels: [
+      {% for category in categories %}
+      "{{ category.name }}",
+      {% endfor %}
+    ],
+    datasets: [
+      {
+        label: "Valor Total",
+        data: [
+          {% for category in categories %}
+          {{ (category.total_amount or 0)|float }},
+          {% endfor %}
+        ],
+        backgroundColor: "rgba(220, 53, 69, 0.2)",
+        borderColor: "rgba(220, 53, 69, 1)",
+        borderWidth: 1,
+      },
+      {
+        label: "Descontos",
+        data: [
+          {% for category in categories %}
+          {{ (category.total_discount or 0)|float }},
+          {% endfor %}
+        ],
+        backgroundColor: "rgba(40, 167, 69, 0.2)",
+        borderColor: "rgba(40, 167, 69, 1)",
+        borderWidth: 1,
+      },
+      {
+        label: "Valor Final",
+        data: [
+          {% for category in categories %}
+          {{ ((category.total_amount or 0)|float - (category.total_discount or 0)|float) }},
+          {% endfor %}
+        ],
+        backgroundColor: "rgba(23, 162, 184, 0.2)",
+        borderColor: "rgba(23, 162, 184, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Configuração do gráfico
+  const config = {
+    type: "bar",
+    data: data,
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "R$ " + value.toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              });
+            },
+          },
+        },
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || "";
+              if (label) {
+                label += ": ";
+              }
+              if (context.parsed.y !== null) {
+                label += new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(context.parsed.y);
+              }
+              return label;
+            },
+          },
+        },
+      },
+    },
+  };
+
+  // Criar o gráfico
+  new Chart(ctx, config);
+</script>
+{% endblock %}
+{% endblock %} 

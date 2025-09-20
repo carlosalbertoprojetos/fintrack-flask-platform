@@ -1,0 +1,1002 @@
+"use strict";
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Inicializar o menu
+  initMenu();
+
+  // Inicializar o sistema
+  initSystem();
+});
+
+// Função para inicializar o menu
+function initMenu() {
+  // Toggle do menu desktop
+  const menuToggle = document.querySelector(".layout-menu-toggle.menu-link");
+  const layoutWrapper = document.querySelector(".layout-wrapper");
+
+  if (menuToggle && layoutWrapper) {
+    menuToggle.addEventListener("click", function () {
+      layoutWrapper.classList.toggle("layout-menu-collapsed");
+    });
+  }
+
+  // Toggle do menu mobile
+  const mobileMenuToggle = document.querySelector(".layout-menu-toggle.navbar-nav");
+  if (mobileMenuToggle) {
+    mobileMenuToggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      toggleMenu();
+    });
+  }
+
+  // Fechar menu ao clicar no overlay
+  const layoutOverlay = document.querySelector(".layout-overlay");
+  if (layoutOverlay) {
+    layoutOverlay.addEventListener("click", function () {
+      closeMenu();
+    });
+  }
+
+  // Inicializar dropdowns do menu
+  initMenuDropdowns();
+}
+
+// Função para inicializar dropdowns do menu
+function initMenuDropdowns() {
+  const menuToggles = document.querySelectorAll(".menu-toggle");
+
+  menuToggles.forEach(function (toggle) {
+    toggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("Dropdown clicado");
+
+      // Verificar se o menu está colapsado
+      const layoutWrapper = document.querySelector(".layout-wrapper");
+      const isMenuCollapsed = layoutWrapper && layoutWrapper.classList.contains("layout-menu-collapsed");
+
+      // Se o menu estiver colapsado, expandir primeiro
+      if (isMenuCollapsed) {
+        layoutWrapper.classList.remove("layout-menu-collapsed");
+
+        // Aguardar um pouco para a animação de expansão e depois abrir o dropdown
+        setTimeout(() => {
+          toggleDropdown(this);
+        }, 300); // Aguardar 300ms para a animação de expansão
+      } else {
+        // Menu já está expandido, abrir dropdown normalmente
+        toggleDropdown(this);
+      }
+    });
+  });
+
+
+
+  // Fechar dropdowns quando clicar fora
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest(".menu-item")) {
+      document.querySelectorAll(".menu-item.open").forEach(function (item) {
+        // Não fechar dropdowns que têm itens ativos
+        const submenu = item.querySelector(".menu-sub");
+        if (submenu) {
+          const activeSubItem = submenu.querySelector(".menu-item.active");
+          if (!activeSubItem) {
+            item.classList.remove("open");
+          }
+        } else {
+          item.classList.remove("open");
+        }
+      });
+    }
+  });
+
+  // Verificar e abrir automaticamente dropdowns que têm itens ativos
+  checkAndOpenActiveDropdowns();
+
+  // Listener para mudanças de URL (navegação) - apenas para dropdowns
+  let currentUrl = window.location.href;
+  const observer = new MutationObserver(function () {
+    if (window.location.href !== currentUrl) {
+      currentUrl = window.location.href;
+      // Aguardar um pouco para o DOM ser atualizado
+      setTimeout(() => {
+        checkAndOpenActiveDropdowns();
+      }, 100);
+    }
+  });
+
+  // Observar mudanças no DOM - apenas para verificar dropdowns ativos
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+// Função para alternar o estado do dropdown
+function toggleDropdown(toggleElement) {
+  const menuItem = toggleElement.closest(".menu-item");
+  const isOpen = menuItem.classList.contains("open");
+
+  // Fechar apenas dropdowns que não têm itens ativos
+  document.querySelectorAll(".menu-item.open").forEach(function (item) {
+    if (item !== menuItem) {
+      const submenu = item.querySelector(".menu-sub");
+      if (submenu) {
+        const activeSubItem = submenu.querySelector(".menu-item.active");
+        // Só fecha se não tiver itens ativos
+        if (!activeSubItem) {
+          item.classList.remove("open");
+        }
+      } else {
+        item.classList.remove("open");
+      }
+    }
+  });
+
+  // Toggle do dropdown atual
+  if (isOpen) {
+    menuItem.classList.remove("open");
+  } else {
+    menuItem.classList.add("open");
+  }
+}
+
+// Função para verificar e abrir automaticamente dropdowns com itens ativos
+function checkAndOpenActiveDropdowns() {
+  // Procurar por dropdowns que contêm itens ativos
+  const menuItems = document.querySelectorAll(".menu-item");
+
+  menuItems.forEach(function (menuItem) {
+    // Verificar se este item tem um submenu
+    const submenu = menuItem.querySelector(".menu-sub");
+    if (submenu) {
+      // Verificar se algum item do submenu está ativo
+      const activeSubItem = submenu.querySelector(".menu-item.active");
+      if (activeSubItem) {
+        // Se encontrou um item ativo, abrir o dropdown pai
+        menuItem.classList.add("open");
+      }
+    }
+  });
+
+  // IMPORTANTE: Preservar o estado colapsado do menu
+  // Não remover a classe layout-menu-collapsed automaticamente
+  const layoutWrapper = document.querySelector(".layout-wrapper");
+  if (layoutWrapper) {
+    // Se o menu estava colapsado, manter colapsado
+    // Apenas expandir quando necessário para dropdowns específicos
+  }
+}
+
+// Função para inicializar contador de abas
+function initTabCounter() {
+  try {
+    // Gerar ID único para esta aba se não existir
+    if (!sessionStorage.getItem('current_tab_id')) {
+      const tabId = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      sessionStorage.setItem('current_tab_id', tabId);
+    }
+
+    const currentTabId = sessionStorage.getItem('current_tab_id');
+
+    // Configurar BroadcastChannel para comunicação entre abas
+    const channel = new BroadcastChannel('financas_pessoais_tabs');
+
+    // Incrementar contador global de abas
+    const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '0');
+    const newCount = currentCount + 1;
+    localStorage.setItem('financas_pessoais_tab_count', newCount.toString());
+
+    console.log(`Aba ${currentTabId} inicializada. Total de abas: ${newCount}`);
+
+    // Listener para mensagens de outras abas
+    channel.addEventListener('message', function (event) {
+      const { type, tabId: senderTabId, count } = event.data;
+
+      switch (type) {
+        case 'request_tab_count':
+          // Responder com contagem atual
+          channel.postMessage({
+            type: 'tab_count_response',
+            count: parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1')
+          });
+          break;
+
+        case 'tab_count_response':
+          // Atualizar contador baseado na resposta
+          if (count && count > 0) {
+            localStorage.setItem('financas_pessoais_tab_count', count.toString());
+            console.log(`Contador de abas atualizado via BroadcastChannel: ${count}`);
+          }
+          break;
+
+        case 'tab_closing':
+          // Outra aba está fechando, decrementar contador
+          if (senderTabId !== currentTabId) {
+            const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+            if (currentCount > 0) {
+              const newCount = currentCount - 1;
+              localStorage.setItem('financas_pessoais_tab_count', newCount.toString());
+              console.log(`Aba ${senderTabId} fechada. Total de abas restantes: ${newCount}`);
+            }
+          }
+          break;
+      }
+    });
+
+    // Solicitar contagem atualizada de outras abas
+    channel.postMessage({ type: 'request_tab_count', tabId: currentTabId });
+
+    // Decrementar contador quando a aba for fechada
+    window.addEventListener('beforeunload', function () {
+      console.log(`Aba ${currentTabId} sendo fechada`);
+
+      // Notificar outras abas sobre o fechamento
+      try {
+        channel.postMessage({
+          type: 'tab_closing',
+          tabId: currentTabId
+        });
+      } catch (e) {
+        console.log('Erro ao notificar fechamento de aba:', e);
+      }
+
+      // Decrementar contador
+      const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '0');
+      if (currentCount > 0) {
+        localStorage.setItem('financas_pessoais_tab_count', (currentCount - 1).toString());
+        console.log(`Contador decrementado. Total de abas restantes: ${currentCount - 1}`);
+      }
+
+      // Fechar o canal
+      try {
+        channel.close();
+      } catch (e) {
+        console.log('Erro ao fechar BroadcastChannel:', e);
+      }
+    });
+
+    // Salvar referência do canal para uso posterior
+    window.financasTabChannel = channel;
+
+  } catch (error) {
+    console.log('Erro na inicialização do contador de abas:', error);
+
+    // Fallback: usar apenas localStorage
+    const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '0');
+    const newCount = currentCount + 1;
+    localStorage.setItem('financas_pessoais_tab_count', newCount.toString());
+
+    window.addEventListener('beforeunload', function () {
+      const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '0');
+      if (currentCount > 0) {
+        localStorage.setItem('financas_pessoais_tab_count', (currentCount - 1).toString());
+      }
+    });
+  }
+}
+
+// Função para detectar quantas abas estão abertas no navegador
+function detectBrowserTabCount() {
+  try {
+    // Método 1: Usar BroadcastChannel para comunicação entre abas
+    const channel = new BroadcastChannel('financas_pessoais_tabs');
+
+    // Gerar ID único para esta aba se não existir
+    if (!sessionStorage.getItem('current_tab_id')) {
+      const tabId = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      sessionStorage.setItem('current_tab_id', tabId);
+    }
+
+    const currentTabId = sessionStorage.getItem('current_tab_id');
+
+    // Solicitar contagem de abas
+    channel.postMessage({ type: 'request_tab_count', tabId: currentTabId });
+
+    // Aguardar resposta
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        // Fallback: usar localStorage como estimativa
+        const storedCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+        resolve(storedCount);
+      }, 100);
+
+      const messageHandler = (event) => {
+        if (event.data.type === 'tab_count_response') {
+          clearTimeout(timeout);
+          channel.removeEventListener('message', messageHandler);
+          resolve(event.data.count);
+        }
+      };
+
+      channel.addEventListener('message', messageHandler);
+    });
+
+  } catch (error) {
+    console.log('Erro na detecção de abas via BroadcastChannel:', error);
+    // Fallback: usar localStorage
+    return Promise.resolve(parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1'));
+  }
+}
+
+// Função para fechar navegador de forma inteligente
+function closeBrowserIntelligently() {
+  try {
+    console.log('Iniciando fechamento inteligente do navegador...');
+
+    // Detectar número de abas
+    detectBrowserTabCount().then((tabCount) => {
+      console.log(`Detectadas ${tabCount} abas abertas`);
+
+      if (tabCount > 1) {
+        console.log('Múltiplas abas detectadas - fechando apenas a aba atual');
+
+        // Decrementar contador no localStorage
+        const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+        if (currentCount > 0) {
+          localStorage.setItem('financas_pessoais_tab_count', (currentCount - 1).toString());
+        }
+
+        // Notificar outras abas sobre o fechamento
+        try {
+          const channel = new BroadcastChannel('financas_pessoais_tabs');
+          channel.postMessage({
+            type: 'tab_closing',
+            tabId: sessionStorage.getItem('current_tab_id')
+          });
+          channel.close();
+        } catch (e) {
+          console.log('Erro ao notificar fechamento de aba:', e);
+        }
+
+        // Tentar fechar apenas esta aba
+        try {
+          window.close();
+        } catch (e) {
+          console.log('window.close() falhou, usando fallback');
+          // Fallback: redirecionar para página vazia
+          window.location.href = 'about:blank';
+        }
+
+      } else {
+        console.log('Apenas uma aba detectada - fechando o navegador completo');
+
+        // Limpar contador
+        localStorage.removeItem('financas_pessoais_tab_count');
+        sessionStorage.removeItem('current_tab_id');
+
+        // Tentar fechar o navegador completo
+        try {
+          window.close();
+        } catch (e) {
+          console.log('window.close() falhou, tentando métodos alternativos');
+
+          // Método 1: redirecionar para página vazia
+          try {
+            window.location.href = 'about:blank';
+          } catch (e2) {
+            console.log('Redirecionamento falhou:', e2);
+          }
+
+          // Método 2: tentar fechar novamente após delay
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (e3) {
+              console.log('Segunda tentativa de window.close() falhou:', e3);
+            }
+          }, 1000);
+        }
+      }
+    }).catch((error) => {
+      console.log('Erro na detecção de abas, usando fallback:', error);
+
+      // Fallback: usar localStorage para estimativa
+      const tabCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+
+      if (tabCount > 1) {
+        // Assumir múltiplas abas - fechar apenas esta
+        localStorage.setItem('financas_pessoais_tab_count', (tabCount - 1).toString());
+        try {
+          window.close();
+        } catch (e) {
+          window.location.href = 'about:blank';
+        }
+      } else {
+        // Assumir única aba - fechar navegador
+        localStorage.removeItem('financas_pessoais_tab_count');
+        try {
+          window.close();
+        } catch (e) {
+          window.location.href = 'about:blank';
+        }
+      }
+    });
+
+  } catch (error) {
+    console.log('Erro na função closeBrowserIntelligently:', error);
+    // Fallback final
+    try {
+      window.close();
+    } catch (e) {
+      window.location.href = 'about:blank';
+    }
+  }
+}
+
+// Função para inicializar o sistema
+function initSystem() {
+  // Inicializar auto-dismiss para alertas
+  initAutoDismissAlerts();
+
+  // Inicializar contador de abas
+  initTabCounter();
+}
+
+// Função para descartar mensagens flash
+function dismissMessage(messageId) {
+  const messageElement = document.getElementById(messageId);
+  if (messageElement) {
+    // Verificar se o Bootstrap está disponível
+    if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+      const bsAlert = new bootstrap.Alert(messageElement);
+      bsAlert.close();
+    } else {
+      // Fallback: remover o alerta manualmente
+      messageElement.style.transition = 'opacity 0.5s ease-out';
+      messageElement.style.opacity = '0';
+      setTimeout(function () {
+        if (messageElement.parentNode) {
+          messageElement.parentNode.removeChild(messageElement);
+        }
+      }, 500);
+    }
+  }
+}
+
+// Função para confirmar o desligamento (chamada pelo modal)
+function confirmShutdown() {
+
+  // Fechar o modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('shutdownModal'));
+  if (modal) {
+
+    modal.hide();
+  } else {
+
+  }
+
+  // Desligar o sistema
+  shutdownSystem();
+}
+
+// Função para desligar o sistema
+function shutdownSystem() {
+
+  try {
+
+    // Timeout global para garantir que o processo não trave
+    const globalTimeout = setTimeout(() => {
+      console.log('Timeout global atingido - forçando fechamento');
+      try {
+        window.close();
+      } catch (e) {
+        window.location.href = 'about:blank';
+      }
+    }, 15000); // 15 segundos de timeout global
+
+    // Mostrar mensagem de desligamento
+    const shutdownMsg = document.createElement('div');
+    shutdownMsg.innerHTML = `
+      <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                  background: rgba(0,0,0,0.8); z-index: 9999; display: flex; 
+                  align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 10px; text-align: center;">
+          <h4>Desligando o sistema...</h4>
+          <p>Por favor, aguarde...</p>
+          <div id="shutdown-status" style="margin-top: 15px; font-size: 14px; color: #02568c;">
+            Iniciando processo de desligamento...
+          </div>
+          <div id="shutdown-timer" style="margin-top: 10px; font-size: 12px; color: #666;">
+            Timeout: 15 segundos
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(shutdownMsg);
+
+    const statusDiv = document.getElementById('shutdown-status');
+    const timerDiv = document.getElementById('shutdown-timer');
+
+    // Atualizar timer
+    let timeLeft = 15;
+    const timerInterval = setInterval(() => {
+      timeLeft--;
+      if (timerDiv) {
+        timerDiv.textContent = `Timeout: ${timeLeft} segundos`;
+      }
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+      }
+    }, 1000);
+
+    // Atualizar status
+    statusDiv.textContent = 'Enviando comando de desligamento...';
+
+
+    // Fazer a requisição para desligar
+    fetch('/shutdown', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+      .then(response => {
+        if (response.ok) {
+          statusDiv.textContent = 'Servidor respondendo... Encerrando aplicação...';
+
+          // Aguardar o servidor processar o shutdown e fechar o CMD
+          setTimeout(() => {
+            statusDiv.textContent = 'Fechando janela do CMD...';
+
+            // Aguardar mais um pouco para o CMD ser fechado
+            setTimeout(() => {
+              statusDiv.textContent = 'Fechando janela do navegador...';
+
+              // Usar fechamento inteligente baseado no número de abas
+              statusDiv.textContent = 'Verificando número de abas...';
+
+              // Detectar número de abas e fechar adequadamente
+              detectBrowserTabCount().then((tabCount) => {
+                console.log(`Sistema detectou ${tabCount} abas abertas`);
+
+                if (tabCount > 1) {
+                  statusDiv.textContent = 'Fechando apenas esta aba...';
+                  console.log('Múltiplas abas detectadas - fechando apenas a aba atual');
+
+                  // Decrementar contador
+                  const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+                  if (currentCount > 0) {
+                    localStorage.setItem('financas_pessoais_tab_count', (currentCount - 1).toString());
+                  }
+
+                  // Notificar outras abas
+                  try {
+                    if (window.financasTabChannel) {
+                      window.financasTabChannel.postMessage({
+                        type: 'tab_closing',
+                        tabId: sessionStorage.getItem('current_tab_id')
+                      });
+                    }
+                  } catch (e) {
+                    console.log('Erro ao notificar fechamento de aba:', e);
+                  }
+
+                  // Fechar apenas esta aba
+                  try {
+                    window.close();
+                    browserClosed = true;
+                    clearTimeout(globalTimeout);
+                    clearInterval(timerInterval);
+                  } catch (e) {
+                    console.log('window.close() falhou, usando fallback');
+                    window.location.href = 'about:blank';
+                  }
+
+                } else {
+                  statusDiv.textContent = 'Fechando navegador completo...';
+                  console.log('Apenas uma aba detectada - fechando o navegador completo');
+
+                  // Limpar contadores
+                  localStorage.removeItem('financas_pessoais_tab_count');
+                  sessionStorage.removeItem('current_tab_id');
+
+                  // Tentar fechar o navegador completo
+                  try {
+                    window.close();
+                    browserClosed = true;
+                    clearTimeout(globalTimeout);
+                    clearInterval(timerInterval);
+                  } catch (e) {
+                    console.log('window.close() falhou, tentando métodos alternativos');
+
+                    // Fallback: redirecionar para página vazia
+                    try {
+                      window.location.href = 'about:blank';
+                    } catch (e2) {
+                      console.log('Redirecionamento falhou:', e2);
+                    }
+
+                    // Segunda tentativa após delay
+                    setTimeout(() => {
+                      try {
+                        window.close();
+                      } catch (e3) {
+                        console.log('Segunda tentativa de window.close() falhou:', e3);
+                      }
+                    }, 1000);
+                  }
+                }
+              }).catch((error) => {
+                console.log('Erro na detecção de abas, usando fallback:', error);
+
+                // Fallback: usar localStorage para estimativa
+                const tabCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+                statusDiv.textContent = `Usando fallback (${tabCount} abas detectadas)...`;
+
+                if (tabCount > 1) {
+                  // Assumir múltiplas abas - fechar apenas esta
+                  localStorage.setItem('financas_pessoais_tab_count', (tabCount - 1).toString());
+                  try {
+                    window.close();
+                    browserClosed = true;
+                    clearTimeout(globalTimeout);
+                    clearInterval(timerInterval);
+                  } catch (e) {
+                    window.location.href = 'about:blank';
+                  }
+                } else {
+                  // Assumir única aba - fechar navegador
+                  localStorage.removeItem('financas_pessoais_tab_count');
+                  try {
+                    window.close();
+                    browserClosed = true;
+                    clearTimeout(globalTimeout);
+                    clearInterval(timerInterval);
+                  } catch (e) {
+                    window.location.href = 'about:blank';
+                  }
+                }
+              });
+
+            }, 2000); // Aguardar 2 segundos para o CMD ser fechado
+          }, 3000); // Aguardar 3 segundos para o servidor processar
+        }
+      })
+      .catch(error => {
+        console.error('Erro na comunicação com servidor:', error);
+        statusDiv.textContent = 'Erro na comunicação. Tentando fechar navegador...';
+
+        // Mesmo com erro, usar fechamento inteligente
+        setTimeout(() => {
+          statusDiv.textContent = 'Erro na comunicação - verificando abas...';
+
+          // Usar detecção inteligente mesmo em modo erro
+          detectBrowserTabCount().then((tabCount) => {
+            console.log(`Modo erro: detectadas ${tabCount} abas abertas`);
+
+            if (tabCount > 1) {
+              statusDiv.textContent = 'Erro - fechando apenas esta aba...';
+              console.log('Múltiplas abas detectadas - fechando apenas a aba atual');
+
+              // Decrementar contador
+              const currentCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+              if (currentCount > 0) {
+                localStorage.setItem('financas_pessoais_tab_count', (currentCount - 1).toString());
+              }
+
+              // Notificar outras abas
+              try {
+                if (window.financasTabChannel) {
+                  window.financasTabChannel.postMessage({
+                    type: 'tab_closing',
+                    tabId: sessionStorage.getItem('current_tab_id')
+                  });
+                }
+              } catch (e) {
+                console.log('Erro ao notificar fechamento de aba:', e);
+              }
+
+              // Fechar apenas esta aba
+              try {
+                window.close();
+              } catch (e) {
+                console.log('window.close() em modo erro falhou:', e);
+                window.location.href = 'about:blank';
+              }
+
+            } else {
+              statusDiv.textContent = 'Erro - fechando navegador completo...';
+              console.log('Apenas uma aba detectada - fechando o navegador completo');
+
+              // Limpar contadores
+              localStorage.removeItem('financas_pessoais_tab_count');
+              sessionStorage.removeItem('current_tab_id');
+
+              // Tentar fechar o navegador completo
+              try {
+                window.close();
+              } catch (e) {
+                console.log('window.close() em modo erro falhou:', e);
+                window.location.href = 'about:blank';
+              }
+            }
+          }).catch((error) => {
+            console.log('Erro na detecção de abas em modo erro, usando fallback:', error);
+
+            // Fallback: usar localStorage para estimativa
+            const tabCount = parseInt(localStorage.getItem('financas_pessoais_tab_count') || '1');
+            statusDiv.textContent = `Erro - usando fallback (${tabCount} abas)...`;
+
+            if (tabCount > 1) {
+              // Assumir múltiplas abas - fechar apenas esta
+              localStorage.setItem('financas_pessoais_tab_count', (tabCount - 1).toString());
+              try {
+                window.close();
+              } catch (e) {
+                window.location.href = 'about:blank';
+              }
+            } else {
+              // Assumir única aba - fechar navegador
+              localStorage.removeItem('financas_pessoais_tab_count');
+              try {
+                window.close();
+              } catch (e) {
+                window.location.href = 'about:blank';
+              }
+            }
+          });
+        }, 1000);
+      });
+
+  } catch (error) {
+    console.error('Erro na função shutdownSystem:', error);
+    // Fallback: redirecionar diretamente
+    window.location.href = '/shutdown';
+  }
+}
+
+// Função para inicializar auto-dismiss de alertas
+function initAutoDismissAlerts() {
+  const autoDismissAlerts = document.querySelectorAll('.auto-dismiss-alert');
+
+  autoDismissAlerts.forEach(function (alert) {
+    const dismissTime = alert.getAttribute('data-auto-dismiss');
+    if (dismissTime) {
+      let dismissTimeout;
+
+      // Função para iniciar o timer de dismiss
+      function startDismissTimer() {
+        dismissTimeout = setTimeout(function () {
+          // Verificar se o alerta ainda existe no DOM
+          if (alert && alert.parentNode) {
+            // Verificar se o Bootstrap está disponível
+            if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+              // Usar Bootstrap para fazer o fade out
+              const bsAlert = new bootstrap.Alert(alert);
+              bsAlert.close();
+            } else {
+              // Fallback: remover o alerta manualmente
+              alert.style.transition = 'opacity 0.5s ease-out';
+              alert.style.opacity = '0';
+              setTimeout(function () {
+                if (alert.parentNode) {
+                  alert.parentNode.removeChild(alert);
+                }
+              }, 500);
+            }
+          }
+        }, parseInt(dismissTime));
+      }
+
+      // Iniciar o timer
+      startDismissTimer();
+
+      // Pausar o timer quando o mouse passar sobre o alerta
+      alert.addEventListener('mouseenter', function () {
+        if (dismissTimeout) {
+          clearTimeout(dismissTimeout);
+        }
+      });
+
+      // Retomar o timer quando o mouse sair do alerta
+      alert.addEventListener('mouseleave', function () {
+        startDismissTimer();
+      });
+    }
+  });
+}
+
+// Função para mostrar/esconder o menu em dispositivos móveis
+function toggleMenu() {
+  const layoutMenu = document.querySelector(".layout-menu");
+  const layoutOverlay = document.querySelector(".layout-overlay");
+
+  if (layoutMenu && layoutOverlay) {
+    layoutMenu.classList.toggle("layout-menu-expanded");
+    layoutOverlay.classList.toggle("layout-menu-expanded");
+  }
+}
+
+// Função para fechar o menu em dispositivos móveis
+function closeMenu() {
+  const layoutMenu = document.querySelector(".layout-menu");
+  const layoutOverlay = document.querySelector(".layout-overlay");
+
+  if (layoutMenu && layoutOverlay) {
+    layoutMenu.classList.remove("layout-menu-expanded");
+    layoutOverlay.classList.remove("layout-menu-expanded");
+  }
+}
+
+// Função para mostrar/esconder o dropdown do usuário
+function toggleUserDropdown() {
+  const dropdownMenu = document.querySelector(".dropdown-menu");
+  if (dropdownMenu) {
+    dropdownMenu.classList.toggle("show");
+  }
+}
+
+// Sistema de Abas para Contas usando Bootstrap Nav-Tabs
+function switchTab(contaId, contaNome, tabType = 'conta') {
+  // Usar requestAnimationFrame para otimizar a animação
+  requestAnimationFrame(() => {
+    // Determinar seletor baseado no tipo de aba
+    const tabSelector = tabType === 'reports' ? '#reportsTabs' : '#contaTabs';
+    const tabPrefix = tabType === 'reports' ? 'reports-tab' : 'conta-tab';
+
+    // Atualizar a aba ativa usando Bootstrap com animação suave
+    const tabItems = document.querySelectorAll(`${tabSelector} .nav-link`);
+    const activeTab = document.querySelector(`#${tabPrefix}-${contaId}`);
+
+    // Animar saída da aba ativa atual
+    tabItems.forEach(tab => {
+      if (tab.classList.contains('active')) {
+        tab.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        tab.classList.remove('active');
+        tab.setAttribute('aria-selected', 'false');
+      }
+    });
+
+    // Aguardar um frame para a animação de saída
+    requestAnimationFrame(() => {
+      // Animar entrada da nova aba ativa
+      if (activeTab) {
+        activeTab.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        activeTab.classList.add('active');
+        activeTab.setAttribute('aria-selected', 'true');
+
+        // Adicionar efeito de "pulse" na aba ativa
+        activeTab.style.animation = 'tabActivate 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+          activeTab.style.animation = '';
+        }, 400);
+      }
+
+      // Atualizar o nome da conta exibido
+      const contaNameElement = document.getElementById('current-conta-name');
+      if (contaNameElement) {
+        contaNameElement.textContent = contaNome;
+      }
+
+      // Redirecionar baseado no tipo de aba
+      if (tabType === 'reports') {
+        // Para relatórios, redirecionar para a página de relatórios
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportType = urlParams.get('type') || 'monthly';
+        const year = urlParams.get('year') || new Date().getFullYear();
+        window.location.href = `/transactions/reports?conta_id=${contaId}&type=${reportType}&year=${year}`;
+      } else {
+        // Para dashboard, redirecionar para o dashboard
+        window.location.href = `/dashboard?conta_id=${contaId}`;
+      }
+    });
+  });
+}
+
+function switchTabReports(contaId, contaNome) {
+  // Usar a função consolidada switchTab com tipo 'reports'
+  switchTab(contaId, contaNome, 'reports');
+}
+
+// Função para inicializar o sistema de abas Bootstrap
+function initTabs() {
+  // Inicializar abas do dashboard
+  const dashboardTabs = document.querySelectorAll('#contaTabs .nav-link');
+  dashboardTabs.forEach(tab => {
+    const contaId = tab.getAttribute('data-conta-id');
+    if (contaId) {
+      // Verificar se a conta tem conteúdo (pode ser implementado com AJAX se necessário)
+      tab.classList.add('has-content');
+    }
+  });
+
+  // Inicializar abas dos relatórios
+  const reportsTabs = document.querySelectorAll('#reportsTabs .nav-link');
+  reportsTabs.forEach(tab => {
+    const contaId = tab.getAttribute('data-conta-id');
+    if (contaId) {
+      // Verificar se a conta tem conteúdo (pode ser implementado com AJAX se necessário)
+      tab.classList.add('has-content');
+    }
+  });
+
+  // Adicionar efeitos de hover e transições otimizados para nav-links
+  const allNavLinks = document.querySelectorAll('.nav-link');
+  allNavLinks.forEach(tab => {
+    // Adicionar transição padrão
+    tab.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+
+    tab.addEventListener('mouseenter', function () {
+      if (!this.classList.contains('active')) {
+        this.style.transform = 'translateY(-2px) translateZ(0)';
+        this.style.boxShadow = '0 4px 12px rgba(2, 86, 140, 0.15)';
+      }
+    });
+
+    tab.addEventListener('mouseleave', function () {
+      if (!this.classList.contains('active')) {
+        this.style.transform = 'translateY(0) translateZ(0)';
+        this.style.boxShadow = '';
+      }
+    });
+
+    // Adicionar efeito de clique
+    tab.addEventListener('mousedown', function () {
+      this.style.transform = 'translateY(-1px) translateZ(0)';
+    });
+
+    tab.addEventListener('mouseup', function () {
+      if (!this.classList.contains('active')) {
+        this.style.transform = 'translateY(-2px) translateZ(0)';
+      }
+    });
+  });
+}
+
+// Inicializar o sistema quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', function () {
+
+  initSystem();
+  initTabs(); // Inicializar o sistema de abas
+
+  // Verificar se as funções estão disponíveis
+
+
+  // Verificar se estamos na página de relatórios
+  if (window.location.pathname.includes('/reports')) {
+
+    // Inicializar imediatamente se a função estiver disponível
+    if (typeof initReportsTabs === 'function') {
+      initReportsTabs();
+    } else {
+      console.warn('Função initReportsTabs não encontrada');
+    }
+  }
+});
+
+// Garantir que as funções estejam disponíveis globalmente
+window.confirmShutdown = confirmShutdown;
+window.shutdownSystem = shutdownSystem;
+window.initSystem = initSystem;
+window.initTabCounter = initTabCounter;
+window.closeBrowserIntelligently = closeBrowserIntelligently;
+window.toggleMenu = toggleMenu;
+window.closeMenu = closeMenu;
+window.toggleUserDropdown = toggleUserDropdown;
+window.switchTab = switchTab;
+window.switchTabReports = switchTabReports;
+window.initTabs = initTabs;
+window.dismissMessage = dismissMessage;
+
+// Verificar se estamos na página de relatórios e inicializar se necessário
+if (window.location.pathname.includes('/reports')) {
+
+  // Aguardar o DOM estar carregado
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof initReportsTabs === 'function') {
+        initReportsTabs();
+      } else {
+        console.warn('Função initReportsTabs não encontrada na inicialização global');
+      }
+    });
+  } else {
+    // DOM já está carregado
+    if (typeof initReportsTabs === 'function') {
+      initReportsTabs();
+    } else {
+      console.warn('Função initReportsTabs não encontrada na inicialização global (DOM já carregado)');
+    }
+  }
+}

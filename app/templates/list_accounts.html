@@ -1,0 +1,298 @@
+{% extends 'index.html' %}
+
+{% block title %}Contas{% endblock %}
+
+{% block index %}
+
+<div class="col p-lg-0">
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 text-gray-800">Contas</h1>
+    <a href="{{ url_for('conta.add_conta') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> Adicionar
+    </a>
+  </div>
+
+  <div class="card m-0">
+    <div class="card-body px-2 pb-0">
+
+      {% if contas %}
+      <div class="table-responsive">
+        <table class="table table-hover table-sm m-0" id="contasTable">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Saldo Inicial</th>
+              <th>Saldo Atual</th>
+              <th class="text-center">Dados</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for conta in contas %}
+            <tr data-conta-id="{{ conta.id }}">
+              <td>
+                <div class="editable-field" data-field="nome" data-value="{{ conta.nome }}">
+                  {{ conta.nome }}
+                </div>
+              </td>
+              <td>
+                {% if conta.tipo %}
+                  {{ conta.tipo.nome }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="text-muted">R$ {{ "%.2f"|format(conta.saldo_inicial or 0) }}</span>
+              </td>
+              <td>
+                <span class="fw-bold {% if conta.saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                  R$ {{ "%.2f"|format(conta.saldo_atual or 0) }}
+                </span>
+              </td>
+              <td class="text-center align-middle">
+                <!-- Botões de Transação e Investimento -->
+                <a
+                  href="{{ url_for('transaction.add_transaction', conta_id=conta.id) }}"
+                  class="text-decoration-none"
+                  style="font-size: 0.75rem; padding: 0.25rem 0.5rem"
+                  title="Nova Transação em {{ conta.nome }}"
+                >
+                  <i class="fas fa-plus fa-lg"></i>
+                  {# <span class="d-none d-md-inline">Transação</span> #}
+                </a>
+                <a
+                  href="{{ url_for('investimento.investimentos', conta_id=conta.id) }}"
+                  style="font-size: 0.75rem; padding: 0.25rem 0.5rem"
+                  title="Investimentos em {{ conta.nome }}"
+                >
+                  <i class="fas fa-chart-line fa-lg"></i>
+                  {# <span class="d-none d-md-inline">Investir</span> #}
+                </a>
+              </td>
+              <td class="text-center">
+                <div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
+                  
+                  <!-- Botões de Ação (Editar/Excluir) -->
+                  <div class="btn-group btn-group-sm d-flex justify-content-center">
+                    <a
+                      href="{{ url_for('conta.editar_conta', conta_id=conta.id) }}"
+                      class="btn btn-sm text-primary p-0"
+                      style="max-width: 50px"
+                      title="Editar {{ conta.nome }}"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    {% if not conta.tem_lancamentos %}
+                    <form
+                      id="deleteForm_{{ conta.id }}"
+                      action="{{ url_for('conta.excluir_conta', conta_id=conta.id) }}"
+                      method="POST"
+                      style="display: inline"
+                    >
+                      <button
+                        type="button"
+                        class="btn btn-sm text-danger p-0"
+                        style="max-width: 50px"
+                        title="Excluir {{ conta.nome }}"
+                        onclick="showDeleteConfirmation('Tem certeza que deseja excluir a conta {{ conta.nome }}?', 'deleteForm_{{ conta.id }}')"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </form>
+                    {% else %}
+                    <button
+                      type="button"
+                      class="btn btn-sm text-muted p-0"
+                      style="max-width: 50px"
+                      title="Não é possível excluir {{ conta.nome }} - possui lançamentos"
+                      disabled
+                    >
+                      <i class="fas fa-lock"></i>
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center">
+          <p class="mb-3">Nenhuma conta registrada.</p>
+          <a href="{{ url_for('conta.add_conta') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Criar Primeira Conta
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"
+></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"
+></script>
+<script>
+  $(document).ready(function () {
+    $("#contasTable").DataTable({
+      language: {
+        sEmptyTable: "Nenhum registro encontrado",
+        sInfo: "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+        sInfoEmpty: "Mostrando 0 até 0 de 0 registros",
+        sInfoFiltered: "(Filtrados de _MAX_ registros)",
+        sInfoPostFix: "",
+        sInfoThousands: ".",
+        sLengthMenu: "_MENU_ resultados por página",
+        sLoadingRecords: "Carregando...",
+        sProcessing: "Processando...",
+        sZeroRecords: "Nenhum registro encontrado",
+        sSearch: "Pesquisar",
+        oPaginate: {
+          sNext: "Próximo",
+          sPrevious: "Anterior",
+          sFirst: "Primeiro",
+          sLast: "Último",
+        },
+        oAria: {
+          sSortAscending: ": Ordenar colunas de forma ascendente",
+          sSortDescending: ": Ordenar colunas de forma descendente",
+        },
+      },
+      pageLength: 25,
+      order: [[0, "asc"]], // Ordena pela coluna Nome
+      columnDefs: [
+        { orderable: false, targets: 4 }, // Desabilita ordenação na coluna de ações
+      ],
+      dom: '<"row px-2 d-flex justify-content-between align-items-center"<"col-auto"l><"col-auto"f>>rt<"row px-2"<"col-sm-12 d-flex align-items-center justify-content-between"ip>>',
+    });
+
+    // Funcionalidade de edição inline
+    $('.editable-field').on('click', function() {
+      if ($(this).hasClass('editing')) return;
+      
+      const field = $(this);
+      const fieldType = field.data('field');
+      const currentValue = field.data('value');
+      const originalContent = field.html();
+      
+      // Adicionar classe de edição
+      field.addClass('editing');
+      
+      // Criar input
+      const inputElement = $('<input type="text" class="edit-input">').val(currentValue);
+      
+      // Criar botões de ação
+      const saveBtn = $('<button class="btn btn-success btn-sm save-btn">').html('<i class="fas fa-check"></i>');
+      const cancelBtn = $('<button class="btn btn-secondary btn-sm cancel-btn">').html('<i class="fas fa-times"></i>');
+      const actionDiv = $('<div class="mt-2">').append(saveBtn, cancelBtn);
+      
+      // Substituir conteúdo
+      field.html('').append(inputElement, actionDiv);
+      inputElement.focus();
+      
+      // Focar no input
+      setTimeout(() => inputElement.focus(), 100);
+      
+      // Evento de salvar
+      saveBtn.on('click', function() {
+        const newValue = inputElement.val().trim();
+        
+        // Validações
+        if (newValue === '') {
+          alert('Nome não pode estar vazio.');
+          return;
+        }
+        
+        if (newValue.length > 100) {
+          alert('Nome deve ter no máximo 100 caracteres.');
+          return;
+        }
+        
+        // Fazer requisição AJAX
+        const contaId = field.closest('tr').data('conta-id');
+        const url = `/conta/editar-nome/${contaId}`;
+        
+        $.ajax({
+          url: url,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ nome: newValue }),
+          success: function(response) {
+            if (response.success) {
+              // Atualizar valor e conteúdo
+              field.data('value', newValue);
+              field.html(newValue).removeClass('editing');
+              
+              // Mostrar mensagem de sucesso
+              showFlashMessage(response.message, 'success');
+            } else {
+              alert('Erro: ' + response.message);
+              field.html(originalContent).removeClass('editing');
+            }
+          },
+          error: function(xhr) {
+            let errorMsg = 'Erro ao atualizar campo.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              errorMsg = xhr.responseJSON.message;
+            }
+            alert('Erro: ' + errorMsg);
+            field.html(originalContent).removeClass('editing');
+          }
+        });
+      });
+      
+      // Evento de cancelar
+      cancelBtn.on('click', function() {
+        field.html(originalContent).removeClass('editing');
+      });
+      
+      // Evento de pressionar Enter para salvar
+      inputElement.on('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
+      
+      // Evento de pressionar Escape para cancelar
+      inputElement.on('keydown', function(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelBtn.click();
+        }
+      });
+    });
+    
+    // Função para mostrar mensagens flash
+    function showFlashMessage(message, type) {
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+      const flashDiv = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>`);
+      
+      $('.card-body').prepend(flashDiv);
+      
+      // Auto-remover após 3 segundos
+      setTimeout(() => {
+        flashDiv.fadeOut(() => flashDiv.remove());
+      }, 3000);
+    }
+  });
+</script>
+{% endblock %}
+

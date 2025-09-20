@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório por Forma de Pagamento - Finanças Pessoais{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="h3 mb-4 text-gray-800">Relatório por Forma de Pagamento</h1>
+
+  <!-- Filtros -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+    </div>
+    <div class="card-body">
+      <form method="GET" class="row g-3">
+        <div class="col-md-3">
+          <label for="start_date" class="form-label">Data Inicial</label>
+          <input
+            type="date"
+            class="form-control"
+            id="start_date"
+            name="start_date"
+            value="{{ request.args.get('start_date', '') }}"
+            required
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="end_date" class="form-label">Data Final</label>
+          <input
+            type="date"
+            class="form-control"
+            id="end_date"
+            name="end_date"
+            value="{{ request.args.get('end_date', '') }}"
+            required
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="type" class="form-label">Tipo</label>
+          <select class="form-select" id="type" name="type">
+            <option value="">Todos</option>
+            <option
+              value="receita"
+              {% if request.args.get('type') == 'receita' %}selected{% endif %}
+            >
+              Receita
+            </option>
+            <option
+              value="despesa"
+              {% if request.args.get('type') == 'despesa' %}selected{% endif %}
+            >
+              Despesa
+            </option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resumo -->
+  <div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                Total Receitas
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(total_amount|float) }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+              >
+                Total Despesas
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(total_discount|float) }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Saldo
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                R$ {{ "%.2f"|format(total_final|float) }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Total de Transações
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_transactions }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Formas de Pagamento -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        Detalhamento por Forma de Pagamento
+      </h6>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Forma de Pagamento</th>
+              <th>Total Receitas</th>
+              <th>Total Despesas</th>
+              <th>Saldo</th>
+              <th>Quantidade</th>
+              <th>% do Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for method in payment_methods %}
+            <tr>
+              <td>{{ method.name }}</td>
+              <td class="text-success">
+                R$ {{ "%.2f"|format(payment_method_totals[method.id].total_income|float) }}
+              </td>
+              <td class="text-danger">
+                R$ {{ "%.2f"|format(payment_method_totals[method.id].total_expenses|float) }}
+              </td>
+              <td
+                class="{% if ((payment_method_totals[method.id].total_income or 0)|float - (payment_method_totals[method.id].total_expenses or 0)|float) >= 0 %}text-success{% else %}text-danger{% endif %}"
+              >
+                R$ {{ "%.2f"|format((payment_method_totals[method.id].total_income or 0)|float - (payment_method_totals[method.id].total_expenses or 0)|float) }}
+              </td>
+              <td>{{ payment_method_totals[method.id].count }}</td>
+              <td>
+                {% if total_transactions > 0 %} {{
+                "%.1f"|format(payment_method_totals[method.id].count / total_transactions * 100) }}% {% else
+                %} 0% {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Gráfico</h6>
+    </div>
+    <div class="card-body">
+      <canvas id="paymentMethodChart"></canvas>
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Dados para o gráfico
+  const ctx = document.getElementById("paymentMethodChart").getContext("2d");
+  const data = {
+    labels: [
+      {% for method in payment_methods %}
+      "{{ method.name }}",
+      {% endfor %}
+    ],
+    datasets: [
+      {
+        label: "Receitas",
+        data: [
+          {% for method in payment_methods %}
+          {{ payment_method_totals[method.id].total_income|default(0)|float }},
+          {% endfor %}
+        ],
+        backgroundColor: "rgba(40, 167, 69, 0.2)",
+        borderColor: "rgba(40, 167, 69, 1)",
+        borderWidth: 1,
+      },
+      {
+        label: "Despesas",
+        data: [
+          {% for method in payment_methods %}
+          {{ payment_method_totals[method.id].total_expenses|default(0)|float }},
+          {% endfor %}
+        ],
+        backgroundColor: "rgba(220, 53, 69, 0.2)",
+        borderColor: "rgba(220, 53, 69, 1)",
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Configuração do gráfico
+  const config = {
+    type: "bar",
+    data: data,
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return "R$ " + value.toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              });
+            },
+          },
+        },
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.dataset.label || "";
+              if (label) {
+                label += ": ";
+              }
+              if (context.parsed.y !== null) {
+                label += new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(context.parsed.y);
+              }
+              return label;
+            },
+          },
+        },
+      },
+    },
+  };
+
+  // Criar o gráfico
+  new Chart(ctx, config);
+</script>
+{% endblock %}
+{% endblock %} 
