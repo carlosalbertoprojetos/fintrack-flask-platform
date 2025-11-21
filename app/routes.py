@@ -493,16 +493,26 @@ def dashboard():
     if conta_filter:
         conta_atual = next((c for c in contas if c.id == conta_filter), None)
         if conta_atual:
-            # Garantir que o saldo esteja atualizado
-            Conta.recalcular_saldos()
+            # Recalcular apenas a conta específica
+            Conta.recalcular_saldos(conta_id=conta_filter)
+            # Recarregar o objeto do banco de dados para obter o valor atualizado
+            db.session.refresh(conta_atual)
             saldo_atual = conta_atual.saldo_atual
     else:
         # Se não há conta específica, usar a conta atual da sessão
         conta_atual = get_current_conta()
         if conta_atual:
-            Conta.recalcular_saldos()
+            # Recalcular apenas a conta específica
+            Conta.recalcular_saldos(conta_id=conta_atual.id)
+            # Recarregar o objeto do banco de dados para obter o valor atualizado
+            db.session.refresh(conta_atual)
             saldo_atual = conta_atual.saldo_atual
         else:
+            # Recalcular todas as contas do usuário
+            Conta.recalcular_saldos()
+            # Recarregar todas as contas
+            for conta in contas:
+                db.session.refresh(conta)
             saldo_atual = sum(c.saldo_atual for c in contas)
 
     # Buscar investimentos da conta selecionada
@@ -1865,6 +1875,8 @@ def add_transaction():
             paid=form.paid.data,
             payment_date=form.payment_date.data,
             recurrence=form.recurrence.data,
+            details=form.details.data,  # Adicionar campo details
+            notes=form.notes.data,  # Adicionar campo notes
             user_id=current_user.id,
             conta_id=conta_id,  # Vincular à conta selecionada
         )
@@ -1919,7 +1931,9 @@ def edit_transaction(id):
         transaction.payment_method_id = form.payment_method_id.data
         transaction.paid = form.paid.data
         transaction.payment_date = form.payment_date.data
+        transaction.recurrence = form.recurrence.data
         transaction.details = form.details.data  # Adicionado para salvar detalhes na edição
+        transaction.notes = form.notes.data  # Adicionar campo notes na edição
         transaction.conta_id = form.conta_id.data if form.conta_id.data else None
 
         db.session.commit()

@@ -158,32 +158,43 @@ class Conta(db.Model):
         return f"<Conta {self.nome} - {self.tipo.nome if self.tipo else 'Sem tipo'}>"
 
     @staticmethod
-    def recalcular_saldos():
+    def recalcular_saldos(conta_id=None):
         from app.models import Transaction, MovimentacaoInvestimento
         from app import db
         from sqlalchemy import extract
-        contas = Conta.query.all()
+        from decimal import Decimal, ROUND_HALF_UP
+        
+        # Se conta_id for especificado, recalcular apenas essa conta
+        if conta_id:
+            contas = Conta.query.filter_by(id=conta_id).all()
+        else:
+            contas = Conta.query.all()
+            
         for conta in contas:
-            saldo = conta.saldo_inicial or 0.0
+            # Usar Decimal para cálculos precisos
+            saldo = Decimal(str(conta.saldo_inicial or 0.0))
+            
             # Considerar apenas transações pagas
             transacoes = Transaction.query.filter_by(conta_id=conta.id, paid=True).order_by(Transaction.date.asc()).all()
             for transacao in transacoes:
                 if transacao.type == 'receita':
-                    saldo += transacao.amount
+                    saldo += Decimal(str(transacao.amount or 0.0))
                 elif transacao.type == 'despesa':
-                    valor = transacao.amount - (transacao.discount or 0.0)
+                    valor = Decimal(str(transacao.amount or 0.0)) - Decimal(str(transacao.discount or 0.0))
                     saldo -= valor
             
             # Considerar movimentações de investimento
             movimentacoes_investimento = MovimentacaoInvestimento.query.filter_by(conta_id=conta.id).all()
             for mov in movimentacoes_investimento:
                 if mov.tipo_movimentacao == 'aplicacao':
-                    saldo -= mov.valor  # Aplicação diminui o saldo da conta
+                    saldo -= Decimal(str(mov.valor or 0.0))  # Aplicação diminui o saldo da conta
                 elif mov.tipo_movimentacao == 'resgate':
-                    saldo += mov.valor  # Resgate aumenta o saldo da conta
+                    saldo += Decimal(str(mov.valor or 0.0))  # Resgate aumenta o saldo da conta
                 # Rendimento não afeta o saldo da conta
             
-            conta.saldo_atual = saldo
+            # Arredondar para 2 casas decimais usando Decimal
+            saldo_arredondado = float(saldo.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+            conta.saldo_atual = saldo_arredondado
         db.session.commit()
     
     def atualizar_saldo_investimento(self, tipo_movimentacao, valor, operacao='adicionar'):

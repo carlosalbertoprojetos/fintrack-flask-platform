@@ -16,15 +16,40 @@ mail = Mail()
 
 
 def format_currency(value):
-    """Format a number as currency with comma as decimal separator"""
+    """Format a number as currency in Brazilian format (R$ 0,00)"""
     if value is None:
         return "0,00"
 
     # Convert to float if it's a string
     try:
         if isinstance(value, str):
+            # Remove espaços e caracteres não numéricos exceto vírgula e ponto
+            value = value.replace(" ", "").replace("R$", "").strip()
+            # Se contém vírgula, assumir formato brasileiro
+            if "," in value:
+                value = value.replace(".", "").replace(",", ".")
             value = float(value)
-        return f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        
+        # Formatar com 2 casas decimais
+        # Usar abs para valores negativos
+        abs_value = abs(value)
+        integer_part = int(abs_value)
+        decimal_part = int(round((abs_value - integer_part) * 100))
+        
+        # Formatar parte inteira com separador de milhar (ponto)
+        integer_str = f"{integer_part:,}".replace(",", ".")
+        
+        # Formatar parte decimal sempre com 2 dígitos
+        decimal_str = f"{decimal_part:02d}"
+        
+        # Combinar
+        formatted = f"{integer_str},{decimal_str}"
+        
+        # Adicionar sinal negativo se necessário
+        if value < 0:
+            formatted = f"-{formatted}"
+        
+        return formatted
     except (ValueError, TypeError):
         return "0,00"
 
@@ -164,49 +189,54 @@ def initialize_user_default_data(user):
         # Fazer commit dos tipos e dados globais
         db.session.commit()
         
-        # 6. CRIAR CONTAS PADRÃO PARA O USUÁRIO
-        tipo_banco_fisico = TipoConta.query.filter_by(
-            nome="Banco Físico", 
-            user_id=user.id
-        ).first()
+        # 6. CRIAR CONTAS PADRÃO PARA O USUÁRIO (apenas se não houver nenhuma conta)
+        # Verificar se o usuário já tem alguma conta
+        existing_contas_count = Conta.query.filter_by(user_id=user.id).count()
         
-        tipo_banco_virtual = TipoConta.query.filter_by(
-            nome="Banco Virtual", 
-            user_id=user.id
-        ).first()
-        
-        contas_data = [
-            {
-                "nome": "Inter", 
-                "tipo_id": tipo_banco_virtual.id if tipo_banco_virtual else None,
-                "saldo_inicial": 0.00,
-                "saldo_atual": 0.00
-            },
-            {
-                "nome": "Banco do Brasil", 
-                "tipo_id": tipo_banco_fisico.id if tipo_banco_fisico else None,
-                "saldo_inicial": 0.00,
-                "saldo_atual": 0.00
-            },
-        ]
-        
-        for conta_data in contas_data:
-            if conta_data["tipo_id"]:
-                # Verificar se a conta já existe para este usuário
-                existing_conta = Conta.query.filter_by(
-                    nome=conta_data["nome"], 
-                    user_id=user.id
-                ).first()
-                
-                if not existing_conta:
-                    conta = Conta(
-                        nome=conta_data["nome"],
-                        tipo_id=conta_data["tipo_id"],
-                        saldo_inicial=conta_data["saldo_inicial"],
-                        saldo_atual=conta_data["saldo_atual"],
+        # Só criar contas padrão se o usuário não tiver nenhuma conta
+        if existing_contas_count == 0:
+            tipo_banco_fisico = TipoConta.query.filter_by(
+                nome="Banco Físico", 
+                user_id=user.id
+            ).first()
+            
+            tipo_banco_virtual = TipoConta.query.filter_by(
+                nome="Banco Virtual", 
+                user_id=user.id
+            ).first()
+            
+            contas_data = [
+                {
+                    "nome": "Inter", 
+                    "tipo_id": tipo_banco_virtual.id if tipo_banco_virtual else None,
+                    "saldo_inicial": 0.00,
+                    "saldo_atual": 0.00
+                },
+                {
+                    "nome": "Banco do Brasil", 
+                    "tipo_id": tipo_banco_fisico.id if tipo_banco_fisico else None,
+                    "saldo_inicial": 0.00,
+                    "saldo_atual": 0.00
+                },
+            ]
+            
+            for conta_data in contas_data:
+                if conta_data["tipo_id"]:
+                    # Verificar se a conta já existe para este usuário (verificação adicional)
+                    existing_conta = Conta.query.filter_by(
+                        nome=conta_data["nome"], 
                         user_id=user.id
-                    )
-                    db.session.add(conta)
+                    ).first()
+                    
+                    if not existing_conta:
+                        conta = Conta(
+                            nome=conta_data["nome"],
+                            tipo_id=conta_data["tipo_id"],
+                            saldo_inicial=conta_data["saldo_inicial"],
+                            saldo_atual=conta_data["saldo_atual"],
+                            user_id=user.id
+                        )
+                        db.session.add(conta)
         
         # Commit final
         db.session.commit()

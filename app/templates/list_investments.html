@@ -18,7 +18,7 @@
   <div class="alert alert-info">
     <i class="fas fa-info-circle"></i>
     <strong>Conta Selecionada:</strong> {{ conta_info.nome }} - 
-    <strong>Saldo Atual:</strong> R$ {{ "%.2f"|format(conta_info.saldo_atual) }}
+    <strong>Saldo Atual:</strong> R$ {{ conta_info.saldo_atual|currency }}
   </div>
   {% endif %}
 
@@ -48,7 +48,7 @@
               </td>
               <td>
                 <span class="fw-bold {% if investimento.saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
-                  R$ {{ "%.2f"|format(investimento.saldo_atual or 0) }}
+                  R$ {{ (investimento.saldo_atual or 0)|currency }}
                 </span>
               </td>
               <td>

@@ -71,7 +71,7 @@
                                 Total Despesas
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                R$ {{ "%.2f"|format(total_amount|float) }}
+                                R$ {{ total_amount|currency }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -93,7 +93,7 @@
                                 Total Descontos
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                R$ {{ "%.2f"|format(total_discount|float) }}
+                                R$ {{ total_discount|currency }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -115,7 +115,7 @@
                                 Valor Final
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                R$ {{ "%.2f"|format(total_final|float) }}
+                                R$ {{ total_final|currency }}
                             </div>
                         </div>
                         <div class="col-auto">
@@ -177,18 +177,17 @@
                             <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
                             <td>{{ transaction.category.name }}</td>
                             <td>
-                                {{ transaction.expense.name if transaction.expense else
-                                transaction.description }}
+                                {{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}
                             </td>
                             <td class="text-danger">
-                                R$ {{ "%.2f"|format(transaction.amount|float) }}
+                                R$ {{ transaction.amount|currency }}
                             </td>
                             <td class="text-success">
                                 {% if transaction.discount and transaction.discount > 0 %}
-                                R$ {{ "%.2f"|format(transaction.discount|float) }} {% else %} - {% endif %}
+                                R$ {{ transaction.discount|currency }} {% else %} - {% endif %}
                             </td>
                             <td class="text-danger">
-                                R$ {{ "%.2f"|format((transaction.amount or 0)|float - (transaction.discount or 0)|float) }}
+                                R$ {{ ((transaction.amount or 0) - (transaction.discount or 0))|currency }}
                             </td>
                             <td>
                                 {{ transaction.due_date.strftime('%d/%m/%Y') if
@@ -213,13 +212,13 @@
                         <tr class="table-primary">
                             <td colspan="3"><strong>Total</strong></td>
                             <td class="text-danger">
-                                <strong>R$ {{ "%.2f"|format(total_amount|float) }}</strong>
+                                <strong>R$ {{ total_amount|currency }}</strong>
                             </td>
                             <td class="text-success">
-                                <strong>R$ {{ "%.2f"|format(total_discount|float) }}</strong>
+                                <strong>R$ {{ total_discount|currency }}</strong>
                             </td>
                             <td class="text-danger">
-                                <strong>R$ {{ "%.2f"|format(total_final|float) }}</strong>
+                                <strong>R$ {{ total_final|currency }}</strong>
                             </td>
                             <td colspan="4"></td>
                         </tr>

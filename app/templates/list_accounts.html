@@ -44,11 +44,11 @@
                 {% endif %}
               </td>
               <td>
-                <span class="text-muted">R$ {{ "%.2f"|format(conta.saldo_inicial or 0) }}</span>
+                <span class="text-muted">R$ {{ (conta.saldo_inicial or 0)|currency }}</span>
               </td>
               <td>
                 <span class="fw-bold {% if conta.saldo_atual >= 0 %}text-success{% else %}text-danger{% endif %}">
-                  R$ {{ "%.2f"|format(conta.saldo_atual or 0) }}
+                  R$ {{ (conta.saldo_atual or 0)|currency }}
                 </span>
               </td>
               <td class="text-center align-middle">

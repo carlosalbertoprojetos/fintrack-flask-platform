@@ -73,7 +73,7 @@
                 Total Receitas
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ "%.2f"|format(total_amount|float) }}
+                R$ {{ total_amount|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -95,7 +95,7 @@
                 Total Despesas
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ "%.2f"|format(total_discount|float) }}
+                R$ {{ total_discount|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -117,7 +117,7 @@
                 Saldo
               </div>
               <div class="h5 mb-0 font-weight-bold text-gray-800">
-                R$ {{ "%.2f"|format(total_final|float) }}
+                R$ {{ total_final|currency }}
               </div>
             </div>
             <div class="col-auto">
@@ -176,15 +176,15 @@
             <tr>
               <td>{{ method.name }}</td>
               <td class="text-success">
-                R$ {{ "%.2f"|format(payment_method_totals[method.id].total_income|float) }}
+                R$ {{ payment_method_totals[method.id].total_income|currency }}
               </td>
               <td class="text-danger">
-                R$ {{ "%.2f"|format(payment_method_totals[method.id].total_expenses|float) }}
+                R$ {{ payment_method_totals[method.id].total_expenses|currency }}
               </td>
               <td
                 class="{% if ((payment_method_totals[method.id].total_income or 0)|float - (payment_method_totals[method.id].total_expenses or 0)|float) >= 0 %}text-success{% else %}text-danger{% endif %}"
               >
-                R$ {{ "%.2f"|format((payment_method_totals[method.id].total_income or 0)|float - (payment_method_totals[method.id].total_expenses or 0)|float) }}
+                R$ {{ ((payment_method_totals[method.id].total_income or 0) - (payment_method_totals[method.id].total_expenses or 0))|currency }}
               </td>
               <td>{{ payment_method_totals[method.id].count }}</td>
               <td>

@@ -149,7 +149,7 @@ function initTabCounter() {
     localStorage.setItem(CONFIG.TAB_COUNT_KEY, newCount.toString());
     localStorage.setItem(CONFIG.LAST_UPDATE_KEY, timestamp.toString());
 
-    console.log(`Aba ${tabId} inicializada. Total de abas: ${newCount}`);
+
 
     // Listener para mensagens de outras abas
     channel.addEventListener('message', handleTabMessage);

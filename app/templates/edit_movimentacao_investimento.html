@@ -27,7 +27,7 @@
   <div class="card-header d-flex justify-content-between bg-primary text-white">
     <h4 class="mb-0">Editar Movimentação</h4>
     <div class="text-white">
-      <small>Investimento ID: {{ investimento.id }} | Tipo: {{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }} | Saldo do Investimento: R$ {{ "%.2f"|format(investimento.saldo_atual or 0.0) }}</small>
+      <small>Investimento ID: {{ investimento.id }} | Tipo: {{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }} | Saldo do Investimento: R$ {{ (investimento.saldo_atual or 0.0)|currency }}</small>
     </div>
   </div>
   <div class="card-body">

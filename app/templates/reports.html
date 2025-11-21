@@ -113,7 +113,7 @@
                         </div>
                         <div class="col-auto">
                             <h6 class="card-title text-end m-0">Receitas</h6>
-                            <h4 class="fw-bold mb-0">R$ {{ "%.2f"|format(income_total|float) }}</h4>
+                            <h4 class="fw-bold mb-0">R$ {{ income_total|currency }}</h4>
                         </div>
                     </div>
                 </div>
@@ -126,7 +126,7 @@
                         </div>
                         <div class="col-auto">
                             <h6 class="card-title text-end m-0">Despesas</h6>
-                            <h4 class="fw-bold mb-0">R$ {{ "%.2f"|format(expense_total|float) }}</h4>
+                            <h4 class="fw-bold mb-0">R$ {{ expense_total|currency }}</h4>
                         </div>
                     </div>
                 </div>
@@ -139,7 +139,7 @@
                         </div>
                         <div class="col-auto">
                             <h6 class="card-title text-end m-0">Saldo</h6>
-                            <h4 class="fw-bold mb-0">R$ {{ "%.2f"|format((income_total|float - expense_total|float)) }}</h4>
+                            <h4 class="fw-bold mb-0">R$ {{ (income_total - expense_total)|currency }}</h4>
                         </div>
                     </div>
                 </div>
@@ -163,7 +163,7 @@
                 </div>
                 <div class="d-lg-flex gap-3 align-items-center  text-lg-end">
                     <small class="d-none d-lg-block fs-6 m-0">Total:</small>
-                    <small class="fs-5">R$ {{ "%.2f"|format(investimentos|sum(attribute='saldo_atual')|float) }}</small>
+                    <small class="fs-5">R$ {{ investimentos|sum(attribute='saldo_atual')|currency }}</small>
                 </div>
                 </div>
                 <div class="col-2 col-lg-1 text-lg-end ps-1 p-lg-0 pe-lg-3">
@@ -206,8 +206,8 @@
                         {% endif %}
                         </td>
                         <td>{{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }}</td>
-                        <td class="text-success fw-bold">R$ {{ "%.2f"|format(investimento.saldo_atual|default(0.0)|float) }}</td>
-                        <td class="{% if investimento.ultimo_rendimento > 0 %}text-success{% else %}text-muted{% endif %}">R$ {{ "%.2f"|format(investimento.ultimo_rendimento|float) }}</td>
+                        <td class="text-success fw-bold">R$ {{ investimento.saldo_atual|default(0.0)|currency }}</td>
+                        <td class="{% if investimento.ultimo_rendimento > 0 %}text-success{% else %}text-muted{% endif %}">R$ {{ investimento.ultimo_rendimento|currency }}</td>
                         <td>
                         {% if investimento.data_ultimo_rendimento %}
                             {{ investimento.data_ultimo_rendimento.strftime('%d/%m/%Y') }}
@@ -255,8 +255,8 @@
                         <tr>
                             <td class="text-center">{{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '-' }}</td>
                             <td class="text-center">{{ transaction.category.name }}</td>
-                            <td class="text-center">{{ transaction.expense.name if transaction.expense else transaction.description }}</td>
-                            <td class="text-nowrap text-success">R$ {{ "%.2f"|format(transaction.amount|float) }}</td>
+                            <td class="text-center">{{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}</td>
+                            <td class="text-nowrap text-success">R$ {{ transaction.amount|currency }}</td>
                             <td class="text-center">{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
                             <td class="text-center">
                                 {% if transaction.paid %}
@@ -326,11 +326,11 @@
                         <tr class="expense-row" data-has-discount="{{ 'true' if transaction.discount and transaction.discount > 0 else 'false' }}">
                             <td class="text-center">{{ transaction.due_date.strftime('%d/%m/%Y') if transaction.due_date else '-' }}</td>
                             <td class="text-center">{{ transaction.category.name }}</td>
-                            <td class="text-center">{{ transaction.expense.name if transaction.expense else transaction.description }}</td>
-                                            <td class="text-nowrap text-danger">R$ {{ "%.2f"|format(transaction.amount|float) }}</td>
-                <td class="text-nowrap text-success">R$ {{ "%.2f"|format(transaction.discount|float) }}</td>
+                            <td class="text-center">{{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}</td>
+                                            <td class="text-nowrap text-danger">R$ {{ transaction.amount|currency }}</td>
+                <td class="text-nowrap text-success">R$ {{ transaction.discount|currency }}</td>
                 <td class="text-nowrap text-danger">
-                  R$ {{ "%.2f"|format((transaction.amount or 0)|float - (transaction.discount or 0)|float) }}
+                  R$ {{ ((transaction.amount or 0) - (transaction.discount or 0))|currency }}
                 </td>
                             <td class="text-center">{{ transaction.payment_date.strftime('%d/%m/%Y') if transaction.payment_date else '-' }}</td>
                             <td class="text-center">{{ transaction.payment_method.name if transaction.payment_method else '-' }}</td>
@@ -390,7 +390,7 @@
                         {% for item in income_by_category %}
                         <span class="mr-2">
                             <i class="fas fa-circle" style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ item.category }} (R$ {{ "%.2f"|format(item.amount|float) }})
+                            {{ item.category }} (R$ {{ item.amount|currency }})
                         </span>
                         {% endfor %}
                     </div>
@@ -412,7 +412,7 @@
                         {% for item in expense_by_category %}
                         <span class="mr-2">
                             <i class="fas fa-circle" style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
-                            {{ item.category }} (R$ {{ "%.2f"|format(item.amount|float) }})
+                            {{ item.category }} (R$ {{ item.amount|currency }})
                         </span>
                         {% endfor %}
                     </div>
@@ -454,7 +454,7 @@
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Total em {{ selected_category.name }} ({{ year }})</div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(annual_total|float) }}</div>
+                            <div class="h6 mb-0 font-weight-bold text-gray-800">R$ {{ annual_total|currency }}</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-folder fa-2x text-gray-300"></i>
@@ -505,8 +505,8 @@
                                 {% for transaction in transactions %}
                                 <tr>
                                     <td>{{ transaction.date.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ transaction.description }}</td>
-                                    <td class="text-right">R$ {{ "%.2f"|format(transaction.amount|float) }}</td>
+                                    <td>{{ transaction.description or '-' }}</td>
+                                    <td class="text-right">R$ {{ transaction.amount|currency }}</td>
                                     <td>
                                         {% if transaction.type == 'income' %}
                                         <span class="badge badge-success">Receita</span>
