@@ -635,6 +635,9 @@ def login():
             return redirect(next_page or url_for("main.dashboard"))
         else:
             flash("Nome de usuário ou senha inválidos", "danger")
+            # Garantir que a mensagem seja exibida apenas na página de login
+            # Não fazer redirect, renderizar o template diretamente
+            return render_template("login.html", form=form)
 
     return render_template("login.html", form=form)
 

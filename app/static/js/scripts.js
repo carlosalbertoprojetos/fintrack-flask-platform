@@ -337,13 +337,33 @@ function cleanupTabStorage() {
  */
 async function closeTabOrBrowser() {
   try {
-    const tabCount = await detectBrowserTabCount();
+    // Timeout para evitar espera infinita
+    const closeTimeout = setTimeout(() => {
+      console.warn('Timeout ao detectar abas, forçando fechamento');
+      forceClose();
+    }, 2000);
+
+    let tabCount;
+    try {
+      tabCount = await detectBrowserTabCount();
+      clearTimeout(closeTimeout);
+    } catch (error) {
+      console.warn('Erro ao detectar abas, usando fallback:', error);
+      clearTimeout(closeTimeout);
+      // Fallback: usar localStorage
+      tabCount = parseInt(
+        localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
+      );
+    }
+
     const shouldCloseBrowser = tabCount <= 1;
 
     if (shouldCloseBrowser) {
       cleanupTabStorage();
+      updateShutdownStatus('Fechando navegador completo...');
     } else {
       decrementTabCount();
+      updateShutdownStatus('Fechando apenas esta aba...');
       
       // Notificar outras abas
       if (AppState.tabChannel) {
@@ -358,23 +378,88 @@ async function closeTabOrBrowser() {
       }
     }
 
-    // Tentar fechar
-    try {
-      window.close();
-    } catch (e) {
-      console.warn('window.close() falhou, usando fallback');
-      window.location.href = 'about:blank';
-    }
+    // Aguardar um pouco para atualizar UI
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // Tentar fechar (não aguardar, executar e continuar)
+    forceClose();
+    
+    // Não aguardar retorno, já que forceClose() tenta múltiplos métodos
 
   } catch (error) {
     console.error('Erro ao fechar aba/navegador:', error);
-    // Fallback final
+    forceClose();
+  }
+}
+
+/**
+ * Força fechamento do navegador/aba
+ */
+function forceClose() {
+  updateShutdownStatus('Fechando navegador...');
+  
+  // Método 1: Tentar window.close() imediatamente
+  try {
+    window.close();
+    // Se chegou aqui, window.close() não lançou exceção
+    // Mas pode não ter funcionado devido a restrições do navegador
+  } catch (e) {
+    console.warn('window.close() lançou exceção:', e);
+  }
+
+  // Método 2: Aguardar um pouco e tentar novamente
+  setTimeout(() => {
     try {
       window.close();
     } catch (e) {
-      window.location.href = 'about:blank';
+      console.warn('Segunda tentativa window.close() falhou:', e);
     }
-  }
+  }, 100);
+
+  // Método 3: Redirecionar para about:blank (força fechamento em alguns casos)
+  setTimeout(() => {
+    try {
+      window.location.replace('about:blank');
+      // Tentar fechar após redirecionar
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch (e) {
+          console.warn('window.close() após about:blank falhou:', e);
+        }
+      }, 200);
+    } catch (e) {
+      console.warn('Redirecionamento para about:blank falhou:', e);
+    }
+  }, 300);
+
+  // Método 4: Tentar via opener (se a janela foi aberta por outra)
+  setTimeout(() => {
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.close();
+      }
+    } catch (e) {
+      console.warn('window.opener.close() falhou:', e);
+    }
+  }, 500);
+
+  // Método 5: Último recurso - mostrar mensagem após 2 segundos
+  setTimeout(() => {
+    const statusDiv = document.getElementById('shutdown-status');
+    if (statusDiv && !document.hidden) {
+      // Se ainda está visível, significa que não fechou
+      updateShutdownStatus('Não foi possível fechar automaticamente. Por favor, feche a janela manualmente.');
+      // Tentar uma última vez após mostrar mensagem
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch (e) {
+          console.warn('Tentativa final de window.close() falhou:', e);
+        }
+      }, 1000);
+    }
+  }, 2000);
 }
 
 /**
@@ -717,24 +802,25 @@ function updateShutdownStatus(message, timeLeft = null) {
  * Sistema de desligamento
  */
 async function shutdownSystem() {
+  let globalTimeout;
+  let timerInterval;
+  
   try {
-    // Timeout global
-    const globalTimeout = setTimeout(() => {
-      console.warn('Timeout global atingido - forçando fechamento');
-      try {
-        window.close();
-      } catch (e) {
-        window.location.href = 'about:blank';
-      }
-    }, CONFIG.SHUTDOWN_TIMEOUT);
-
-    // Criar UI
+    // Criar UI primeiro
     createShutdownUI();
     updateShutdownStatus('Enviando comando de desligamento...');
 
+    // Timeout global para forçar fechamento
+    globalTimeout = setTimeout(() => {
+      console.warn('Timeout global atingido - forçando fechamento');
+      updateShutdownStatus('Timeout atingido. Forçando fechamento...');
+      if (timerInterval) clearInterval(timerInterval);
+      forceClose();
+    }, CONFIG.SHUTDOWN_TIMEOUT);
+
     // Timer de contagem regressiva
     let timeLeft = CONFIG.SHUTDOWN_TIMEOUT / 1000;
-    const timerInterval = setInterval(() => {
+    timerInterval = setInterval(() => {
       timeLeft--;
       updateShutdownStatus(null, timeLeft);
       if (timeLeft <= 0) {
@@ -742,27 +828,44 @@ async function shutdownSystem() {
       }
     }, 1000);
 
-    // Fazer requisição de shutdown
+    // Fazer requisição de shutdown com timeout
     try {
-      const response = await fetch('/shutdown', {
+      const fetchPromise = fetch('/shutdown', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         }
       });
 
-      if (response.ok) {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout na requisição')), 5000)
+      );
+
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+      if (response && response.ok) {
         updateShutdownStatus('Servidor respondendo... Encerrando aplicação...');
         
-        // Aguardar processamento
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Aguardar processamento (reduzido para 2 segundos)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         updateShutdownStatus('Verificando número de abas...');
 
-        // Fechar usando sistema inteligente
-        await closeTabOrBrowser();
+        // Fechar usando sistema inteligente com timeout
+        try {
+          await Promise.race([
+            closeTabOrBrowser(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout ao fechar')), 3000)
+            )
+          ]);
+        } catch (closeError) {
+          console.warn('Erro ao fechar, usando método forçado:', closeError);
+          updateShutdownStatus('Fechando navegador...');
+          forceClose();
+        }
         
-        clearTimeout(globalTimeout);
-        clearInterval(timerInterval);
+        if (globalTimeout) clearTimeout(globalTimeout);
+        if (timerInterval) clearInterval(timerInterval);
       } else {
         throw new Error('Resposta não OK do servidor');
       }
@@ -770,15 +873,29 @@ async function shutdownSystem() {
       console.error('Erro na comunicação com servidor:', error);
       updateShutdownStatus('Erro na comunicação. Tentando fechar navegador...');
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await closeTabOrBrowser();
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      clearTimeout(globalTimeout);
-      clearInterval(timerInterval);
+      try {
+        await Promise.race([
+          closeTabOrBrowser(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 2000)
+          )
+        ]);
+      } catch (closeError) {
+        console.warn('Erro ao fechar, usando método forçado:', closeError);
+        forceClose();
+      }
+      
+      if (globalTimeout) clearTimeout(globalTimeout);
+      if (timerInterval) clearInterval(timerInterval);
     }
   } catch (error) {
     console.error('Erro na função shutdownSystem:', error);
-    window.location.href = '/shutdown';
+    updateShutdownStatus('Erro crítico. Tentando fechar...');
+    if (globalTimeout) clearTimeout(globalTimeout);
+    if (timerInterval) clearInterval(timerInterval);
+    forceClose();
   }
 }
 
