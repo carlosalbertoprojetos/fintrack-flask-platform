@@ -230,11 +230,9 @@
 
         <!-- Tabela de Receitas -->
         <div class="card shadow mb-2">
-            <div
-            class="card-header d-flex justify-content-between align-items-center py-1"
-            <div class="card-header py-2">
-            <h6 class="m-0 font-weight-bold text-primary">Receitas Recentes</h6>
-        </div> 
+            <div class="card-header d-flex justify-content-between align-items-center py-1">
+                <h6 class="m-0 font-weight-bold text-primary">Receitas Recentes</h6>
+            </div> 
 
         <div class="card-body p-0">
             {% set income_transactions = transactions|selectattr('type', 'equalto', 'receita')|list %}
@@ -302,11 +300,9 @@
 
     <!-- Tabela de Despesas -->
     <div class="card shadow mb-2">
-        <div
-        class="card-header d-flex justify-content-between align-items-center py-1"
-    >
-        <h6 class="m-0 font-weight-bold text-primary">Despesas Recentes</h6>
-    </div>
+        <div class="card-header d-flex justify-content-between align-items-center py-1">
+            <h6 class="m-0 font-weight-bold text-primary">Despesas Recentes</h6>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-sm m-0">
@@ -544,12 +540,12 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
     // Função para inicializar o sistema de abas de relatórios usando Bootstrap
     function initReportsTabs() {
-        const tabsContainer = document.getElementById('reportsTabs');
+        const tabsContainer = document.getElementById('contaTabs');
         if (tabsContainer) {
             const tabItems = tabsContainer.querySelectorAll('.nav-link');
             
@@ -570,8 +566,25 @@
     function createCharts() {
         {% if report_type == 'monthly' %}
         // Dados para os gráficos do relatório mensal
-        const expenseData = JSON.parse('{{ expense_chart_data | safe }}');
-        const incomeData = JSON.parse('{{ income_chart_data | safe }}');
+        let expenseData = [];
+        let incomeData = [];
+        
+        try {
+            const expenseDataStr = '{{ expense_chart_data | safe }}';
+            const incomeDataStr = '{{ income_chart_data | safe }}';
+            
+            if (expenseDataStr && expenseDataStr.trim() !== '' && expenseDataStr !== 'null') {
+                expenseData = JSON.parse(expenseDataStr);
+            }
+            
+            if (incomeDataStr && incomeDataStr.trim() !== '' && incomeDataStr !== 'null') {
+                incomeData = JSON.parse(incomeDataStr);
+            }
+        } catch (e) {
+            console.error('Erro ao parsear dados dos gráficos:', e);
+            expenseData = [];
+            incomeData = [];
+        }
 
         // Gráfico de Despesas por Categoria
         const expenseCtx = document.getElementById('expenseChart');
@@ -632,7 +645,17 @@
 
         {% if report_type == 'annual' %}
         // Dados para os gráficos do relatório anual
-        const monthlyData = JSON.parse('{{ monthly_data | safe }}');
+        let monthlyData = [];
+        
+        try {
+            const monthlyDataStr = '{{ monthly_data | safe }}';
+            if (monthlyDataStr && monthlyDataStr.trim() !== '' && monthlyDataStr !== 'null') {
+                monthlyData = JSON.parse(monthlyDataStr);
+            }
+        } catch (e) {
+            console.error('Erro ao parsear dados mensais:', e);
+            monthlyData = [];
+        }
 
         // Gráfico de Evolução Mensal
         const monthlyCtx = document.getElementById('monthlyChart');
@@ -709,8 +732,23 @@
     // Aguardar o DOM estar completamente carregado
     document.addEventListener('DOMContentLoaded', function() {
         
-        // Aguardar um pouco para garantir que tudo esteja carregado
-        setTimeout(() => {
+        // Função para verificar se Chart.js está carregado
+        function waitForChartJS(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(checkInterval);
+                    callback();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    console.error('Chart.js não foi carregado após múltiplas tentativas');
+                }
+            }, 100);
+        }
+        
+        // Aguardar Chart.js estar disponível antes de inicializar
+        waitForChartJS(() => {
             // Inicializar o sistema de abas
             if (typeof initReportsTabs === 'function') {
                 initReportsTabs();
@@ -731,7 +769,7 @@
             } else {
                 console.warn('Função filterExpenses não encontrada no template');
             }
-        }, 100);
+        });
     });
 </script>
 

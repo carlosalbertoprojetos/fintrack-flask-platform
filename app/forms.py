@@ -206,7 +206,7 @@ class ProfileForm(FlaskForm):
 class ContaForm(FlaskForm):
     nome = StringField("Nome da Conta", validators=[DataRequired(), Length(max=100)])
     tipo_id = SelectField("Tipo de Conta", coerce=int, validators=[DataRequired()])
-    saldo_inicial = FloatField("Saldo Inicial", validators=[Optional()])
+    saldo_inicial = FloatField("Saldo Inicial", validators=[Optional()], default=0.0)
     submit = SubmitField("Adicionar")
 
 class InvestimentoForm(FlaskForm):

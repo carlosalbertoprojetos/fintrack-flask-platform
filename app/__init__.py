@@ -29,6 +29,196 @@ def format_currency(value):
         return "0,00"
 
 
+def initialize_user_default_data(user):
+    """Inicializa TODOS os dados padrão para um novo usuário"""
+    try:
+        from app.models import TipoConta, TipoInvestimento, Conta, Category, PaymentMethod, Expense
+        
+        # 1. CRIAR CATEGORIAS PADRÃO (se não existirem globalmente)
+        categories_data = [
+            {"name": "Salário", "type": "receita", "exclusive": True, "icon": "bx-money", "color": "#28a745"},
+            {"name": "Freelance", "type": "receita", "exclusive": True, "icon": "bx-briefcase", "color": "#17a2b8"},
+            {"name": "Investimentos", "type": "receita", "exclusive": True, "icon": "bx-trending-up", "color": "#20c997"},
+            {"name": "Outros Rendimentos", "type": "receita", "exclusive": True, "icon": "bx-plus-circle", "color": "#6f42c1"},
+            {"name": "Alimentação", "type": "despesa", "exclusive": True, "icon": "bx-food-menu", "color": "#dc3545"},
+            {"name": "Moradia", "type": "despesa", "exclusive": True, "icon": "bx-home", "color": "#fd7e14"},
+            {"name": "Transporte", "type": "despesa", "exclusive": True, "icon": "bx-car", "color": "#ffc107"},
+            {"name": "Lazer", "type": "despesa", "exclusive": True, "icon": "bx-game", "color": "#e83e8c"},
+            {"name": "Saúde", "type": "despesa", "exclusive": True, "icon": "bx-heart", "color": "#6f42c1"},
+            {"name": "Educação", "type": "despesa", "exclusive": True, "icon": "bx-book", "color": "#17a2b8"},
+            {"name": "Serviços", "type": "despesa", "exclusive": True, "icon": "bx-wrench", "color": "#20c997"},
+            {"name": "Compras", "type": "despesa", "exclusive": True, "icon": "bx-shopping-bag", "color": "#28a745"},
+            {"name": "Outros", "type": "receita", "exclusive": False, "icon": "bx-plus", "color": "#6c757d"},
+            {"name": "Diversos", "type": "despesa", "exclusive": False, "icon": "bx-dots-horizontal-rounded", "color": "#6c757d"},
+        ]
+        
+        for category_data in categories_data:
+            # Verificar se a categoria já existe globalmente
+            existing_category = Category.query.filter_by(name=category_data["name"]).first()
+            if not existing_category:
+                category = Category(**category_data)
+                db.session.add(category)
+        
+        # 2. CRIAR FORMAS DE PAGAMENTO PADRÃO (se não existirem globalmente)
+        payments_data = [
+            {"name": "Dinheiro", "is_active": True},
+            {"name": "Pix", "is_active": True},
+            {"name": "Cartão Débito", "is_active": True},
+            {"name": "Cartão Crédito", "is_active": True},
+            {"name": "Boleto", "is_active": True},
+            {"name": "Cheque", "is_active": True},
+            {"name": "Crediário", "is_active": True},
+            {"name": "Transferência", "is_active": True},
+            {"name": "Outros", "is_active": True},
+        ]
+        
+        for payment_data in payments_data:
+            # Verificar se a forma de pagamento já existe globalmente
+            existing_payment = PaymentMethod.query.filter_by(name=payment_data["name"]).first()
+            if not existing_payment:
+                payment = PaymentMethod(**payment_data)
+                db.session.add(payment)
+        
+        # 3. CRIAR DESPESAS PADRÃO (se não existirem globalmente)
+        expensives_data = [
+            {"name": "CDB", "category_id": "Investimentos"},
+            {"name": "Ações", "category_id": "Investimentos"},
+            {"name": "Fundos", "category_id": "Investimentos"},
+            {"name": "Supermercado", "category_id": "Alimentação"},
+            {"name": "Restaurante", "category_id": "Alimentação"},
+            {"name": "Aluguel", "category_id": "Moradia"},
+            {"name": "Condomínio", "category_id": "Moradia"},
+            {"name": "IPTU", "category_id": "Moradia"},
+            {"name": "Combustível", "category_id": "Transporte"},
+            {"name": "Manutenção", "category_id": "Transporte"},
+            {"name": "Farmácia", "category_id": "Saúde"},
+            {"name": "Médico", "category_id": "Saúde"},
+            {"name": "Curso", "category_id": "Educação"},
+            {"name": "Material", "category_id": "Educação"},
+            {"name": "Internet", "category_id": "Serviços"},
+            {"name": "Telefone", "category_id": "Serviços"},
+            {"name": "Energia", "category_id": "Serviços"},
+            {"name": "Água", "category_id": "Serviços"},
+            {"name": "Gás", "category_id": "Serviços"},
+            {"name": "Roupas", "category_id": "Compras"},
+            {"name": "Eletrônicos", "category_id": "Compras"},
+        ]
+        
+        for expensive_data in expensives_data:
+            # Verificar se a despesa já existe globalmente
+            existing_expense = Expense.query.filter_by(name=expensive_data["name"]).first()
+            if not existing_expense:
+                category = Category.query.filter_by(name=expensive_data["category_id"]).first()
+                if category:
+                    expense = Expense(name=expensive_data["name"], category_id=category.id)
+                    db.session.add(expense)
+        
+        # 4. CRIAR TIPOS DE CONTA PARA O USUÁRIO
+        tipos_conta_data = [
+            {"nome": "Banco Físico", "descricao": "Físico", "ativo": True},
+            {"nome": "Banco Virtual", "descricao": "Virtual", "ativo": True},
+            {"nome": "Investimento", "descricao": "Corretora", "ativo": True},
+        ]
+        
+        for tipo_data in tipos_conta_data:
+            # Verificar se o tipo já existe para este usuário
+            existing_tipo = TipoConta.query.filter_by(
+                nome=tipo_data["nome"], 
+                user_id=user.id
+            ).first()
+            
+            if not existing_tipo:
+                tipo_conta = TipoConta(
+                    nome=tipo_data["nome"],
+                    descricao=tipo_data["descricao"],
+                    ativo=tipo_data["ativo"],
+                    user_id=user.id
+                )
+                db.session.add(tipo_conta)
+        
+        # 5. CRIAR TIPOS DE INVESTIMENTO PARA O USUÁRIO
+        tipos_investimento_data = [
+            {"nome": "CDB", "descricao": "Certificado de Depósito Bancário", "ativo": True},
+            {"nome": "Ações", "descricao": "Investimento em ações", "ativo": True},
+            {"nome": "Fundos", "descricao": "Fundos de investimento", "ativo": True},
+            {"nome": "Tesouro Direto", "descricao": "Títulos públicos", "ativo": True},
+            {"nome": "Poupança", "descricao": "Conta poupança", "ativo": True},
+        ]
+        
+        for tipo_data in tipos_investimento_data:
+            # Verificar se o tipo já existe para este usuário
+            existing_tipo = TipoInvestimento.query.filter_by(
+                nome=tipo_data["nome"], 
+                user_id=user.id
+            ).first()
+            
+            if not existing_tipo:
+                tipo_investimento = TipoInvestimento(
+                    nome=tipo_data["nome"],
+                    descricao=tipo_data["descricao"],
+                    ativo=tipo_data["ativo"],
+                    user_id=user.id
+                )
+                db.session.add(tipo_investimento)
+        
+        # Fazer commit dos tipos e dados globais
+        db.session.commit()
+        
+        # 6. CRIAR CONTAS PADRÃO PARA O USUÁRIO
+        tipo_banco_fisico = TipoConta.query.filter_by(
+            nome="Banco Físico", 
+            user_id=user.id
+        ).first()
+        
+        tipo_banco_virtual = TipoConta.query.filter_by(
+            nome="Banco Virtual", 
+            user_id=user.id
+        ).first()
+        
+        contas_data = [
+            {
+                "nome": "Inter", 
+                "tipo_id": tipo_banco_virtual.id if tipo_banco_virtual else None,
+                "saldo_inicial": 0.00,
+                "saldo_atual": 0.00
+            },
+            {
+                "nome": "Banco do Brasil", 
+                "tipo_id": tipo_banco_fisico.id if tipo_banco_fisico else None,
+                "saldo_inicial": 0.00,
+                "saldo_atual": 0.00
+            },
+        ]
+        
+        for conta_data in contas_data:
+            if conta_data["tipo_id"]:
+                # Verificar se a conta já existe para este usuário
+                existing_conta = Conta.query.filter_by(
+                    nome=conta_data["nome"], 
+                    user_id=user.id
+                ).first()
+                
+                if not existing_conta:
+                    conta = Conta(
+                        nome=conta_data["nome"],
+                        tipo_id=conta_data["tipo_id"],
+                        saldo_inicial=conta_data["saldo_inicial"],
+                        saldo_atual=conta_data["saldo_atual"],
+                        user_id=user.id
+                    )
+                    db.session.add(conta)
+        
+        # Commit final
+        db.session.commit()
+        print(f"TODOS os dados padrão criados com sucesso para o usuário {user.username}!")
+        return True
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao criar dados padrão para o usuário {user.username}: {str(e)}")
+        return False
+
+
 def ensure_backup_exists():
     """Ensure that a backup of the database exists at C:\backup\bk_flask.db"""
     backup_dir = r"C:\backup"
@@ -701,19 +891,6 @@ Get-Process | Where-Object {$_.ProcessName -eq "python"} | ForEach-Object {
                 expense = Expense(name=expensive_data["name"], category_id=category.id)
                 db.session.add(expense)
 
-        # Adicionar tipos de investimento padrão apenas se não houver nenhum
-        from app.models import TipoInvestimento
-        if TipoInvestimento.query.count() == 0:
-            tipos_investimento_data = [
-                {"nome": "CDB", "descricao": "Certificado de Depósito Bancário", "ativo": True, "user_id": 1},
-                {"nome": "Ações", "descricao": "Investimento em ações", "ativo": True, "user_id": 1},
-                {"nome": "Fundos", "descricao": "Fundos de investimento", "ativo": True, "user_id": 1},
-                {"nome": "Tesouro Direto", "descricao": "Títulos públicos", "ativo": True, "user_id": 1},
-                {"nome": "Poupança", "descricao": "Conta poupança", "ativo": True, "user_id": 1},
-            ]
-            for tipo_data in tipos_investimento_data:
-                db.session.add(TipoInvestimento(**tipo_data))
-
         # Criar usuário padrão se não existir nenhum
         from app.models import User
         if User.query.count() == 0:
@@ -726,75 +903,17 @@ Get-Process | Where-Object {$_.ProcessName -eq "python"} | ForEach-Object {
             db.session.add(admin_user)
             print("Usuário admin criado com sucesso!")
 
-        # Adicionar tipos de conta padrão apenas se não houver nenhum
-        from app.models import TipoConta
-        if TipoConta.query.count() == 0:
-            # Buscar todos os usuários para criar os tipos de conta para cada um
-            users = User.query.all()
-            if users:
-                tipos_conta_data = [
-                    {"nome": "Banco Físico", "descricao": "Físico", "ativo": True},
-                    {"nome": "Banco Virtual", "descricao": "Virtual", "ativo": True},
-                    {"nome": "Investimento", "descricao": "Corretora", "ativo": True},
-                ]
-                for user in users:
-                    for tipo_data in tipos_conta_data:
-                        tipo_conta = TipoConta(
-                            nome=tipo_data["nome"],
-                            descricao=tipo_data["descricao"],
-                            ativo=tipo_data["ativo"],
-                            user_id=user.id
-                        )
-                        db.session.add(tipo_conta)
-                print("Tipos de conta criados com sucesso!")
-
-        # Adicionar contas padrão apenas se não houver nenhuma
-        from app.models import Conta
-        if Conta.query.count() == 0:
-            # Buscar todos os usuários para criar as contas para cada um
-            users = User.query.all()
-            if users:
-                for user in users:
-                    # Buscar os tipos de conta do usuário
-                    tipo_banco_fisico = TipoConta.query.filter_by(
-                        nome="Banco Físico", 
-                        descricao="Físico", 
-                        user_id=user.id
-                    ).first()
-                    
-                    tipo_banco_virtual = TipoConta.query.filter_by(
-                        nome="Banco Virtual", 
-                        descricao="Virtual", 
-                        user_id=user.id
-                    ).first()
-                    
-                    # Criar contas padrão para o usuário
-                    contas_data = [
-                        {
-                            "nome": "Inter", 
-                            "tipo_id": tipo_banco_virtual.id if tipo_banco_virtual else None,
-                            "saldo_inicial": 0.00,
-                            "saldo_atual": 0.00
-                        },
-                    ]
-                    
-                    for conta_data in contas_data:
-                        if conta_data["tipo_id"]:  # Só criar se o tipo existir
-                            conta = Conta(
-                                nome=conta_data["nome"],
-                                tipo_id=conta_data["tipo_id"],
-                                saldo_inicial=conta_data["saldo_inicial"],
-                                saldo_atual=conta_data["saldo_atual"],
-                                user_id=user.id
-                            )
-                            db.session.add(conta)
-                print("Contas padrão criadas com sucesso!")
-
+        # Fazer commit do usuário primeiro para garantir que ele existe
         try:
             db.session.commit()
-            print("Dados iniciais criados com sucesso!")
+            print("Usuário admin commitado com sucesso!")
         except Exception as e:
+            print(f"Erro ao commitar usuário admin: {str(e)}")
             db.session.rollback()
-            print(f"Erro ao criar dados iniciais: {str(e)}")
+
+        # Inicializar dados padrão para usuários existentes (apenas na primeira execução)
+        users = User.query.all()
+        for user in users:
+            initialize_user_default_data(user)
 
     return app

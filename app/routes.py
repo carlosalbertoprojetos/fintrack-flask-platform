@@ -88,7 +88,12 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash("Cadastro realizado com sucesso! Agora crie sua primeira conta.", "success")
+        
+        # Inicializar dados padrão para o novo usuário
+        from app import initialize_user_default_data
+        initialize_user_default_data(user)
+        
+        flash("Cadastro realizado com sucesso! Categorias, formas de pagamento, despesas, tipos de conta e contas padrão foram criados automaticamente.", "success")
         return redirect(url_for("conta.listar_contas"))
 
     return render_template("add_register.html", form=form)

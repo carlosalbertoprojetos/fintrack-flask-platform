@@ -30,11 +30,16 @@ def add_conta():
     tipos_conta = TipoConta.query.filter_by(user_id=current_user.id, ativo=True).all()
     form.tipo_id.choices = [(t.id, t.nome) for t in tipos_conta]
     
+    # Definir valor padrão para saldo inicial
+    if not form.saldo_inicial.data:
+        form.saldo_inicial.data = 0.0
+    
     if form.validate_on_submit():
         conta = Conta(
             nome=form.nome.data,
             tipo_id=form.tipo_id.data,
             saldo_inicial=form.saldo_inicial.data or 0.0,
+            saldo_atual=form.saldo_inicial.data or 0.0,  # Saldo atual inicia igual ao saldo inicial
             user_id=current_user.id
         )
         db.session.add(conta)
@@ -60,6 +65,9 @@ def editar_conta(conta_id):
         conta.nome = form.nome.data
         conta.tipo_id = form.tipo_id.data
         conta.saldo_inicial = form.saldo_inicial.data or 0.0
+        # Atualizar saldo atual se necessário (recalcular baseado no saldo inicial)
+        if conta.saldo_inicial != conta.saldo_atual:
+            conta.saldo_atual = conta.saldo_inicial
         db.session.commit()
         flash('Conta atualizada com sucesso!', 'success')
         return redirect(url_for('conta.listar_contas'))

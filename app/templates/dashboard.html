@@ -647,9 +647,32 @@
   // Função para criar os gráficos
   function createCharts() {
       // Dados para os gráficos
-      const monthlyData = JSON.parse('{{ monthly_data_json|safe }}');
-      const expenseData = JSON.parse('{{ expense_chart_json|safe }}');
-      const incomeData = JSON.parse('{{ income_chart_json|safe }}');
+      let monthlyData = [];
+      let expenseData = [];
+      let incomeData = [];
+      
+      try {
+          const monthlyDataStr = '{{ monthly_data_json|safe }}';
+          const expenseDataStr = '{{ expense_chart_json|safe }}';
+          const incomeDataStr = '{{ income_chart_json|safe }}';
+          
+          if (monthlyDataStr && monthlyDataStr.trim() !== '' && monthlyDataStr !== 'null' && monthlyDataStr !== '[]') {
+              monthlyData = JSON.parse(monthlyDataStr);
+          }
+          
+          if (expenseDataStr && expenseDataStr.trim() !== '' && expenseDataStr !== 'null' && expenseDataStr !== '[]') {
+              expenseData = JSON.parse(expenseDataStr);
+          }
+          
+          if (incomeDataStr && incomeDataStr.trim() !== '' && incomeDataStr !== 'null' && incomeDataStr !== '[]') {
+              incomeData = JSON.parse(incomeDataStr);
+          }
+      } catch (e) {
+          console.error('Erro ao parsear dados dos gráficos:', e);
+          monthlyData = [];
+          expenseData = [];
+          incomeData = [];
+      }
 
       // Gráfico de Evolução Mensal
       const monthlyCtx = document.getElementById('monthlyChart');
@@ -759,15 +782,41 @@
       }
   }
 
+  // Função para verificar se Chart.js está carregado
+  function waitForChartJS(callback, maxAttempts = 50) {
+      let attempts = 0;
+      const checkInterval = setInterval(() => {
+          attempts++;
+          if (typeof Chart !== 'undefined') {
+              clearInterval(checkInterval);
+              callback();
+          } else if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              console.error('Chart.js não foi carregado após múltiplas tentativas');
+          }
+      }, 100);
+  }
+
   // Aguardar o DOM estar completamente carregado
   document.addEventListener('DOMContentLoaded', function() {
-      // Criar os gráficos
-      createCharts();
+      // Aguardar Chart.js estar disponível antes de criar os gráficos
+      waitForChartJS(() => {
+          // Criar os gráficos
+          if (typeof createCharts === 'function') {
+              createCharts();
+          } else {
+              console.warn('Função createCharts não encontrada');
+          }
+      });
   });
 
   // Recriar os gráficos quando a página for carregada via AJAX
   document.addEventListener('contentLoaded', function() {
-      createCharts();
+      waitForChartJS(() => {
+          if (typeof createCharts === 'function') {
+              createCharts();
+          }
+      });
   });
 </script>
 <script>
