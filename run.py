@@ -86,9 +86,28 @@ def minimize_console():
     
     return False
 
-def open_browser():
-    """Abre o navegador após o servidor iniciar"""
-    time.sleep(2)  # Aguarda 2 segundos para o servidor iniciar
+def minimize_and_open_browser():
+    """Minimiza a janela do CMD e depois abre o navegador"""
+    # Aguardar tempo suficiente para Flask exibir todas as mensagens de inicialização
+    time.sleep(5)  # Aguardar servidor iniciar completamente e exibir todas as mensagens
+    
+    # Primeiro: Minimizar janela do CMD
+    print("[INFO] Minimizando janela do CMD...")
+    minimized = False
+    for attempt in range(3):
+        if minimize_console():
+            print("[OK] Janela do CMD minimizada")
+            minimized = True
+            break
+        time.sleep(0.3)
+    
+    if not minimized:
+        print("[AVISO] Não foi possível minimizar a janela automaticamente")
+    
+    # Aguardar um pouco para garantir que a minimização foi processada
+    time.sleep(0.5)
+    
+    # Depois: Abrir navegador
     try:
         # Abrir diretamente na página de login
         webbrowser.open('http://127.0.0.1:5000/auth/login')
@@ -96,19 +115,6 @@ def open_browser():
     except Exception as e:
         print(f"[AVISO] Não foi possível abrir o navegador automaticamente: {e}")
         print("[INFO] Acesse manualmente: http://127.0.0.1:5000/auth/login")
-    
-    # Minimizar janela após exibir todas as informações do servidor
-    # Aguardar tempo suficiente para Flask exibir todas as mensagens de inicialização
-    time.sleep(5)  # Aguardar servidor iniciar completamente e exibir todas as mensagens
-    
-    # Tentar minimizar múltiplas vezes para garantir
-    for attempt in range(3):
-        if minimize_console():
-            print("[OK] Janela do CMD minimizada")
-            break
-        time.sleep(0.5)
-    else:
-        print("[AVISO] Não foi possível minimizar a janela automaticamente")
 
 if __name__ == "__main__":
     try:
@@ -178,8 +184,8 @@ if __name__ == "__main__":
         print("=" * 60)
         print()
         
-        # Abrir navegador em thread separada
-        browser_thread = threading.Thread(target=open_browser, daemon=True)
+        # Minimizar CMD e abrir navegador em thread separada
+        browser_thread = threading.Thread(target=minimize_and_open_browser, daemon=True)
         browser_thread.start()
         
         # Iniciar servidor Flask

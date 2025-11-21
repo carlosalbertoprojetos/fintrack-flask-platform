@@ -1,6 +1,7 @@
 @echo off
 REM ============================================================
 REM Script para iniciar o Sistema de Finanças Pessoais
+REM Este script será executado de forma oculta via VBScript
 REM ============================================================
 
 title Sistema de Finanças Pessoais
@@ -64,17 +65,11 @@ if errorlevel 1 (
 
 echo [INFO] Iniciando servidor Flask...
 echo [INFO] O navegador será aberto automaticamente em alguns segundos...
-echo [INFO] A janela será minimizada após o navegador abrir...
 echo.
 echo ============================================================
 echo   Para encerrar o sistema, pressione Ctrl+C
 echo ============================================================
 echo.
-
-REM Iniciar script VBScript para minimizar janela após 7 segundos
-if exist "minimize_window.vbs" (
-    start /min wscript.exe minimize_window.vbs
-)
 
 REM Executar o script Python
 python run.py

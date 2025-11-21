@@ -1,8 +1,8 @@
 Set objShell = CreateObject("WScript.Shell")
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 
-' Aguardar um pouco para garantir que a janela está aberta
-WScript.Sleep 7000
+' Aguardar um pouco para garantir que a janela está aberta e mensagens foram exibidas
+WScript.Sleep 5000
 
 ' Encontrar a janela pelo título
 strWindowTitle = "Sistema de Finanças Pessoais"
