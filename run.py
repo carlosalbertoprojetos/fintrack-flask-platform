@@ -6,15 +6,109 @@ import threading
 from app import create_app, db
 from flask_migrate import Migrate
 
+def minimize_console():
+    """Minimiza a janela do console"""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        
+        # Obter handle da janela do console
+        kernel32 = ctypes.windll.kernel32
+        user32 = ctypes.windll.user32
+        
+        # Encontrar a janela do console atual
+        hwnd = kernel32.GetConsoleWindow()
+        if hwnd:
+            # Tentar minimizar usando ShowWindow
+            result = user32.ShowWindow(hwnd, 6)  # SW_MINIMIZE = 6
+            if result:
+                return True
+            
+            # Se ShowWindow não funcionou, tentar IsIconic e depois ShowWindow
+            is_minimized = user32.IsIconic(hwnd)
+            if not is_minimized:
+                # Forçar minimização
+                user32.ShowWindow(hwnd, 2)  # SW_MINIMIZE = 2 (alternativa)
+                time.sleep(0.1)
+                user32.ShowWindow(hwnd, 6)  # SW_MINIMIZE = 6
+                return True
+    except Exception as e:
+        print(f"[DEBUG] Erro no método ctypes: {e}")
+    
+    # Método alternativo: encontrar janela pelo título
+    try:
+        import ctypes
+        from ctypes import wintypes
+        
+        def enum_windows_callback(hwnd, lParam):
+            window_text = ctypes.create_unicode_buffer(512)
+            user32 = ctypes.windll.user32
+            user32.GetWindowTextW(hwnd, window_text, 512)
+            if "Sistema de Finanças Pessoais" in window_text.value:
+                user32.ShowWindow(hwnd, 6)  # SW_MINIMIZE
+                return False
+            return True
+        
+        EnumWindows = ctypes.windll.user32.EnumWindows
+        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+        EnumWindows(EnumWindowsProc(enum_windows_callback), 0)
+        return True
+    except Exception as e:
+        print(f"[DEBUG] Erro no método EnumWindows: {e}")
+    
+    # Último recurso: usar PowerShell com método mais direto
+    try:
+        import subprocess
+        script = '''
+        Add-Type @"
+        using System;
+        using System.Runtime.InteropServices;
+        public class Win32 {
+            [DllImport("user32.dll")]
+            public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+            [DllImport("kernel32.dll")]
+            public static extern IntPtr GetConsoleWindow();
+        }
+"@
+        $hwnd = [Win32]::GetConsoleWindow()
+        if ($hwnd -ne [IntPtr]::Zero) {
+            [Win32]::ShowWindow($hwnd, 6)
+        }
+        '''
+        subprocess.run(
+            ['powershell', '-Command', script],
+            creationflags=subprocess.CREATE_NO_WINDOW,
+            timeout=2
+        )
+        return True
+    except Exception as e:
+        print(f"[DEBUG] Erro no método PowerShell: {e}")
+    
+    return False
+
 def open_browser():
     """Abre o navegador após o servidor iniciar"""
     time.sleep(2)  # Aguarda 2 segundos para o servidor iniciar
     try:
-        webbrowser.open('http://127.0.0.1:5000')
-        print("[OK] Navegador aberto automaticamente")
+        # Abrir diretamente na página de login
+        webbrowser.open('http://127.0.0.1:5000/auth/login')
+        print("[OK] Navegador aberto automaticamente na tela de login")
     except Exception as e:
         print(f"[AVISO] Não foi possível abrir o navegador automaticamente: {e}")
-        print("[INFO] Acesse manualmente: http://127.0.0.1:5000")
+        print("[INFO] Acesse manualmente: http://127.0.0.1:5000/auth/login")
+    
+    # Minimizar janela após exibir todas as informações do servidor
+    # Aguardar tempo suficiente para Flask exibir todas as mensagens de inicialização
+    time.sleep(5)  # Aguardar servidor iniciar completamente e exibir todas as mensagens
+    
+    # Tentar minimizar múltiplas vezes para garantir
+    for attempt in range(3):
+        if minimize_console():
+            print("[OK] Janela do CMD minimizada")
+            break
+        time.sleep(0.5)
+    else:
+        print("[AVISO] Não foi possível minimizar a janela automaticamente")
 
 if __name__ == "__main__":
     try:
@@ -89,6 +183,7 @@ if __name__ == "__main__":
         browser_thread.start()
         
         # Iniciar servidor Flask
+        # Nota: app.run() é bloqueante, então a minimização acontecerá na thread do navegador
         app.run(
             host='127.0.0.1',
             port=5000,
