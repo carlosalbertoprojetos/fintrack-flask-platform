@@ -249,24 +249,79 @@ def initialize_user_default_data(user):
         return False
 
 
+def get_database_path():
+    """Retorna o caminho do banco de dados"""
+    from config import Config
+    db_uri = Config.SQLALCHEMY_DATABASE_URI
+    if db_uri.startswith('sqlite:///'):
+        db_path = db_uri.replace('sqlite:///', '')
+        return db_path
+    return None
+
+def create_backup():
+    """Cria um backup do banco de dados"""
+    try:
+        db_path = get_database_path()
+        if not db_path or not os.path.exists(db_path):
+            print("[AVISO] Banco de dados não encontrado para backup")
+            return False
+        
+        # Criar diretório de backup
+        backup_dir = r"C:\backup"
+        if not os.path.exists(backup_dir):
+            try:
+                os.makedirs(backup_dir)
+            except Exception as e:
+                print(f"[ERRO] Não foi possível criar diretório de backup: {e}")
+                return False
+        
+        # Criar nome do arquivo de backup com timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = os.path.join(backup_dir, f"bk_flask_{timestamp}.db")
+        
+        # Também manter um backup mais recente sem timestamp
+        backup_file_latest = os.path.join(backup_dir, "bk_flask.db")
+        
+        # Fazer backup
+        try:
+            shutil.copy2(db_path, backup_file)
+            shutil.copy2(db_path, backup_file_latest)
+            print(f"[OK] Backup criado com sucesso:")
+            print(f"     - {backup_file}")
+            print(f"     - {backup_file_latest}")
+            return True
+        except Exception as e:
+            print(f"[ERRO] Falha ao criar backup: {e}")
+            return False
+    except Exception as e:
+        print(f"[ERRO] Erro ao criar backup: {e}")
+        return False
+
 def ensure_backup_exists():
     """Ensure that a backup of the database exists at C:\backup\bk_flask.db"""
     backup_dir = r"C:\backup"
     backup_file = os.path.join(backup_dir, "bk_flask.db")
-    db_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.db")
+    db_path = get_database_path()
 
     # Create backup directory if it doesn't exist
     if not os.path.exists(backup_dir):
-        os.makedirs(backup_dir)
+        try:
+            os.makedirs(backup_dir)
+        except Exception as e:
+            print(f"[AVISO] Não foi possível criar diretório de backup: {e}")
+            return
 
     # If backup doesn't exist or is older than the main db, create/update it
-    if not os.path.exists(backup_file) or (
-        os.path.exists(db_file)
-        and os.path.getmtime(db_file) > os.path.getmtime(backup_file)
-    ):
-        if os.path.exists(db_file):
-            shutil.copy2(db_file, backup_file)
-            print(f"Backup criado/atualizado em: {backup_file}")
+    if db_path and os.path.exists(db_path):
+        if not os.path.exists(backup_file) or (
+            os.path.getmtime(db_path) > os.path.getmtime(backup_file)
+        ):
+            try:
+                shutil.copy2(db_path, backup_file)
+                print(f"[OK] Backup criado/atualizado em: {backup_file}")
+            except Exception as e:
+                print(f"[AVISO] Não foi possível criar backup: {e}")
 
 
 def create_app(config_class=Config):
@@ -407,13 +462,24 @@ def create_app(config_class=Config):
     # Rota para encerrar o servidor
     @app.route("/shutdown", methods=["GET"])
     def shutdown():
+        """Rota para encerrar o sistema com backup automático"""
+        # Criar backup antes de encerrar
+        try:
+            print("[INFO] Criando backup do banco de dados antes de encerrar...")
+            if create_backup():
+                print("[OK] Backup criado com sucesso!")
+            else:
+                print("[AVISO] Não foi possível criar backup automaticamente")
+        except Exception as e:
+            print(f"[AVISO] Erro ao criar backup: {e}")
         """Rota para encerrar o servidor"""
         try:
-            # Retornar resposta primeiro
+            # Retornar resposta primeiro para permitir que o navegador feche
             from flask import jsonify
-            response = jsonify({"message": "Encerrando o servidor..."})
+            response = jsonify({"message": "Encerrando o servidor...", "status": "ok"})
             
             # Agendar o shutdown para depois da resposta ser enviada
+            # Aguardar mais tempo para dar chance do navegador fechar primeiro
             def delayed_shutdown():
                 import time
                 import os
@@ -428,7 +494,8 @@ def create_app(config_class=Config):
                     psutil_available = False
                     print("psutil não disponível, usando métodos alternativos...")
                 
-                time.sleep(1)  # Aguardar 1 segundo
+                print("[INFO] Aguardando navegador fechar...")
+                time.sleep(5)  # Aguardar 5 segundos para dar tempo do navegador fechar
                 
                 print("Encerrando o servidor...")
                 
@@ -736,16 +803,22 @@ Get-Process | Where-Object {$_.ProcessName -eq "python"} | ForEach-Object {
     }
 }
 '''
-                            with open("FECHAR_POWERSHELL.ps1", "w", encoding='utf-8') as f:
+                            # Criar pasta sistema se não existir
+                            sistema_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sistema')
+                            sistema_dir = os.path.abspath(sistema_dir)
+                            os.makedirs(sistema_dir, exist_ok=True)
+                            
+                            powershell_file = os.path.join(sistema_dir, "FECHAR_POWERSHELL.ps1")
+                            with open(powershell_file, "w", encoding='utf-8') as f:
                                 f.write(powershell_script)
                             
                             # Executar PowerShell
-                            subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', 'FECHAR_POWERSHELL.ps1'], 
+                            subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', powershell_file], 
                                           capture_output=True, shell=True, timeout=10)
                             
                             # Limpar arquivo
                             try:
-                                os.remove("FECHAR_POWERSHELL.ps1")
+                                os.remove(powershell_file)
                             except:
                                 pass
                                 

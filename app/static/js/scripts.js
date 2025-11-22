@@ -406,6 +406,20 @@ function forceClose() {
   } catch (e) {
     console.warn('window.close() lançou exceção:', e);
   }
+  
+  // Método 1.5: Tentar fechar usando window.open e depois close
+  setTimeout(() => {
+    if (!document.hidden) {
+      try {
+        const newWindow = window.open('', '_self');
+        if (newWindow) {
+          newWindow.close();
+        }
+      } catch (e) {
+        console.warn('Método window.open/close falhou:', e);
+      }
+    }
+  }, 200);
 
   // Método 2: Aguardar um pouco e tentar novamente
   setTimeout(() => {
@@ -844,11 +858,11 @@ async function shutdownSystem() {
       const response = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (response && response.ok) {
-        updateShutdownStatus('Servidor respondendo... Encerrando aplicação...');
+        updateShutdownStatus('Servidor respondendo... Preparando fechamento...');
         
-        // Aguardar processamento (reduzido para 2 segundos)
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        updateShutdownStatus('Verificando número de abas...');
+        // Aguardar processamento do backup (1 segundo)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        updateShutdownStatus('Fechando navegador...');
 
         // Fechar usando sistema inteligente com timeout
         try {

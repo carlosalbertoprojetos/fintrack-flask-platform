@@ -4,8 +4,19 @@
 
 $ErrorActionPreference = "Stop"
 
-# Configurações
-$ProjectPath = "C:\PROJETOS\Flask\SFP_alfa"
+# Obter o diretório onde o script está localizado
+$ScriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
+# O script está em sistema/, então o projeto está um nível acima
+$ProjectPath = Split-Path -Parent $ScriptPath
+
+# Normalizar o caminho
+$ProjectPath = (Resolve-Path $ProjectPath).Path
+
+# Se o diretório do projeto não existir, tentar caminho padrão
+if (-not (Test-Path (Join-Path $ProjectPath "venv\Scripts\Activate.ps1"))) {
+    $ProjectPath = "C:\PROJETOS\Flask\SFP_alfa"
+}
+
 $VenvPath = Join-Path $ProjectPath "venv"
 $ActivateScript = Join-Path $VenvPath "Scripts\Activate.ps1"
 $RunScript = Join-Path $ProjectPath "run.py"

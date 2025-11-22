@@ -3,7 +3,9 @@ import sys
 import webbrowser
 import time
 import threading
-from app import create_app, db
+import signal
+import atexit
+from app import create_app, db, create_backup
 from flask_migrate import Migrate
 
 def minimize_console():
@@ -116,7 +118,28 @@ def minimize_and_open_browser():
         print(f"[AVISO] Não foi possível abrir o navegador automaticamente: {e}")
         print("[INFO] Acesse manualmente: http://127.0.0.1:5000/auth/login")
 
+def backup_on_exit():
+    """Função chamada ao encerrar o sistema para fazer backup"""
+    print()
+    print("[INFO] Criando backup do banco de dados...")
+    if create_backup():
+        print("[OK] Backup concluído com sucesso!")
+    else:
+        print("[AVISO] Não foi possível criar backup automaticamente")
+    print()
+
 if __name__ == "__main__":
+    # Registrar função de backup para diferentes formas de encerramento
+    atexit.register(backup_on_exit)
+    
+    # Registrar handlers de sinal para capturar Ctrl+C e outros sinais
+    def signal_handler(signum, frame):
+        backup_on_exit()
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     try:
         print("=" * 60)
         print("  SISTEMA DE FINANÇAS PESSOAIS")
@@ -200,6 +223,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print()
         print("[INFO] Encerrando sistema...")
+        backup_on_exit()
         print("[OK] Sistema encerrado com sucesso!")
         sys.exit(0)
         
@@ -211,6 +235,11 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
         print()
+        # Tentar fazer backup mesmo em caso de erro
+        try:
+            backup_on_exit()
+        except:
+            pass
         print("[INFO] Pressione Enter para sair...")
         input()
         sys.exit(1)

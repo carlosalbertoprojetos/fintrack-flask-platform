@@ -3,7 +3,14 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
 <div class="card">
   <div class="card-header d-flex justify-content-between bg-primary text-white">
     <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
-    <h4>{{ form.date }}</h4>
+    <div class="d-flex align-items-center gap-2">
+      {{ form.date }}
+      {% if edit %}
+      <a href="{{ url_for('transaction.replicate_transaction', id=transaction.id) }}" class="btn btn-sm btn-light text-primary border-primary btn-replicar" title="Replicar transação">
+        Replicar
+      </a>
+      {% endif %}
+    </div>
   </div>
   <div class="card-body p-2">
     <form
@@ -114,6 +121,15 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
     </form>
   </div>
 </div>
+{% endblock %} {% block extra_css %}
+<style>
+  /* Estilo para o botão Replicar no hover */
+  .btn-replicar:hover {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+    border-color: #fff !important;
+  }
+</style>
 {% endblock %} {% block extra_js %}
 <script>
   // URLs para buscar categorias e despesas

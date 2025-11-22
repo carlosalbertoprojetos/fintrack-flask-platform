@@ -3,11 +3,12 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 
 ' Obter o diretório onde o script está localizado
 strScriptPath = objFSO.GetParentFolderName(WScript.ScriptFullName)
-strProjectDir = strScriptPath
+' O script está em sistema/, então o projeto está um nível acima
+strProjectDir = objFSO.GetParentFolderName(strScriptPath)
 
-' Se o script estiver na área de trabalho, tentar encontrar o projeto
-If Right(strScriptPath, 1) = "\" Then
-    strProjectDir = Left(strScriptPath, Len(strScriptPath) - 1)
+' Normalizar o caminho (remover ..)
+If Right(strProjectDir, 1) = "\" Then
+    strProjectDir = Left(strProjectDir, Len(strProjectDir) - 1)
 End If
 
 ' Verificar se o diretório existe

@@ -8,10 +8,19 @@ title Sistema de Finanças Pessoais
 
 REM Obter o diretório onde o script está localizado
 set "SCRIPT_DIR=%~dp0"
-set "PROJECT_DIR=%SCRIPT_DIR%"
+REM O script está em sistema/, então o projeto está um nível acima
+set "PROJECT_DIR=%SCRIPT_DIR%.."
 
-REM Se o script estiver na área de trabalho, tentar encontrar o projeto
-if "%SCRIPT_DIR:~-1%"=="\" set "PROJECT_DIR=%SCRIPT_DIR:~0,-1%"
+REM Normalizar o caminho (remover ..)
+cd /d "%PROJECT_DIR%"
+if errorlevel 1 (
+    REM Se falhar, tentar caminho padrão
+    set "PROJECT_DIR=C:\PROJETOS\Flask\SFP_alfa"
+) else (
+    set "PROJECT_DIR=%CD%"
+)
+
+REM Se o diretório do projeto não existir, tentar caminho padrão
 if not exist "%PROJECT_DIR%\venv\Scripts\activate.bat" (
     REM Tentar caminho padrão
     set "PROJECT_DIR=C:\PROJETOS\Flask\SFP_alfa"

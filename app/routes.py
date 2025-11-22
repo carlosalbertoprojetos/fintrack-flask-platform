@@ -8,6 +8,7 @@ from flask import (
     jsonify,
     session,
 )
+from urllib.parse import urlencode
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db, mail
 from app.models import Expense, PaymentMethod, User, Category, Transaction
@@ -448,24 +449,41 @@ def dashboard():
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False)
 
     # Calcular estatísticas adicionais
+    # Total de transações: considerar transações com due_date ou payment_date no mês atual
     total_transactions_query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
-        extract("month", Transaction.date) == current_month,
-        extract("year", Transaction.date) == current_year,
+        or_(
+            and_(
+                extract("month", Transaction.due_date) == current_month,
+                extract("year", Transaction.due_date) == current_year,
+            ),
+            and_(
+                extract("month", Transaction.payment_date) == current_month,
+                extract("year", Transaction.payment_date) == current_year,
+            ),
+        ),
     )
     if conta_filter:
         total_transactions_query = total_transactions_query.filter(Transaction.conta_id == conta_filter)
     total_transactions = total_transactions_query.count()
 
     # Calcular a média diária de despesas
+    # Considerar apenas despesas com due_date ou payment_date no mês atual
+    # A média é calculada dividindo o total pelo número de dias do mês
     days_in_month = monthrange(current_year, current_month)[1]
     daily_avg_expense = expense_total / days_in_month if days_in_month > 0 else 0
 
     # Calcular a projeção para o final do mês
+    # Usar o dia atual do mês como base para a projeção
     current_day = datetime.now().day
-    projected_expense = (
-        (expense_total / current_day) * days_in_month if current_day > 0 else 0
-    )
+    # Garantir que estamos no mês atual
+    if current_date.month == current_month and current_date.year == current_year:
+        projected_expense = (
+            (expense_total / current_day) * days_in_month if current_day > 0 else 0
+        )
+    else:
+        # Se não estamos no mês atual, a projeção é igual ao total
+        projected_expense = expense_total
 
     # Verificar transações pendentes
     pending_transactions_query = Transaction.query.filter(
@@ -1837,6 +1855,62 @@ def add_transaction():
     # Se conta_id foi fornecido na URL, pré-selecionar essa conta
     if conta_id_from_url:
         form.conta_id.data = conta_id_from_url
+    
+    # Pré-preencher campos se vier de uma replicação (GET request com parâmetros)
+    if request.method == 'GET' and request.args:
+        if request.args.get('type'):
+            form.type.data = request.args.get('type')
+        if request.args.get('category_id'):
+            form.category_id.data = int(request.args.get('category_id'))
+        if request.args.get('expense_id'):
+            expense_id = request.args.get('expense_id')
+            if expense_id:
+                form.expense_id.data = int(expense_id)
+        if request.args.get('description'):
+            form.description.data = request.args.get('description')
+        if request.args.get('amount'):
+            # Converter para formato brasileiro (vírgula como decimal, ponto como milhar)
+            amount = float(request.args.get('amount'))
+            # Formatar com 2 casas decimais, vírgula como separador decimal
+            amount_str = f"{amount:.2f}".replace('.', ',')
+            # Adicionar pontos como separadores de milhar
+            parts = amount_str.split(',')
+            integer_part = parts[0]
+            # Adicionar pontos a cada 3 dígitos
+            integer_part = '{:,}'.format(int(integer_part)).replace(',', '.')
+            form.amount.data = f"{integer_part},{parts[1]}"
+        if request.args.get('discount'):
+            discount = float(request.args.get('discount'))
+            # Formatar com 2 casas decimais, vírgula como separador decimal
+            discount_str = f"{discount:.2f}".replace('.', ',')
+            # Adicionar pontos como separadores de milhar
+            parts = discount_str.split(',')
+            integer_part = parts[0]
+            # Adicionar pontos a cada 3 dígitos
+            integer_part = '{:,}'.format(int(integer_part)).replace(',', '.')
+            form.discount.data = f"{integer_part},{parts[1]}"
+        if request.args.get('payment_method_id'):
+            payment_method_id = request.args.get('payment_method_id')
+            if payment_method_id:
+                form.payment_method_id.data = int(payment_method_id)
+        if request.args.get('paid'):
+            form.paid.data = request.args.get('paid') == '1'
+        if request.args.get('recurrence'):
+            form.recurrence.data = request.args.get('recurrence')
+        if request.args.get('details'):
+            form.details.data = request.args.get('details')
+        if request.args.get('notes'):
+            form.notes.data = request.args.get('notes')
+        if request.args.get('conta_id'):
+            conta_id = request.args.get('conta_id')
+            if conta_id:
+                form.conta_id.data = int(conta_id)
+        if request.args.get('date'):
+            form.date.data = datetime.strptime(request.args.get('date'), '%Y-%m-%d').date()
+        if request.args.get('due_date'):
+            form.due_date.data = datetime.strptime(request.args.get('due_date'), '%Y-%m-%d').date()
+        if request.args.get('payment_date'):
+            form.payment_date.data = datetime.strptime(request.args.get('payment_date'), '%Y-%m-%d').date()
 
     if form.validate_on_submit():
         if not form.category_id.data or form.category_id.data == 0:
@@ -1947,6 +2021,43 @@ def edit_transaction(id):
     return render_template(
         "add_edit_transaction.html", form=form, transaction=transaction, edit=True
     )
+
+
+@transaction_bp.route("/transactions/replicate/<int:id>")
+@login_required
+def replicate_transaction(id):
+    transaction = Transaction.query.filter_by(
+        id=id, user_id=current_user.id
+    ).first_or_404()
+    
+    # Redirecionar para a página de adicionar com os dados da transação na query string
+    params = {
+        'type': transaction.type,
+        'category_id': transaction.category_id,
+        'expense_id': transaction.expense_id or '',
+        'description': transaction.description or '',
+        'amount': transaction.amount,
+        'discount': transaction.discount or 0,
+        'payment_method_id': transaction.payment_method_id or '',
+        'paid': '1' if transaction.paid else '0',
+        'recurrence': transaction.recurrence or 'nenhuma',
+        'details': transaction.details or '',
+        'notes': transaction.notes or '',
+        'conta_id': transaction.conta_id or '',
+    }
+    
+    # Adicionar datas se existirem
+    if transaction.date:
+        params['date'] = transaction.date.strftime('%Y-%m-%d')
+    if transaction.due_date:
+        params['due_date'] = transaction.due_date.strftime('%Y-%m-%d')
+    if transaction.payment_date:
+        params['payment_date'] = transaction.payment_date.strftime('%Y-%m-%d')
+    
+    # Construir URL com parâmetros codificados
+    base_url = url_for('transaction.add_transaction')
+    url = f"{base_url}?{urlencode(params)}"
+    return redirect(url)
 
 
 @transaction_bp.route("/transactions/delete/<int:id>")

@@ -76,7 +76,7 @@
           style="width: 50px; height: 50px"
           title="Investimentos em {{ conta_atual.nome }}"
         >
-          <i class="menu-icon tf-icons bx bx-trending-up"></i>
+          <i class="menu-icon tf-icons bx bx-trending-up m-0"></i>
         </a>
       </div>
       <div class="d-none d-lg-block">
@@ -246,8 +246,16 @@
               </thead>
               <tbody>
                 {% for t in pending_transactions_list %}
-                <tr>
-                  <td>{{ t.date.strftime('%d/%m/%Y') if t.date else '-' }}</td>
+                <tr class="transaction-row" data-transaction-id="{{ t.id }}" style="cursor: pointer;" title="Clique para editar">
+                  <td>
+                    {% if t.type == 'despesa' %}
+                      {{ t.due_date.strftime('%d/%m/%Y') if t.due_date else '-' }}
+                    {% elif t.type == 'receita' %}
+                      {{ t.payment_date.strftime('%d/%m/%Y') if t.payment_date else '-' }}
+                    {% else %}
+                      {{ t.date.strftime('%d/%m/%Y') if t.date else '-' }}
+                    {% endif %}
+                  </td>
                   <td>{{ t.category.name if t.category else '-' }}</td>
                   <td>{{ t.expense.name if t.expense else (t.description or '-') }}</td>
                   <td>R$ {{ t.amount|currency }}</td>
@@ -824,6 +832,31 @@
         alert.style.display = 'none';
       }, 5000);
     }
+    
+    // Adicionar evento de clique nas linhas da tabela de transações pendentes
+    const transactionRows = document.querySelectorAll('.transaction-row');
+    transactionRows.forEach(function(row) {
+      row.addEventListener('click', function(e) {
+        // Evitar redirecionamento se clicar em um link ou botão dentro da linha
+        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('a') || e.target.closest('button')) {
+          return;
+        }
+        
+        const transactionId = this.getAttribute('data-transaction-id');
+        if (transactionId) {
+          window.location.href = '/transactions/transactions/edit/' + transactionId;
+        }
+      });
+      
+      // Adicionar efeito hover
+      row.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = 'rgba(2, 86, 140, 0.1)';
+      });
+      
+      row.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '';
+      });
+    });
   });
 </script>
 {% endblock %}

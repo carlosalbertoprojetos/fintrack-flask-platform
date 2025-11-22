@@ -95,7 +95,8 @@ class TransactionForm(FlaskForm):
         default=datetime.today,
         render_kw={
             "readonly": True,
-            "class": "form-control transparent-white",
+            "class": "form-control bg-transparent text-white border-0 fw-bold",
+            "id": "date",
         },  # Campo somente leitura
     )
     due_date = DateField(
