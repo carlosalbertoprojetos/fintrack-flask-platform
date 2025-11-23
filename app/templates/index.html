@@ -1,5 +1,95 @@
 {% extends "base.html" %} {% block content %}
 
+<style>
+  /* Fixar botões de ação no topo da navbar */
+  .navbar-action-buttons {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background-color: var(--bs-navbar-bg, #fff);
+    padding: 8px 0;
+    margin: -8px 0;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Garantir que os botões fiquem visíveis mesmo quando o collapse expandir */
+  #navbar-collapse {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  #navbar-collapse .navbar-action-buttons {
+    position: sticky;
+    top: 0;
+    margin: 0;
+    z-index: 1031;
+    background-color: var(--bs-navbar-bg, #fff);
+    align-self: flex-start;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Garantir que o dropdown não afete o posicionamento dos botões */
+  #navbar-collapse .navbar-nav {
+    align-self: flex-start;
+  }
+  
+  /* Garantir que os botões dentro do container fiquem lado a lado */
+  .navbar-action-buttons > * {
+    flex-shrink: 0;
+  }
+  
+  /* Em telas pequenas, garantir que o botão fique sempre visível */
+  @media (max-width: 991.98px) {
+    .navbar-action-buttons {
+      position: sticky;
+      top: 0;
+      z-index: 1032;
+      background-color: var(--bs-navbar-bg, #fff);
+      padding: 8px 0;
+      width: auto;
+      order: -1;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    #navbar-collapse {
+      flex-direction: row;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    
+    #navbar-collapse .navbar-action-buttons {
+      position: sticky;
+      top: 0;
+      z-index: 1032;
+      background-color: var(--bs-navbar-bg, #fff);
+      width: auto;
+      padding: 8px 0;
+      margin-bottom: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      align-self: flex-start;
+    }
+    
+    #navbar-collapse .navbar-nav {
+      align-self: flex-start;
+    }
+  }
+</style>
+
 <!-- Layout wrapper -->
 <div class="layout-wrapper layout-content-navbar">
   <div class="layout-container">
@@ -118,19 +208,53 @@
       <!-- Navbar -->
       <nav
         class="layout-navbar container-fluid navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
-        id="layout-navbar"
-      >
-        <div
-          class="layout-menu-toggle navbar-nav align-items-xl-center fixed-top m-3 me-xl-0 d-xl-none"
-        >
+        id="layout-navbar">
+        <div class="layout-menu-toggle navbar-nav align-items-xl-center fixed-top m-3 me-xl-0 d-xl-none">
           <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0);">
             <i class="bx bx-menu bx-sm"></i>
           </a>
         </div>
         <div
           class="navbar-nav-right d-flex align-items-center"
-          id="navbar-collapse"
-        >
+          id="navbar-collapse">
+        <div class="navbar-action-buttons d-lg-none d-flex gap-2 p-0">
+          <a
+            href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}"
+            class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow position-relative"
+            style="width: 50px; height: 50px"
+            title="{% if conta_filter %}{% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}{% if conta_atual %}Nova transação em {{ conta_atual.nome }}{% else %}Nova transação{% endif %}{% else %}Nova transação{% endif %}">
+            <i class="fas fa-plus fa-lg"></i>
+          </a>
+          {% if conta_filter %}
+            {% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}
+            {% if conta_atual and conta_atual.saldo_atual > 0 %}
+              <a
+                href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}"
+                class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow"
+                style="width: 50px; height: 50px"
+                title="Investimentos em {{ conta_atual.nome }}"
+              >
+                <i class="menu-icon tf-icons bx bx-trending-up m-0"></i>
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+        <div class="navbar-action-buttons d-none d-lg-flex">
+          <a href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}" 
+            class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Nova Transação
+          </a>
+          {% if conta_filter %}
+            {% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}
+            {% if conta_atual and conta_atual.saldo_atual > 0 %}
+              <a href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}" 
+                class="btn btn-sm btn-primary">
+                <i class="fas fa-chart-line me-1"></i> Investimentos
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+        
           <ul class="navbar-nav flex-row align-items-center ms-auto">
             <!-- User -->
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -139,7 +263,7 @@
                 href="javascript:void(0);"
                 data-bs-toggle="dropdown"
               >
-                <div class="avatar avatar-online bg-primary">
+              <div class="avatar avatar-online bg-primary">
                   <i class="bx bx-user-circle fs-2"></i>
                 </div>
               </a>
@@ -208,6 +332,7 @@
             </li>
             <!--/ User -->
           </ul>
+
         </div>
       </nav>
       <!-- / Navbar -->
@@ -324,6 +449,10 @@
   </div>
 </div>
 
+<div class="watermark" id="footer-developer-info">
+  Desenvolvido por Carlos Alberto Medeiros +55 (31) 98676-6866
+</div>
+
 <!-- Sistema de mensagens flash -->
 <script>
  
@@ -389,6 +518,45 @@
       dismissMessage(messageId);
     }, duration);
   }
+  
+  // Ocultar div do desenvolvedor quando chegar ao final da página
+  function handleFooterVisibility() {
+    const footerInfo = document.getElementById('footer-developer-info');
+    if (!footerInfo) return;
+    
+    // Calcular se chegou ao final da página
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollBottom = scrollTop + windowHeight;
+    
+    // Verificar se está no final da página (com margem de 10px)
+    const isAtBottom = scrollBottom >= documentHeight - 10;
+    
+    if (isAtBottom) {
+      footerInfo.style.display = 'none';
+    } else {
+      footerInfo.style.display = '';
+    }
+  }
+  
+  // Adicionar listener de scroll
+  let scrollTimeout;
+  window.addEventListener('scroll', function() {
+    // Usar debounce para melhor performance
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(handleFooterVisibility, 10);
+  });
+  
+  // Verificar na carga inicial
+  document.addEventListener('DOMContentLoaded', function() {
+    handleFooterVisibility();
+  });
+  
+  // Verificar quando a página redimensionar
+  window.addEventListener('resize', function() {
+    handleFooterVisibility();
+  });
 </script>
 
 {% endblock %}

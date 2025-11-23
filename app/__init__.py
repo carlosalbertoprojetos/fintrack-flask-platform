@@ -258,8 +258,40 @@ def get_database_path():
         return db_path
     return None
 
+def get_quarter_info():
+    """Retorna informações sobre o trimestre atual"""
+    from datetime import datetime
+    now = datetime.now()
+    month = now.month
+    year = now.year
+    
+    # Mapeamento de trimestres
+    # 1º trimestre: janeiro(1), fevereiro(2), março(3) -> finaliza em março
+    # 2º trimestre: abril(4), maio(5), junho(6) -> finaliza em junho
+    # 3º trimestre: julho(7), agosto(8), setembro(9) -> finaliza em setembro
+    # 4º trimestre: outubro(10), novembro(11), dezembro(12) -> finaliza em dezembro
+    
+    if month <= 3:
+        quarter = 1
+        month_name = "março"
+    elif month <= 6:
+        quarter = 2
+        month_name = "junho"
+    elif month <= 9:
+        quarter = 3
+        month_name = "setembro"
+    else:
+        quarter = 4
+        month_name = "dezembro"
+    
+    return {
+        "quarter": quarter,
+        "month_name": month_name,
+        "year": year
+    }
+
 def create_backup():
-    """Cria um backup do banco de dados"""
+    """Cria um backup do banco de dados com nomenclatura por trimestre"""
     try:
         db_path = get_database_path()
         if not db_path or not os.path.exists(db_path):
@@ -275,21 +307,22 @@ def create_backup():
                 print(f"[ERRO] Não foi possível criar diretório de backup: {e}")
                 return False
         
-        # Criar nome do arquivo de backup com timestamp
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_file = os.path.join(backup_dir, f"bk_flask_{timestamp}.db")
+        # Obter informações do trimestre atual
+        quarter_info = get_quarter_info()
+        quarter = quarter_info["quarter"]
+        month_name = quarter_info["month_name"]
+        year = quarter_info["year"]
         
-        # Também manter um backup mais recente sem timestamp
-        backup_file_latest = os.path.join(backup_dir, "bk_flask.db")
+        # Criar nome do arquivo de backup no formato: mês_ano_trimestretrimestre.db
+        backup_filename = f"{month_name}_{year}_{quarter}ºtrimestre.db"
+        backup_file = os.path.join(backup_dir, backup_filename)
         
-        # Fazer backup
+        # Fazer backup (sobrescreve o arquivo anterior do mesmo trimestre)
         try:
             shutil.copy2(db_path, backup_file)
-            shutil.copy2(db_path, backup_file_latest)
             print(f"[OK] Backup criado com sucesso:")
             print(f"     - {backup_file}")
-            print(f"     - {backup_file_latest}")
+            print(f"     - Trimestre: {quarter}º ({month_name} {year})")
             return True
         except Exception as e:
             print(f"[ERRO] Falha ao criar backup: {e}")
@@ -299,9 +332,8 @@ def create_backup():
         return False
 
 def ensure_backup_exists():
-    """Ensure that a backup of the database exists at C:\backup\bk_flask.db"""
+    """Ensure that a backup of the database exists with quarterly naming"""
     backup_dir = r"C:\backup"
-    backup_file = os.path.join(backup_dir, "bk_flask.db")
     db_path = get_database_path()
 
     # Create backup directory if it doesn't exist
@@ -312,8 +344,19 @@ def ensure_backup_exists():
             print(f"[AVISO] Não foi possível criar diretório de backup: {e}")
             return
 
-    # If backup doesn't exist or is older than the main db, create/update it
+    # If database exists, create/update backup using quarterly naming
     if db_path and os.path.exists(db_path):
+        # Obter informações do trimestre atual
+        quarter_info = get_quarter_info()
+        quarter = quarter_info["quarter"]
+        month_name = quarter_info["month_name"]
+        year = quarter_info["year"]
+        
+        # Criar nome do arquivo de backup no formato: mês_ano_trimestretrimestre.db
+        backup_filename = f"{month_name}_{year}_{quarter}ºtrimestre.db"
+        backup_file = os.path.join(backup_dir, backup_filename)
+        
+        # Se o backup não existe ou o banco foi modificado, criar/atualizar
         if not os.path.exists(backup_file) or (
             os.path.getmtime(db_path) > os.path.getmtime(backup_file)
         ):

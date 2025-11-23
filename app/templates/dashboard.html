@@ -27,6 +27,14 @@
   <h3 class="mb-0 text-gray-800">
     Dashboard
   </h3>
+  <div class="d-flex justify-content-end align-items-center">
+    <h6 class="mb-0 fw-bold text-primary">
+      {{ current_month }}
+      {% if conta_filter %}
+      {% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}
+      {% endif %}
+    </h6>
+  </div>
 </div>
 
 <!-- Sistema de Abas para Contas usando Bootstrap Nav-Tabs -->
@@ -53,50 +61,520 @@
     </ul>
   </div>
 
-  <div class="card-body ps-2 py-2">
-    <div class="d-flex justify-content-between align-items-center">
-      <h6 class="mb-0 fw-bold text-primary">
-        {{ current_month }}
-        {% if conta_filter %}
-        {% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}
-        {% endif %}
-      </h6>
-      <div class="d-lg-none d-flex gap-2">
-        <a
-          href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}"
-          class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow position-relative"
-          style="width: 50px; height: 50px"
-          title="{% if conta_filter %}{% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}{% if conta_atual %}Nova transação em {{ conta_atual.nome }}{% else %}Nova transação{% endif %}{% else %}Nova transação{% endif %}"
-        >
-          <i class="fas fa-plus fa-lg"></i>
-        </a>
-        <a
-          href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}"
-          class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow"
-          style="width: 50px; height: 50px"
-          title="Investimentos em {{ conta_atual.nome }}"
-        >
-          <i class="menu-icon tf-icons bx bx-trending-up m-0"></i>
-        </a>
+  <div class="card-body ps-2 py-2">        
+    <!-- Cards de Resumo -->
+    <div class="row mx-0">
+      <div class="col-md-3 px-0 pe-lg-1 ps-lg-0 mb-2">
+        <div class="card shadow bg-primary text-white m-0">
+          <div
+          class="card-body d-flex justify-content-between align-items-center p-2 px-4"
+          >
+          <div class="col-auto">
+            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+          </div>
+            <div class="col-auto">
+              <h6 class="card-title text-end m-0">Receitas</h6>
+              <h4 class="mb-0">R$ {{ income_total|currency }}</h4>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="d-none d-lg-block">
-        <a href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}" 
-          class="btn btn-sm btn-primary">
-          <i class="fas fa-plus me-1"></i> Nova Transação
-        </a>
-        <a href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}" 
-          class="btn btn-sm btn-primary">
-          <i class="fas fa-chart-line me-1"></i> Investimentos
-        </a>
+      <div class="col-md-3 px-0 px-lg-1 mb-2">
+        <div class="card shadow bg-primary text-white mb-0">
+          <div
+            class="card-body d-flex justify-content-between align-items-center p-2 px-4"
+          >
+          <div class="col-auto">
+            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
+          </div>
+            <div class="col-auto">
+              <h6 class="card-title text-end m-0">Despesas</h6>
+              <h4 class="mb-0">R$ {{ expense_total|currency }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 px-0 px-lg-1">
+        <div
+          class="card shadow {% if monthly_balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white mb-2"
+        >
+          <div
+            class="card-body d-flex justify-content-between align-items-center p-2 px-4"
+          >
+          <div class="col-auto">
+            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+          </div>
+            <div class="col-auto text-end">
+              <h6 class="card-title text-end m-0">Saldo do Mês</h6>
+              <h4 class="mb-0">R$ {{ monthly_balance|currency }}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 px-0 pe-lg-0 ps-lg-1">
+        <div class="card shadow {% if saldo_atual >= 0 %}bg-primary{% else %}bg-danger{% endif %} text-white mb-2">
+          <div class="card-body d-flex justify-content-between align-items-center p-2 px-4">
+            <div class="col-auto">
+              <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+            </div>
+            <div class="col-auto text-end">
+              <h6 class="card-title m-0">Saldo Atual</h6>
+              <h4 class="mb-0">R$ {{ saldo_atual|currency }}</h4>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    {% if pending_transactions > 0 %}
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="card shadow bg-bar bg-gradient p-2 py-lg-2 mb-2" id="pendingCard" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse" aria-expanded="false" aria-controls="pendingTableCollapse">
+          <div
+            class="row justify-content-start justify-content-lg-between align-items-center p-0"
+          >
+            <div
+              class="col d-lg-flex justify-content-lg-end gap-lg-5 ps-4 pe-0 pe-lg-0"
+            >
+              <div class="d-flex gap-2 align-items-center">
+                <h6 class="card-title m-0">Transações Pendentes</h6>
+                <h4 class="mb-0">{{ pending_transactions }}</h4>
+              </div>
+              <div class="d-flex gap-3 align-items-center text-lg-end">
+                <h6 class="m-0">Total:</h6>
+                <small class="fs-5">R$ {{ pending_amount|currency }}</small>
+              </div>
+            </div>
+            <div class="col-2 col-lg-1 text-lg-end ps-1 p-lg-0 pe-lg-3">
+              <i class="fas fa-clock fa-2x text-primary"></i>
+            </div>
+          </div>
+        </div>
+        <div class="collapse" id="pendingTableCollapse">
+          <div class="card shadow mb-2">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Data</th>
+                      <th>Categoria</th>
+                      <th>Descrição</th>
+                      <th>Valor</th>
+                      <th>Forma de Pagamento</th>
+                      <th>Tipo</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for t in pending_transactions_list %}
+                    <tr class="transaction-row" data-transaction-id="{{ t.id }}" style="cursor: pointer;" title="Clique para editar">
+                      <td>
+                        {% if t.type == 'despesa' %}
+                          {{ t.due_date.strftime('%d/%m/%Y') if t.due_date else '-' }}
+                        {% elif t.type == 'receita' %}
+                          {{ t.payment_date.strftime('%d/%m/%Y') if t.payment_date else '-' }}
+                        {% else %}
+                          {{ t.date.strftime('%d/%m/%Y') if t.date else '-' }}
+                        {% endif %}
+                      </td>
+                      <td>{{ t.category.name if t.category else '-' }}</td>
+                      <td>{{ t.expense.name if t.expense else (t.description or '-') }}</td>
+                      <td>R$ {{ t.amount|currency }}</td>
+                      <td>{{ t.payment_method.name if t.payment_method else '-' }}</td>
+                      <td>
+                        {% if t.type == 'receita' %}
+                          <span class="badge bg-success">Receita</span>
+                        {% elif t.type == 'despesa' %}
+                          <span class="badge bg-danger">Despesa</span>
+                        {% endif %}                  
+                      </td>
+                      <td>
+                        {% if t.paid %}
+                          <span class="badge bg-success">Pago</span>
+                        {% elif t.due_date and t.due_date.date() < datetime.now().date() %}
+                          <span class="badge bg-danger">Vencido</span>
+                        {% else %}
+                          <span class="badge bg-warning">Pendente</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center">Nenhuma transação pendente.</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Investimentos -->
+    {% if investimentos %}
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="card shadow bg-bar p-2 py-lg-2 mb-2" id="pendingCard2" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse2" aria-expanded="false" aria-controls="pendingTableCollapse2">
+          <div
+            class="row justify-content-start justify-content-lg-between align-items-center p-0"
+          >
+            <div
+              class="col d-lg-flex justify-content-lg-end gap-lg-5 ps-4 pe-0 pe-lg-0"
+            >
+              <div class="d-flex gap-2 align-items-center">
+                <h6 class="card-title m-0">Investimentos</h6>
+                <h4 class="mb-0">{{ investimentos|length }}</h4>
+              </div>
+              <div class="d-flex gap-3 align-items-center text-lg-end">
+                <h6 class="m-0">Total:</h6>
+                <small class="fs-5">R$ {{ investimentos|sum(attribute='saldo_atual')|currency }}</small>
+              </div>
+            </div>
+            <div class="col-2 col-lg-1 text-lg-end ps-1 p-lg-0 pe-lg-3">
+                <i class="fas fa-chart-line fa-2x text-primary"></i>
+            </div>
+          </div>
+        </div>
+        <div class="collapse" id="pendingTableCollapse2">
+        <div class="card shadow mb-2">
+
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm m-0">
+                <thead>
+                  <tr>
+                    <th>Operação</th>
+                    <th>Tipo</th>
+                    <th>Saldo Atual</th>
+                    <th>Último Rendimento</th>
+                    <th>Última Movimentação</th>
+                    <th>Data Aplicação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for investimento in investimentos %}
+                  <tr>
+                    <td>
+                      {% if investimento.ultima_movimentacao %}
+                        {% set tipo_mov = investimento.ultima_movimentacao.tipo_movimentacao %}
+                        {% if tipo_mov == 'aplicacao' %}
+                          <span class="badge bg-primary">Aplicação</span>
+                        {% elif tipo_mov == 'resgate' %}
+                          <span class="badge bg-warning">Resgate</span>
+                        {% elif tipo_mov == 'rendimento' %}
+                          <span class="badge bg-success">Rendimento</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ tipo_mov|title }}</span>
+                        {% endif %}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }}</td>
+                    <td class="text-success fw-bold">R$ {{ investimento.saldo_atual|default(0.0)|currency }}</td>
+                    <td class="{% if investimento.ultimo_rendimento > 0 %}text-success{% else %}text-muted{% endif %}">R$ {{ investimento.ultimo_rendimento|currency }}</td>
+                    <td>
+                      {% if investimento.data_ultimo_rendimento %}
+                        {{ investimento.data_ultimo_rendimento.strftime('%d/%m/%Y') }}
+                      {% else %}
+                        <span class="text-muted">-</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ investimento.data_abertura.strftime('%d/%m/%Y') }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Estatísticas do Mês -->
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="card shadow mb-2">
+
+          <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">Estatísticas do Mês</h6>
+          </div>
+          <div class="card-body py-2">
+            <div class="row text-center">
+              <div class="col-6 col-md-3 p-0 m-0">
+                <p class="mb-1 small">Média Diária de Despesas</p>
+                                <h6 class="text-dark">R$ {{ daily_avg_expense|currency }}</h6>
+              </div>
+              <div class="col-6 col-md-3 p-0 m-0">
+                <p class="mb-1 small">Projeção de Despesas</p>
+                                <h6 class="text-dark">R$ {{ projected_expense|currency }}</h6>
+              </div>
+              <div class="col col-md-3">
+                <p class="mb-1 small">Total de Transações</p>
+                <h6 class="text-dark">{{ total_transactions }}</h6>
+              </div>
+              <div class="col col-md-3">
+                <p class="mb-1 small">Dias no Mês</p>
+                <h6 class="text-dark">
+                  {{ monthrange(datetime.now().year, datetime.now().month)[1] }}
+                </h6>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="card shadow mb-2">
+          <div
+            class="card-header d-flex justify-content-between align-items-center py-1"
+          >
+            <h6 class="m-0 font-weight-bold text-primary">Receitas Recentes</h6>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm m-0">
+                {% if recent_income %}
+                <thead>
+                  <tr>
+                    <th class="text-center">Pagamento</th>
+                    <th class="text-center">Categoria</th>
+                    <th class="text-center">Descrição</th>
+                    <th class="ps-1">Valor</th>
+                    <th class="text-center">Forma</th>
+                    <th class="text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for transaction in recent_income %}
+                  <tr>
+                    <td class="text-center">
+                      {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                      transaction.payment_date else '-' }}
+                    </td>
+                    <td class="text-center">{{ transaction.category.name }}</td>
+                    <td class="text-center">
+                      {{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}
+                    </td>
+                    <td class="text-nowrap text-success">
+                      R$ {{ transaction.amount|currency }}
+                    </td>
+                    <td class="text-center">
+                      {{ transaction.payment_method.name if
+                      transaction.payment_method else '-' }}
+                    </td>
+                    <td class="text-center">
+                      {% if transaction.paid %}
+                      <span class="badge bg-success">Pago</span>
+                      {% elif transaction.due_date and transaction.due_date.date() < datetime.now().date() %}
+                      <span class="badge bg-danger">Vencido</span>
+                      {% else %}
+                      <span class="badge bg-warning">Pendente</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                {% else %}
+                <tr>
+                  <td colspan="6" class="text-center">
+                    Nenhuma receita registrada.
+                  </td>
+                </tr>
+                {% endif %}
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Despesas -->
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="card shadow mb-2">
+
+          <div
+            class="card-header d-flex justify-content-between align-items-center py-1"
+          >
+            <h6 class="m-0 font-weight-bold text-primary">Despesas Recentes</h6>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm m-0">
+                {% if recent_expenses %}
+                <thead>
+                  <tr>
+                    <th class="text-center">Vencimento</th>
+                    <th class="text-center">Categoria</th>
+                    <th class="text-center">Descrição</th>
+                    <th class="ps-1">Valor</th>
+                    <th class="ps-1">Desconto</th>
+                    <th class="ps-1">Resultado</th>
+                    <th class="text-center">Pagamento</th>
+                    <th class="text-center">Forma</th>
+                    <th class="text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for transaction in recent_expenses %}
+                  <tr>
+                    <td class="text-center">
+                      {{ transaction.due_date.strftime('%d/%m/%Y') if
+                      transaction.due_date else '-' }}
+                    </td>
+                    <td class="text-center">{{ transaction.category.name }}</td>
+                    <td class="text-nowrap text-center">
+                      {{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}
+                    </td>
+                    <td class="text-nowrap text-danger">
+                      R$ {{ transaction.amount|currency }}
+                    </td>
+                    <td class="text-success">
+                      {% if transaction.discount and transaction.discount > 0 %}
+                      R$ {{ transaction.discount|currency }} {% else %} - {% endif
+                      %}
+                    </td>
+                    <td class="text-nowrap text-danger">
+                      R$ {{ (transaction.amount - transaction.discount)|currency }}
+                    </td>
+                    <td class="text-center">
+                      {{ transaction.payment_date.strftime('%d/%m/%Y') if
+                      transaction.payment_date else '-' }}
+                    </td>
+                    <td class="text-center">
+                      {{ transaction.payment_method.name if
+                      transaction.payment_method else '-' }}
+                    </td>
+                    <td class="text-center">
+                      {% if transaction.paid %}
+                      <span class="badge bg-success">Pago</span>
+                      {% elif transaction.due_date and transaction.due_date.date() < datetime.now().date() %}
+                      <span class="badge bg-danger">Vencido</span>
+                      {% else %}
+                      <span class="badge bg-warning">Pendente</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+
+                </tbody>
+                {% else %}
+                <tr>
+                  <td colspan="9" class="text-center">
+                    Nenhuma despesa registrada.
+                  </td>
+                </tr>
+                {% endif %}
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    {% if top_income_categories or top_expense_categories %}
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="row mb-4">
+          {% if top_income_categories %}
+          <div class="{% if top_expense_categories %}col-md-6{% else %}col-12{% endif %}">
+            <div class="card shadow mb-2">
+              <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Receitas por Categoria
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                  <canvas id="incomeChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                  {% for category, total in top_income_categories %}
+                  <span class="mr-2">
+                    <i
+                      class="fas fa-circle"
+                      style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
+                    ></i>
+                    {{ category }} (R$ {{ total|currency }})
+                  </span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% if top_expense_categories %}
+          <div class="{% if top_income_categories %}col-md-6{% else %}col-12{% endif %}">
+            <div class="card shadow mb-2">
+              <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Despesas por Categoria
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                  <canvas id="expenseChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                  {% for category, total in top_expense_categories %}
+                  <span class="mr-2">
+                    <i
+                      class="fas fa-circle"
+                      style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
+                    ></i>
+                    {{ category }} (R$ {{ total|currency }})
+                  </span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Evolução Mensal -->
+    {% if monthly_data_json and monthly_data_json != '[]' and monthly_data_json != 'null' and monthly_data_json != '""' %}
+    <div class="row mx-0">
+      <div class="col px-0">
+        <div class="row mb-4">
+          <div class="col-12">
+        <div class="card shadow mb-2">
+
+              <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Evolução Financeira (Últimos 6 meses)
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="chart-area">
+                  <canvas id="monthlyChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 </div>
 {% else %}
 <!-- Botões de Ação quando há apenas uma conta ou nenhuma conta selecionada -->
 <div class="card shadow mb-2">
   <div class="card-body py-2">
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-end align-items-center">
       <h6 class="mb-0 fw-bold text-primary">
         {{ current_month }}
         {% if conta_filter %}
@@ -136,519 +614,8 @@
 </div>
 {% endif %}
 
-<div class="watermark">
-  Desenvolvido por Carlos Alberto Medeiros +55 (31) 98676-6866
-</div>
-
-<!-- Cards de Resumo -->
-<div class="row mx-0">
-  <div class="col-md-3 px-0 pe-lg-1 ps-lg-0 mb-2">
-    <div class="card shadow bg-primary text-white m-0">
-      <div
-      class="card-body d-flex justify-content-between align-items-center p-2 px-4"
-      >
-      <div class="col-auto">
-        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-      </div>
-        <div class="col-auto">
-          <h6 class="card-title text-end m-0">Receitas</h6>
-          <h4 class="mb-0">R$ {{ income_total|currency }}</h4>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 px-0 px-lg-1 mb-2">
-    <div class="card shadow bg-primary text-white mb-0">
-      <div
-        class="card-body d-flex justify-content-between align-items-center p-2 px-4"
-      >
-      <div class="col-auto">
-        <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-      </div>
-        <div class="col-auto">
-          <h6 class="card-title text-end m-0">Despesas</h6>
-          <h4 class="mb-0">R$ {{ expense_total|currency }}</h4>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 px-0 px-lg-1">
-    <div
-      class="card shadow {% if monthly_balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white mb-2"
-    >
-      <div
-        class="card-body d-flex justify-content-between align-items-center p-2 px-4"
-      >
-      <div class="col-auto">
-        <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
-      </div>
-        <div class="col-auto text-end">
-          <h6 class="card-title text-end m-0">Saldo do Mês</h6>
-          <h4 class="mb-0">R$ {{ monthly_balance|currency }}</h4>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 px-0 pe-lg-0 ps-lg-1">
-    <div class="card shadow {% if saldo_atual >= 0 %}bg-primary{% else %}bg-danger{% endif %} text-white mb-2">
-      <div class="card-body d-flex justify-content-between align-items-center p-2 px-4">
-        <div class="col-auto">
-          <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
-        </div>
-        <div class="col-auto text-end">
-          <h6 class="card-title m-0">Saldo Atual</h6>
-          <h4 class="mb-0">R$ {{ saldo_atual|currency }}</h4>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-{% if pending_transactions > 0 %}
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="card shadow bg-bar p-2 py-lg-2 mb-2" id="pendingCard" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse" aria-expanded="false" aria-controls="pendingTableCollapse">
-      <div
-        class="row justify-content-start justify-content-lg-between align-items-center p-0"
-      >
-        <div
-          class="col d-lg-flex justify-content-lg-end gap-lg-5 ps-4 pe-0 pe-lg-0"
-        >
-          <div class="d-flex gap-2 align-items-center">
-            <h6 class="card-title m-0">Transações Pendentes</h6>
-            <h4 class="mb-0">{{ pending_transactions }}</h4>
-          </div>
-          <div class="d-flex gap-3 align-items-center text-lg-end">
-            <h6 class="m-0">Total:</h6>
-            <small class="fs-5">R$ {{ pending_amount|currency }}</small>
-          </div>
-        </div>
-        <div class="col-2 col-lg-1 text-lg-end ps-1 p-lg-0 pe-lg-3">
-          <i class="fas fa-clock fa-2x text-primary"></i>
-        </div>
-      </div>
-    </div>
-    <div class="collapse" id="pendingTableCollapse">
-      <div class="card shadow mb-2">
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Categoria</th>
-                  <th>Descrição</th>
-                  <th>Valor</th>
-                  <th>Forma de Pagamento</th>
-                  <th>Tipo</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for t in pending_transactions_list %}
-                <tr class="transaction-row" data-transaction-id="{{ t.id }}" style="cursor: pointer;" title="Clique para editar">
-                  <td>
-                    {% if t.type == 'despesa' %}
-                      {{ t.due_date.strftime('%d/%m/%Y') if t.due_date else '-' }}
-                    {% elif t.type == 'receita' %}
-                      {{ t.payment_date.strftime('%d/%m/%Y') if t.payment_date else '-' }}
-                    {% else %}
-                      {{ t.date.strftime('%d/%m/%Y') if t.date else '-' }}
-                    {% endif %}
-                  </td>
-                  <td>{{ t.category.name if t.category else '-' }}</td>
-                  <td>{{ t.expense.name if t.expense else (t.description or '-') }}</td>
-                  <td>R$ {{ t.amount|currency }}</td>
-                  <td>{{ t.payment_method.name if t.payment_method else '-' }}</td>
-                  <td>
-                    {% if t.type == 'receita' %}
-                      <span class="badge bg-success">Receita</span>
-                    {% elif t.type == 'despesa' %}
-                      <span class="badge bg-danger">Despesa</span>
-                    {% endif %}                  
-                  </td>
-                  <td>
-                    {% if t.paid %}
-                      <span class="badge bg-success">Pago</span>
-                    {% elif t.due_date and t.due_date.date() < datetime.now().date() %}
-                      <span class="badge bg-danger">Vencido</span>
-                    {% else %}
-                      <span class="badge bg-warning">Pendente</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="7" class="text-center">Nenhuma transação pendente.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- Tabela de Investimentos -->
-{% if investimentos %}
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="card shadow bg-bar p-2 py-lg-2 mb-2" id="pendingCard2" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse2" aria-expanded="false" aria-controls="pendingTableCollapse2">
-      <div
-        class="row justify-content-start justify-content-lg-between align-items-center p-0"
-      >
-        <div
-          class="col d-lg-flex justify-content-lg-end gap-lg-5 ps-4 pe-0 pe-lg-0"
-        >
-          <div class="d-flex gap-2 align-items-center">
-            <h6 class="card-title m-0">Investimentos</h6>
-            <h4 class="mb-0">{{ investimentos|length }}</h4>
-          </div>
-          <div class="d-flex gap-3 align-items-center text-lg-end">
-            <h6 class="m-0">Total:</h6>
-            <small class="fs-5">R$ {{ investimentos|sum(attribute='saldo_atual')|currency }}</small>
-          </div>
-        </div>
-        <div class="col-2 col-lg-1 text-lg-end ps-1 p-lg-0 pe-lg-3">
-            <i class="fas fa-chart-line fa-2x text-primary"></i>
-        </div>
-      </div>
-    </div>
-    <div class="collapse" id="pendingTableCollapse2">
-    <div class="card shadow mb-2">
-
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover table-sm m-0">
-            <thead>
-              <tr>
-                <th>Operação</th>
-                <th>Tipo</th>
-                <th>Saldo Atual</th>
-                <th>Último Rendimento</th>
-                <th>Última Movimentação</th>
-                <th>Data Aplicação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for investimento in investimentos %}
-              <tr>
-                <td>
-                  {% if investimento.ultima_movimentacao %}
-                    {% set tipo_mov = investimento.ultima_movimentacao.tipo_movimentacao %}
-                    {% if tipo_mov == 'aplicacao' %}
-                      <span class="badge bg-primary">Aplicação</span>
-                    {% elif tipo_mov == 'resgate' %}
-                      <span class="badge bg-warning">Resgate</span>
-                    {% elif tipo_mov == 'rendimento' %}
-                      <span class="badge bg-success">Rendimento</span>
-                    {% else %}
-                      <span class="badge bg-secondary">{{ tipo_mov|title }}</span>
-                    {% endif %}
-                  {% else %}
-                    <span class="text-muted">-</span>
-                  {% endif %}
-                </td>
-                <td>{{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }}</td>
-                <td class="text-success fw-bold">R$ {{ investimento.saldo_atual|default(0.0)|currency }}</td>
-                <td class="{% if investimento.ultimo_rendimento > 0 %}text-success{% else %}text-muted{% endif %}">R$ {{ investimento.ultimo_rendimento|currency }}</td>
-                <td>
-                  {% if investimento.data_ultimo_rendimento %}
-                    {{ investimento.data_ultimo_rendimento.strftime('%d/%m/%Y') }}
-                  {% else %}
-                    <span class="text-muted">-</span>
-                  {% endif %}
-                </td>
-                <td>{{ investimento.data_abertura.strftime('%d/%m/%Y') }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- Estatísticas do Mês -->
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="card shadow mb-2">
-
-      <div class="card-header">
-        <h6 class="m-0 font-weight-bold text-primary">Estatísticas do Mês</h6>
-      </div>
-      <div class="card-body py-2">
-        <div class="row text-center">
-          <div class="col-6 col-md-3 p-0 m-0">
-            <p class="mb-1 small">Média Diária de Despesas</p>
-                            <h6 class="text-dark">R$ {{ daily_avg_expense|currency }}</h6>
-          </div>
-          <div class="col-6 col-md-3 p-0 m-0">
-            <p class="mb-1 small">Projeção de Despesas</p>
-                            <h6 class="text-dark">R$ {{ projected_expense|currency }}</h6>
-          </div>
-          <div class="col col-md-3">
-            <p class="mb-1 small">Total de Transações</p>
-            <h6 class="text-dark">{{ total_transactions }}</h6>
-          </div>
-          <div class="col col-md-3">
-            <p class="mb-1 small">Dias no Mês</p>
-            <h6 class="text-dark">
-              {{ monthrange(datetime.now().year, datetime.now().month)[1] }}
-            </h6>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="card shadow mb-2">
-      <div
-        class="card-header d-flex justify-content-between align-items-center py-1"
-      >
-        <h6 class="m-0 font-weight-bold text-primary">Receitas Recentes</h6>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover table-sm m-0">
-            {% if recent_income %}
-            <thead>
-              <tr>
-                <th class="text-center">Pagamento</th>
-                <th class="text-center">Categoria</th>
-                <th class="text-center">Descrição</th>
-                <th class="ps-1">Valor</th>
-                <th class="text-center">Forma</th>
-                <th class="text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for transaction in recent_income %}
-              <tr>
-                <td class="text-center">
-                  {{ transaction.payment_date.strftime('%d/%m/%Y') if
-                  transaction.payment_date else '-' }}
-                </td>
-                <td class="text-center">{{ transaction.category.name }}</td>
-                <td class="text-center">
-                  {{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}
-                </td>
-                <td class="text-nowrap text-success">
-                  R$ {{ transaction.amount|currency }}
-                </td>
-                <td class="text-center">
-                  {{ transaction.payment_method.name if
-                  transaction.payment_method else '-' }}
-                </td>
-                <td class="text-center">
-                  {% if transaction.paid %}
-                  <span class="badge bg-success">Pago</span>
-                  {% elif transaction.due_date and transaction.due_date.date() < datetime.now().date() %}
-                  <span class="badge bg-danger">Vencido</span>
-                  {% else %}
-                  <span class="badge bg-warning">Pendente</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-            {% else %}
-            <tr>
-              <td colspan="6" class="text-center">
-                Nenhuma receita registrada.
-              </td>
-            </tr>
-            {% endif %}
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Tabela de Despesas -->
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="card shadow mb-2">
-
-      <div
-        class="card-header d-flex justify-content-between align-items-center py-1"
-      >
-        <h6 class="m-0 font-weight-bold text-primary">Despesas Recentes</h6>
-      </div>
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-hover table-sm m-0">
-            {% if recent_expenses %}
-            <thead>
-              <tr>
-                <th class="text-center">Vencimento</th>
-                <th class="text-center">Categoria</th>
-                <th class="text-center">Descrição</th>
-                <th class="ps-1">Valor</th>
-                <th class="ps-1">Desconto</th>
-                <th class="ps-1">Resultado</th>
-                <th class="text-center">Pagamento</th>
-                <th class="text-center">Forma</th>
-                <th class="text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for transaction in recent_expenses %}
-              <tr>
-                <td class="text-center">
-                  {{ transaction.due_date.strftime('%d/%m/%Y') if
-                  transaction.due_date else '-' }}
-                </td>
-                <td class="text-center">{{ transaction.category.name }}</td>
-                <td class="text-nowrap text-center">
-                  {{ transaction.expense.name if transaction.expense else (transaction.description or '-') }}
-                </td>
-                <td class="text-nowrap text-danger">
-                  R$ {{ transaction.amount|currency }}
-                </td>
-                <td class="text-success">
-                  {% if transaction.discount and transaction.discount > 0 %}
-                  R$ {{ transaction.discount|currency }} {% else %} - {% endif
-                  %}
-                </td>
-                <td class="text-nowrap text-danger">
-                  R$ {{ (transaction.amount - transaction.discount)|currency }}
-                </td>
-                <td class="text-center">
-                  {{ transaction.payment_date.strftime('%d/%m/%Y') if
-                  transaction.payment_date else '-' }}
-                </td>
-                <td class="text-center">
-                  {{ transaction.payment_method.name if
-                  transaction.payment_method else '-' }}
-                </td>
-                <td class="text-center">
-                  {% if transaction.paid %}
-                  <span class="badge bg-success">Pago</span>
-                  {% elif transaction.due_date and transaction.due_date.date() < datetime.now().date() %}
-                  <span class="badge bg-danger">Vencido</span>
-                  {% else %}
-                  <span class="badge bg-warning">Pendente</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-
-            </tbody>
-            {% else %}
-            <tr>
-              <td colspan="9" class="text-center">
-                Nenhuma despesa registrada.
-              </td>
-            </tr>
-            {% endif %}
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Gráficos -->
-{% if top_income_categories or top_expense_categories %}
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="row mb-4">
-      {% if top_income_categories %}
-      <div class="{% if top_expense_categories %}col-md-6{% else %}col-12{% endif %}">
-        <div class="card shadow mb-2">
-          <div class="card-header">
-            <h6 class="m-0 font-weight-bold text-primary">
-              Receitas por Categoria
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="chart-pie pt-4 pb-2">
-              <canvas id="incomeChart"></canvas>
-            </div>
-            <div class="mt-4 text-center small">
-              {% for category, total in top_income_categories %}
-              <span class="mr-2">
-                <i
-                  class="fas fa-circle"
-                  style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
-                ></i>
-                {{ category }} (R$ {{ total|currency }})
-              </span>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-      {% if top_expense_categories %}
-      <div class="{% if top_income_categories %}col-md-6{% else %}col-12{% endif %}">
-        <div class="card shadow mb-2">
-          <div class="card-header">
-            <h6 class="m-0 font-weight-bold text-primary">
-              Despesas por Categoria
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="chart-pie pt-4 pb-2">
-              <canvas id="expenseChart"></canvas>
-            </div>
-            <div class="mt-4 text-center small">
-              {% for category, total in top_expense_categories %}
-              <span class="mr-2">
-                <i
-                  class="fas fa-circle"
-                  style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
-                ></i>
-                {{ category }} (R$ {{ total|currency }})
-              </span>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-</div>
-{% endif %}
-
-<!-- Evolução Mensal -->
-{% if monthly_data_json and monthly_data_json != '[]' and monthly_data_json != 'null' and monthly_data_json != '""' %}
-<div class="row mx-0">
-  <div class="col px-0">
-    <div class="row mb-4">
-      <div class="col-12">
-    <div class="card shadow mb-2">
-
-          <div class="card-header">
-            <h6 class="m-0 font-weight-bold text-primary">
-              Evolução Financeira (Últimos 6 meses)
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="chart-area">
-              <canvas id="monthlyChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-
 {% endblock %} {% block extra_js %}
-<script>
+<script>  
   // Função para criar os gráficos
   function createCharts() {
       // Dados para os gráficos
