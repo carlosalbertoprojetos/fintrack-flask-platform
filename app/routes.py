@@ -377,15 +377,14 @@ def dashboard():
     top_expense_categories.sort(key=lambda x: x[1], reverse=True)
     top_expense_categories = top_expense_categories[:5]
 
-    # Obter as categorias de receitas com maiores valores no mês
+    # Obter todas as categorias de receitas do usuário (exceto investimentos)
     top_income_categories_query = (
         db.session.query(Category.name, func.sum(Transaction.amount).label("total"))
         .join(Transaction)
         .filter(
             Transaction.user_id == current_user.id,
             Transaction.type == "receita",
-            extract("month", Transaction.date) == current_month,
-            extract("year", Transaction.date) == current_year,
+            Category.name != "Investimentos",
         )
     )
     
@@ -393,7 +392,7 @@ def dashboard():
     if conta_filter:
         top_income_categories_query = top_income_categories_query.filter(Transaction.conta_id == conta_filter)
     
-    top_income_categories = top_income_categories_query.group_by(Category.name).order_by(func.sum(Transaction.amount).desc()).limit(5).all()
+    top_income_categories = top_income_categories_query.group_by(Category.name).order_by(func.sum(Transaction.amount).desc()).all()
 
     # Obter dados para o gráfico de evolução mensal (últimos 6 meses)
     monthly_data = []

@@ -259,6 +259,34 @@ function handleTabMessage(event) {
         }
       }
       break;
+
+    case 'close_localhost_tabs':
+      // Verificar se esta aba é do localhost:5000
+      const currentUrl = window.location.href;
+      const isLocalhostApp = currentUrl.startsWith('http://127.0.0.1:5000') || 
+                            currentUrl.startsWith('http://localhost:5000');
+      
+      if (isLocalhostApp && senderTabId !== AppState.currentTabId) {
+        console.log('Recebida mensagem para fechar aba do localhost');
+        // Aguardar um pouco antes de fechar para dar tempo da mensagem ser processada
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (e) {
+            console.warn('Erro ao fechar aba via window.close():', e);
+            // Tentar método alternativo
+            try {
+              window.location.replace('about:blank');
+              setTimeout(() => {
+                window.close();
+              }, 100);
+            } catch (e2) {
+              console.warn('Erro ao fechar aba via método alternativo:', e2);
+            }
+          }
+        }, 200);
+      }
+      break;
   }
 }
 
@@ -337,10 +365,20 @@ function cleanupTabStorage() {
  */
 async function closeTabOrBrowser() {
   try {
+    // Verificar se a URL atual começa com http://127.0.0.1:5000
+    const currentUrl = window.location.href;
+    const isLocalhostApp = currentUrl.startsWith('http://127.0.0.1:5000') || 
+                          currentUrl.startsWith('http://localhost:5000');
+    
+    if (!isLocalhostApp) {
+      console.log('Esta aba não é do aplicativo local, não será fechada.');
+      return;
+    }
+
     // Timeout para evitar espera infinita
     const closeTimeout = setTimeout(() => {
       console.warn('Timeout ao detectar abas, forçando fechamento');
-      forceClose();
+      forceClose(true); // Tentar fechar navegador completo em caso de timeout
     }, 2000);
 
     let tabCount;
@@ -356,14 +394,28 @@ async function closeTabOrBrowser() {
       );
     }
 
+    // Notificar outras abas do aplicativo para fecharem
+    if (AppState.tabChannel) {
+      try {
+        AppState.tabChannel.postMessage({
+          type: 'close_localhost_tabs',
+          source: 'shutdown',
+          tabId: AppState.currentTabId
+        });
+      } catch (e) {
+        console.warn('Erro ao notificar outras abas:', e);
+      }
+    }
+
+    // Se houver apenas uma aba aberta no navegador, fechar o navegador
     const shouldCloseBrowser = tabCount <= 1;
 
     if (shouldCloseBrowser) {
       cleanupTabStorage();
-      updateShutdownStatus('Fechando navegador completo...');
+      updateShutdownStatus('Fechando navegador completo (última aba)...');
     } else {
       decrementTabCount();
-      updateShutdownStatus('Fechando apenas esta aba...');
+      updateShutdownStatus('Fechando aba do aplicativo...');
       
       // Notificar outras abas
       if (AppState.tabChannel) {
@@ -378,74 +430,80 @@ async function closeTabOrBrowser() {
       }
     }
 
-    // Aguardar um pouco para atualizar UI
+    // Aguardar um pouco para atualizar UI e permitir que outras abas recebam a mensagem
     await new Promise(resolve => setTimeout(resolve, 300));
 
     // Tentar fechar (não aguardar, executar e continuar)
-    forceClose();
+    // Passar informação se deve fechar navegador completo
+    forceClose(shouldCloseBrowser);
     
     // Não aguardar retorno, já que forceClose() tenta múltiplos métodos
 
   } catch (error) {
     console.error('Erro ao fechar aba/navegador:', error);
-    forceClose();
+    // Em caso de erro, tentar fechar de qualquer forma
+    forceClose(true);
   }
 }
 
 /**
  * Força fechamento do navegador/aba
+ * @param {boolean} closeBrowser - Se true, tenta fechar o navegador completo
  */
-function forceClose() {
-  updateShutdownStatus('Fechando navegador...');
-  
-  // Método 1: Tentar window.close() imediatamente
-  try {
-    window.close();
-    // Se chegou aqui, window.close() não lançou exceção
-    // Mas pode não ter funcionado devido a restrições do navegador
-  } catch (e) {
-    console.warn('window.close() lançou exceção:', e);
+function forceClose(closeBrowser = false) {
+  if (closeBrowser) {
+    updateShutdownStatus('Fechando navegador completo...');
+  } else {
+    updateShutdownStatus('Fechando aba...');
   }
   
-  // Método 1.5: Tentar fechar usando window.open e depois close
+  // Método 1: Tentar window.close() imediatamente (múltiplas tentativas)
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      try {
+        window.close();
+      } catch (e) {
+        console.warn(`window.close() tentativa ${i + 1} falhou:`, e);
+      }
+    }, i * 50);
+  }
+  
+  // Método 2: Tentar fechar usando window.open e depois close
   setTimeout(() => {
     if (!document.hidden) {
       try {
+        // Abrir uma nova janela vazia na mesma aba
         const newWindow = window.open('', '_self');
         if (newWindow) {
-          newWindow.close();
+          setTimeout(() => {
+            try {
+              newWindow.close();
+            } catch (e) {
+              console.warn('newWindow.close() falhou:', e);
+            }
+          }, 50);
         }
       } catch (e) {
         console.warn('Método window.open/close falhou:', e);
       }
     }
-  }, 200);
-
-  // Método 2: Aguardar um pouco e tentar novamente
-  setTimeout(() => {
-    try {
-      window.close();
-    } catch (e) {
-      console.warn('Segunda tentativa window.close() falhou:', e);
-    }
   }, 100);
 
-  // Método 3: Redirecionar para about:blank (força fechamento em alguns casos)
+  // Método 3: Redirecionar para about:blank e tentar fechar
   setTimeout(() => {
     try {
       window.location.replace('about:blank');
-      // Tentar fechar após redirecionar
       setTimeout(() => {
         try {
           window.close();
         } catch (e) {
           console.warn('window.close() após about:blank falhou:', e);
         }
-      }, 200);
+      }, 100);
     } catch (e) {
       console.warn('Redirecionamento para about:blank falhou:', e);
     }
-  }, 300);
+  }, 200);
 
   // Método 4: Tentar via opener (se a janela foi aberta por outra)
   setTimeout(() => {
@@ -456,14 +514,46 @@ function forceClose() {
     } catch (e) {
       console.warn('window.opener.close() falhou:', e);
     }
-  }, 500);
+  }, 300);
 
-  // Método 5: Último recurso - mostrar mensagem após 2 segundos
+  // Método 5: Se for para fechar navegador completo, tentar métodos mais agressivos
+  if (closeBrowser) {
+    setTimeout(() => {
+      try {
+        // Tentar fechar via history
+        window.history.go(-(window.history.length));
+      } catch (e) {
+        console.warn('window.history.go() falhou:', e);
+      }
+    }, 400);
+
+    setTimeout(() => {
+      try {
+        // Tentar redirecionar para página vazia e fechar
+        window.location.href = 'about:blank';
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (e) {
+            console.warn('window.close() após location.href falhou:', e);
+          }
+        }, 100);
+      } catch (e) {
+        console.warn('window.location.href falhou:', e);
+      }
+    }, 500);
+  }
+
+  // Método 6: Último recurso - mostrar mensagem após 1.5 segundos
   setTimeout(() => {
     const statusDiv = document.getElementById('shutdown-status');
     if (statusDiv && !document.hidden) {
       // Se ainda está visível, significa que não fechou
-      updateShutdownStatus('Não foi possível fechar automaticamente. Por favor, feche a janela manualmente.');
+      if (closeBrowser) {
+        updateShutdownStatus('Não foi possível fechar automaticamente. Por favor, feche o navegador manualmente (Alt+F4 ou Ctrl+W).');
+      } else {
+        updateShutdownStatus('Não foi possível fechar automaticamente. Por favor, feche a aba manualmente (Ctrl+W).');
+      }
       // Tentar uma última vez após mostrar mensagem
       setTimeout(() => {
         try {
@@ -471,9 +561,9 @@ function forceClose() {
         } catch (e) {
           console.warn('Tentativa final de window.close() falhou:', e);
         }
-      }, 1000);
+      }, 500);
     }
-  }, 2000);
+  }, 1500);
 }
 
 /**
@@ -829,7 +919,7 @@ async function shutdownSystem() {
       console.warn('Timeout global atingido - forçando fechamento');
       updateShutdownStatus('Timeout atingido. Forçando fechamento...');
       if (timerInterval) clearInterval(timerInterval);
-      forceClose();
+      forceClose(true); // Tentar fechar navegador completo em caso de timeout
     }, CONFIG.SHUTDOWN_TIMEOUT);
 
     // Timer de contagem regressiva
@@ -875,7 +965,7 @@ async function shutdownSystem() {
         } catch (closeError) {
           console.warn('Erro ao fechar, usando método forçado:', closeError);
           updateShutdownStatus('Fechando navegador...');
-          forceClose();
+          forceClose(true); // Tentar fechar navegador completo em caso de erro
         }
         
         if (globalTimeout) clearTimeout(globalTimeout);
@@ -898,7 +988,7 @@ async function shutdownSystem() {
         ]);
       } catch (closeError) {
         console.warn('Erro ao fechar, usando método forçado:', closeError);
-        forceClose();
+        forceClose(true); // Tentar fechar navegador completo em caso de erro
       }
       
       if (globalTimeout) clearTimeout(globalTimeout);
@@ -909,7 +999,7 @@ async function shutdownSystem() {
     updateShutdownStatus('Erro crítico. Tentando fechar...');
     if (globalTimeout) clearTimeout(globalTimeout);
     if (timerInterval) clearInterval(timerInterval);
-    forceClose();
+    forceClose(true); // Tentar fechar navegador completo em caso de erro crítico
   }
 }
 

@@ -27,7 +27,7 @@
   #navbar-collapse .navbar-action-buttons {
     position: sticky;
     top: 0;
-    margin: 0;
+    margin-top: 10px;
     z-index: 1031;
     background-color: var(--bs-navbar-bg, #fff);
     align-self: flex-start;
@@ -70,17 +70,10 @@
     }
     
     #navbar-collapse .navbar-action-buttons {
-      position: sticky;
-      top: 0;
       z-index: 1032;
-      background-color: var(--bs-navbar-bg, #fff);
       width: auto;
       padding: 8px 0;
       margin-bottom: 0;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 0.5rem;
       align-self: flex-start;
     }
     
@@ -221,7 +214,7 @@
           <a
             href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}"
             class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow position-relative"
-            style="width: 50px; height: 50px"
+            style="width: 40px; height: 40px"
             title="{% if conta_filter %}{% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}{% if conta_atual %}Nova transação em {{ conta_atual.nome }}{% else %}Nova transação{% endif %}{% else %}Nova transação{% endif %}">
             <i class="fas fa-plus fa-lg"></i>
           </a>
@@ -231,7 +224,7 @@
               <a
                 href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}"
                 class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow"
-                style="width: 50px; height: 50px"
+                style="width: 40px; height: 40px"
                 title="Investimentos em {{ conta_atual.nome }}"
               >
                 <i class="menu-icon tf-icons bx bx-trending-up m-0"></i>
@@ -239,7 +232,7 @@
             {% endif %}
           {% endif %}
         </div>
-        <div class="navbar-action-buttons d-none d-lg-flex">
+        <div class="navbar-action-buttons d-none d-lg-flex m-auto">
           <a href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}" 
             class="btn btn-sm btn-primary">
             <i class="fas fa-plus me-1"></i> Nova Transação

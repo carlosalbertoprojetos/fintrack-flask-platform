@@ -537,404 +537,53 @@ def create_app(config_class=Config):
                     psutil_available = False
                     print("psutil não disponível, usando métodos alternativos...")
                 
-                print("[INFO] Aguardando navegador fechar...")
-                time.sleep(5)  # Aguardar 5 segundos para dar tempo do navegador fechar
+                print("[INFO] Fechando CMD...")
+                time.sleep(0.5)  # Aguardar apenas 0.5 segundos
                 
                 print("Encerrando o servidor...")
                 
-                # No Windows, fechar o CMD
+                # No Windows, fechar o CMD de forma rápida e direta
                 if os.name == 'nt':  # Windows
                     try:
-                        print("Tentando fechar o CMD...")
-                        
-                        # Estratégia 1: Identificar e fechar o CMD pai
+                        # Estratégia RÁPIDA: Fechar CMD pai diretamente
                         try:
-                            print("Estratégia 1: Identificando CMD pai...")
-                            
                             if psutil_available:
                                 current_process = psutil.Process()
                                 parent = current_process.parent()
                                 
                                 if parent and 'cmd.exe' in parent.name().lower():
-                                    print(f"CMD pai encontrado: PID {parent.pid}")
-                                    
-                                    # Tentar fechar o CMD pai graciosamente
+                                    print(f"Fechando CMD pai (PID {parent.pid})...")
+                                    # Fechar diretamente sem esperar
                                     try:
-                                        parent.terminate()
-                                        parent.wait(timeout=3)
-                                        print("CMD pai fechado com sucesso")
-                                    except psutil.TimeoutExpired:
-                                        print("Timeout ao fechar CMD pai, forçando...")
-                                        parent.kill()
+                                        parent.kill()  # Usar kill diretamente para ser mais rápido
+                                        print("CMD fechado com sucesso")
                                     except Exception as e:
-                                        print(f"Erro ao fechar CMD pai: {e}")
-                                        parent.kill()
+                                        print(f"Erro ao fechar CMD: {e}")
                             else:
-                                # Método alternativo sem psutil
+                                # Método alternativo sem psutil - usar taskkill diretamente
                                 parent_pid = os.getppid()
                                 if parent_pid > 0:
-                                    print(f"Tentando fechar processo pai PID: {parent_pid}")
+                                    print(f"Fechando CMD pai (PID {parent_pid})...")
                                     try:
-                                        os.kill(parent_pid, signal.SIGTERM)
-                                        time.sleep(2)
-                                        # Se ainda estiver rodando, forçar
-                                        os.kill(parent_pid, signal.SIGKILL)
+                                        # Usar taskkill /f diretamente para fechar rapidamente
+                                        subprocess.run(['taskkill', '/f', '/pid', str(parent_pid)], 
+                                                      capture_output=True, shell=True, timeout=1)
+                                        print("CMD fechado com sucesso")
                                     except Exception as e:
-                                        print(f"Erro ao fechar processo pai: {e}")
-                                    
+                                        print(f"Erro ao fechar CMD: {e}")
                         except Exception as e:
-                            print(f"Erro na estratégia 1: {e}")
+                            print(f"Erro ao fechar CMD pai: {e}")
                         
-                        # Estratégia 2: Fechar todos os CMDs relacionados
+                        # Estratégia RÁPIDA 2: Se a primeira falhou, usar taskkill direto
                         try:
-                            print("Estratégia 2: Fechando CMDs relacionados...")
-                            
-                            if psutil_available:
-                                for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-                                    try:
-                                        if 'cmd.exe' in proc.info['name'].lower():
-                                            # Verificar se é o CMD que iniciou nossa aplicação
-                                            cmdline = proc.info['cmdline']
-                                            if cmdline and any('python' in arg.lower() for arg in cmdline):
-                                                print(f"Fechando CMD da aplicação: PID {proc.info['pid']}")
-                                                proc.terminate()
-                                                proc.wait(timeout=2)
-                                            elif proc.info['pid'] != os.getppid():
-                                                print(f"Fechando CMD órfão: PID {proc.info['pid']}")
-                                                proc.terminate()
-                                                proc.wait(timeout=1)
-                                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                                        continue
-                                    except Exception as e:
-                                        print(f"Erro ao processar processo: {e}")
-                            else:
-                                # Método alternativo sem psutil - usar taskkill mais agressivo
-                                print("Usando taskkill AGGRESSIVO para fechar CMDs...")
-                                try:
-                                    # Primeiro: fechar CMDs específicos que executam Python
-                                    result = subprocess.run(['tasklist', '/fi', 'imagename eq cmd.exe', '/fo', 'csv'], 
-                                                          capture_output=True, shell=True, timeout=5, text=True)
-                                    
-                                    if result.returncode == 0:
-                                        lines = result.stdout.strip().split('\n')[1:]  # Pular cabeçalho
-                                        for line in lines:
-                                            if line.strip():
-                                                parts = line.split(',')
-                                                if len(parts) >= 2:
-                                                    pid = parts[1].strip('"')
-                                                    try:
-                                                        # Verificar se o CMD executa Python
-                                                        cmd_check = subprocess.run(['tasklist', '/fi', f'pid eq {pid}', '/fo', 'csv'], 
-                                                                                capture_output=True, shell=True, timeout=2, text=True)
-                                                        if 'python' in cmd_check.stdout.lower():
-                                                            print(f"Fechando CMD Python PID: {pid}")
-                                                            subprocess.run(['taskkill', '/f', '/pid', pid], 
-                                                                          capture_output=True, shell=True, timeout=3)
-                                                    except:
-                                                        continue
-                                    
-                                    # Segundo: fechar TODOS os CMDs restantes
-                                    print("Fechando TODOS os CMDs restantes...")
-                                    subprocess.run(['taskkill', '/f', '/im', 'cmd.exe'], 
-                                                  capture_output=True, shell=True, timeout=5)
-                                    print("CMDs fechados via taskkill agressivo")
-                                except Exception as e:
-                                    print(f"Erro ao usar taskkill agressivo: {e}")
-                                    
-                        except Exception as e:
-                            print(f"Erro na estratégia 2: {e}")
-                        
-                        # Estratégia 3: Fechar consoles relacionados
-                        try:
-                            print("Estratégia 3: Fechando consoles relacionados...")
-                            
-                            if psutil_available:
-                                for proc in psutil.process_iter(['pid', 'name']):
-                                    try:
-                                        if 'conhost.exe' in proc.info['name'].lower():
-                                            # Verificar se está relacionado ao nosso processo
-                                            if proc.parent() and proc.parent().pid == os.getppid():
-                                                print(f"Fechando console relacionado: PID {proc.info['pid']}")
-                                                proc.terminate()
-                                                proc.wait(timeout=1)
-                                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
-                                        continue
-                                    except Exception as e:
-                                        print(f"Erro ao processar console: {e}")
-                            else:
-                                # Método alternativo sem psutil
-                                print("Usando taskkill para fechar consoles...")
-                                try:
-                                    subprocess.run(['taskkill', '/f', '/im', 'conhost.exe'], 
-                                                  capture_output=True, shell=True, timeout=5)
-                                    print("Consoles fechados via taskkill")
-                                except Exception as e:
-                                    print(f"Erro ao fechar consoles: {e}")
-                                    
-                        except Exception as e:
-                            print(f"Erro na estratégia 3: {e}")
-                        
-                        # Estratégia 4: Script batch otimizado e mais agressivo
-                        try:
-                            print("Estratégia 4: Executando script final agressivo...")
-                            batch_script = '''@echo off
-title FECHANDO SISTEMA - AGUARDE
-color 0C
-cls
-echo.
-echo ========================================
-echo    FECHANDO SISTEMA FINANCAS PESSOAIS
-echo ========================================
-echo.
-echo Fechando CMD e processos Python...
-echo.
-
-REM Aguardar um momento para o servidor processar
-timeout /t 1 /nobreak >nul
-
-REM ESTRATÉGIA AGRESSIVA: Fechar TODOS os CMDs que executam Python
-echo [1/4] Fechando CMDs da aplicacao...
-for /f "tokens=2" %%i in ('tasklist /fi "imagename eq cmd.exe" /fo table /nh 2^>nul') do (
-    echo Verificando CMD PID: %%i
-    tasklist /fi "pid eq %%i" /fo table /nh 2^>nul | findstr /i "python" >nul 2^>nul
-    if not errorlevel 1 (
-        echo [FORÇANDO] Fechando CMD da aplicacao: PID %%i
-        taskkill /f /pid %%i >nul 2>&1
-        if errorlevel 1 (
-            echo [ERRO] Nao foi possivel fechar PID %%i
-        ) else (
-            echo [SUCESSO] CMD PID %%i fechado
-        )
-    )
-)
-
-REM Fechar TODOS os processos Python (mais agressivo)
-echo.
-echo [2/4] Fechando TODOS os processos Python...
-taskkill /f /im python.exe >nul 2>&1
-if errorlevel 1 (
-    echo [SUCESSO] Processos Python encerrados
-) else (
-    echo [INFO] Nenhum processo Python encontrado
-)
-
-REM Fechar TODOS os consoles relacionados
-echo.
-echo [3/4] Fechando TODOS os consoles...
-taskkill /f /im conhost.exe >nul 2>&1
-if errorlevel 1 (
-    echo [SUCESSO] Consoles encerrados
-) else (
-    echo [INFO] Nenhum console encontrado
-)
-
-REM Estratégia adicional: Fechar navegadores
-echo.
-echo [4/6] Fechando navegadores...
-echo Fechando Chrome...
-taskkill /im chrome.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-taskkill /f /im chrome.exe >nul 2>&1
-
-echo Fechando Firefox...
-taskkill /im firefox.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-taskkill /f /im firefox.exe >nul 2>&1
-
-echo Fechando Edge...
-taskkill /im msedge.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-taskkill /f /im msedge.exe >nul 2>&1
-
-echo Fechando Internet Explorer...
-taskkill /im iexplore.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-taskkill /f /im iexplore.exe >nul 2>&1
-
-echo Fechando Opera...
-taskkill /im opera.exe >nul 2>&1
-timeout /t 1 /nobreak >nul
-taskkill /f /im opera.exe >nul 2>&1
-
-REM ESTRATÉGIA FINAL: Forçar fechamento de qualquer CMD restante
-echo.
-echo [5/6] Estrategia final: fechando CMDs restantes...
-taskkill /f /im cmd.exe >nul 2>&1
-
-REM Limpeza final de processos órfãos
-echo.
-echo [6/6] Limpeza final de processos...
-taskkill /f /im conhost.exe >nul 2>&1
-
-REM Limpar arquivo temporário
-echo.
-echo Limpando arquivos temporarios...
-del "%~f0" >nul 2>&1
-
-echo.
-echo ========================================
-echo    SISTEMA ENCERRADO COM SUCESSO!
-echo ========================================
-echo.
-echo Fechando esta janela automaticamente...
-timeout /t 2 /nobreak >nul
-
-REM Forçar fechamento da janela atual
-exit
-'''
-                            with open("FECHAR_SISTEMA.bat", "w", encoding='utf-8') as f:
-                                f.write(batch_script)
-                            
-                            # Executar script com privilégios elevados se possível
-                            try:
-                                # Tentar executar como administrador
-                                subprocess.Popen(["FECHAR_SISTEMA.bat"], 
-                                               shell=True, 
-                                               creationflags=subprocess.CREATE_NEW_CONSOLE | subprocess.HIGH_PRIORITY_CLASS)
-                                print("Script de fechamento executado com alta prioridade")
-                            except:
-                                # Fallback: executar normalmente
-                                subprocess.Popen(["FECHAR_SISTEMA.bat"], 
-                                               shell=True, 
-                                               creationflags=subprocess.CREATE_NEW_CONSOLE)
-                                print("Script de fechamento executado normalmente")
-                            
-                            # Aguardar mais tempo para o script executar
-                            time.sleep(5)
-                            try:
-                                os.remove("FECHAR_SISTEMA.bat")
-                            except:
-                                pass
-                                
-                        except Exception as e:
-                            print(f"Erro na estratégia 4: {e}")
-                        
-                        # Estratégia 5: Usar script PowerShell dedicado para navegadores
-                        try:
-                            print("Estratégia 5: Usando script PowerShell para navegadores...")
-                            
-                            # Verificar se o script existe
-                            if os.path.exists("FECHAR_NAVEGADORES.ps1"):
-                                # Executar script PowerShell com privilégios elevados
-                                subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', 'FECHAR_NAVEGADORES.ps1'], 
-                                              capture_output=True, shell=True, timeout=15)
-                                print("Script de navegadores executado")
-                            else:
-                                print("Script FECHAR_NAVEGADORES.ps1 não encontrado")
-                                
-                        except Exception as e:
-                            print(f"Erro na estratégia 5: {e}")
-                        
-                        # Estratégia 5.5: Método alternativo usando PowerShell inline
-                        try:
-                            print("Estratégia 5.5: Usando PowerShell inline para fechar CMD...")
-                            powershell_script = '''
-Get-Process | Where-Object {$_.ProcessName -eq "cmd" -or $_.ProcessName -eq "conhost"} | ForEach-Object {
-    try {
-        $_.Kill()
-        Write-Host "Processo $($_.ProcessName) PID $($_.Id) fechado"
-    } catch {
-        Write-Host "Erro ao fechar $($_.ProcessName) PID $($_.Id): $_"
-    }
-}
-Get-Process | Where-Object {$_.ProcessName -eq "python"} | ForEach-Object {
-    try {
-        $_.Kill()
-        Write-Host "Processo Python PID $($_.Id) fechado"
-    } catch {
-        Write-Host "Erro ao fechar Python PID $($_.Id): $_"
-    }
-}
-'''
-                            # Criar pasta sistema se não existir
-                            sistema_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sistema')
-                            sistema_dir = os.path.abspath(sistema_dir)
-                            os.makedirs(sistema_dir, exist_ok=True)
-                            
-                            powershell_file = os.path.join(sistema_dir, "FECHAR_POWERSHELL.ps1")
-                            with open(powershell_file, "w", encoding='utf-8') as f:
-                                f.write(powershell_script)
-                            
-                            # Executar PowerShell
-                            subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', powershell_file], 
-                                          capture_output=True, shell=True, timeout=10)
-                            
-                            # Limpar arquivo
-                            try:
-                                os.remove(powershell_file)
-                            except:
-                                pass
-                                
-                        except Exception as e:
-                            print(f"Erro na estratégia 5.5: {e}")
-                        
-                        # Estratégia 6: Usar script batch dedicado para navegadores
-                        try:
-                            print("Estratégia 6: Usando script batch para navegadores...")
-                            
-                            # Verificar se o script existe
-                            if os.path.exists("FECHAR_NAVEGADORES.bat"):
-                                # Executar script batch
-                                subprocess.Popen(["FECHAR_NAVEGADORES.bat"], 
-                                               shell=True, 
-                                               creationflags=subprocess.CREATE_NEW_CONSOLE)
-                                print("Script batch de navegadores executado")
-                                time.sleep(3)  # Aguardar execução
-                            else:
-                                print("Script FECHAR_NAVEGADORES.bat não encontrado")
-                                
-                        except Exception as e:
-                            print(f"Erro na estratégia 6: {e}")
-                        
-                        # Estratégia 6.5: Fechar janelas do navegador manualmente
-                        try:
-                            print("Estratégia 6.5: Fechando janelas do navegador manualmente...")
-                            
-                            # Lista de navegadores comuns
-                            browsers = ['chrome.exe', 'firefox.exe', 'msedge.exe', 'iexplore.exe', 'opera.exe', 'brave.exe', 'vivaldi.exe']
-                            
-                            for browser in browsers:
-                                try:
-                                    # Verificar se o navegador está rodando
-                                    result = subprocess.run(['tasklist', '/fi', f'imagename eq {browser}', '/fo', 'csv'], 
-                                                          capture_output=True, shell=True, timeout=3, text=True)
-                                    
-                                    if result.returncode == 0 and browser in result.stdout.lower():
-                                        print(f"Fechando {browser}...")
-                                        
-                                        # Tentar fechar graciosamente primeiro
-                                        subprocess.run(['taskkill', '/im', browser], 
-                                                      capture_output=True, shell=True, timeout=5)
-                                        
-                                        # Aguardar um pouco
-                                        time.sleep(2)
-                                        
-                                        # Se ainda estiver rodando, forçar fechamento
-                                        subprocess.run(['taskkill', '/f', '/im', browser], 
-                                                      capture_output=True, shell=True, timeout=5)
-                                        
-                                        print(f"{browser} fechado")
-                                        
-                                except Exception as e:
-                                    print(f"Erro ao fechar {browser}: {e}")
-                                    continue
-                                    
-                        except Exception as e:
-                            print(f"Erro na estratégia 6.5: {e}")
-                        
-                        # Estratégia 7: Forçar saída final
-                        try:
-                            print("Estratégia 7: Finalizando processo...")
-                            time.sleep(3)
-                            
-                            # Última tentativa: usar taskkill diretamente
+                            # Fechar diretamente todos os CMDs relacionados ao Python
                             subprocess.run(['taskkill', '/f', '/im', 'cmd.exe'], 
-                                          capture_output=True, shell=True, timeout=5)
-                            
-                            os._exit(0)
+                                          capture_output=True, shell=True, timeout=0.5)
                         except Exception as e:
-                            print(f"Erro na estratégia 7: {e}")
-                            os._exit(0)
+                            pass  # Ignorar erros silenciosamente
+                        
+                        # Forçar saída imediata
+                        os._exit(0)
                             
                     except Exception as e:
                         print(f"Erro geral no shutdown: {e}")
