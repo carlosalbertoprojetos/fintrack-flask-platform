@@ -1,0 +1,555 @@
+{% extends "base.html" %} {% block content %}
+
+<style>
+  /* Fixar botões de ação no topo da navbar */
+  .navbar-action-buttons {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background-color: var(--bs-navbar-bg, #fff);
+    padding: 8px 0;
+    margin: -8px 0;
+    align-self: flex-start;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Garantir que os botões fiquem visíveis mesmo quando o collapse expandir */
+  #navbar-collapse {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  #navbar-collapse .navbar-action-buttons {
+    position: sticky;
+    top: 0;
+    margin-top: 10px;
+    z-index: 1031;
+    background-color: var(--bs-navbar-bg, #fff);
+    align-self: flex-start;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  /* Garantir que o dropdown não afete o posicionamento dos botões */
+  #navbar-collapse .navbar-nav {
+    align-self: flex-start;
+  }
+  
+  /* Garantir que os botões dentro do container fiquem lado a lado */
+  .navbar-action-buttons > * {
+    flex-shrink: 0;
+  }
+  
+  /* Em telas pequenas, garantir que o botão fique sempre visível */
+  @media (max-width: 991.98px) {
+    .navbar-action-buttons {
+      position: sticky;
+      top: 0;
+      z-index: 1032;
+      background-color: var(--bs-navbar-bg, #fff);
+      padding: 8px 0;
+      width: auto;
+      order: -1;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    #navbar-collapse {
+      flex-direction: row;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    
+    #navbar-collapse .navbar-action-buttons {
+      z-index: 1032;
+      width: auto;
+      padding: 8px 0;
+      margin-bottom: 0;
+      align-self: flex-start;
+    }
+    
+    #navbar-collapse .navbar-nav {
+      align-self: flex-start;
+    }
+  }
+</style>
+
+<!-- Layout wrapper -->
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <!-- Menu -->
+    <aside
+      id="layout-menu"
+      class="layout-menu menu-vertical menu bg-menu-theme"
+    >
+      <div class="app-brand demo">
+        <a href="{{ url_for('main.index') }}" class="app-brand-link">
+          <span class="app-brand-logo demo">
+            <i class="bx bx-wallet-alt"></i>
+          </span>
+          <span class="app-brand-text demo menu-text fw-bold"
+            >Finanças Pessoais</span
+          >
+        </a>
+
+        <!-- Toggle button for desktop -->
+        <a
+          href="javascript:void(0);"
+          class="layout-menu-toggle menu-link text-large ms-auto d-none d-xl-block"
+        >
+          <i class="bx bx-chevron-left align-middle"></i>
+        </a>
+      </div>
+
+      <div class="menu-inner-shadow"></div>
+
+      <ul class="menu-inner py-1">
+        {% if current_user.is_authenticated %}
+        <!-- Dashboard -->
+        <li
+          class="menu-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+          <a href="{{ url_for('main.dashboard') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-home-circle"></i>
+            <div>Dashboard</div>
+          </a>
+        </li>
+
+        <!-- Relatórios -->
+        <li
+          class="menu-item {% if request.endpoint == 'transaction.reports' %}active{% endif %}"
+        >
+          <a href="{{ url_for('transaction.reports') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+            <div>Relatórios</div>
+          </a>
+        </li>
+
+        <!-- Configurações Dropdown -->
+        <li class="menu-item">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-cog"></i>
+            <div>Configurações</div>
+            <i class="bx bx-chevron-down menu-arrow"></i>
+          </a>
+          <ul class="menu-sub">           
+
+            <!-- Tipos de Conta -->
+            <li class="menu-item {% if request.endpoint.startswith('tipo_conta.') %}active{% endif %}">
+              <a href="{{ url_for('tipo_conta.listar_tipos_conta') }}" class="menu-link px-4">
+                <i class="menu-icon tf-icons bx bx-receipt"></i>
+                <div>Tipos de Conta</div>
+              </a>
+            </li>
+
+            <!-- Contas -->
+            <li class="menu-item {% if request.endpoint.startswith('conta.') %}active{% endif %}">
+              <a href="{{ url_for('conta.listar_contas') }}" class="menu-link px-4">
+                <i class="menu-icon tf-icons bx bx-wallet"></i>
+                <div>Contas</div>
+              </a>
+            </li>
+
+            <!-- Categorias -->
+            <li class="menu-item {% if 'categories' in request.endpoint or 'category' in request.endpoint %}active{% endif %}">
+              <a href="{{ url_for('transaction.categories') }}" class="menu-link px-4">
+                <i class="menu-icon tf-icons bx bx-category"></i>
+                <div>Categorias</div>
+              </a>
+            </li>
+
+            <!-- Descrições -->
+            <li class="menu-item {% if 'expenses' in request.endpoint or 'expense' in request.endpoint %}active{% endif %}">
+              <a href="{{ url_for('transaction.expenses') }}" class="menu-link px-4">
+                <i class="menu-icon tf-icons bx bx-list-ul"></i>
+                <div>Descrições</div>
+              </a>
+            </li>
+
+            <!-- Formas de Pagamento -->
+            <li class="menu-item {% if 'payment_methods' in request.endpoint or 'payment_method' in request.endpoint %}active{% endif %}">
+              <a href="{{ url_for('transaction.list_payment_methods') }}" class="menu-link px-4">
+                <i class="menu-icon tf-icons bx bx-credit-card"></i>
+                <div>Formas de Pagamento</div>
+              </a>
+            </li>
+
+            <!-- Tipos de Investimento -->
+            <li class="menu-item {% if 'tipo_investimento' in request.endpoint %}active{% endif %}">
+              <a href="{{ url_for('tipo_investimento.listar_tipos_investimento') }}" class="menu-link px-4">
+                <i class="menu-icon tf-icons bx bx-trending-up m-0"></i>
+                <div>Tipos de Investimento</div>
+              </a>
+            </li>
+          </ul>
+        </li>
+        {% endif %}
+      </ul>
+    </aside>
+    <!-- / Menu -->
+
+    <!-- Layout container -->
+    <div class="layout-page">
+      <!-- Navbar -->
+      <nav
+        class="layout-navbar container-fluid navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+        id="layout-navbar">
+        <div class="layout-menu-toggle navbar-nav align-items-xl-center fixed-top m-3 me-xl-0 d-xl-none">
+          <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0);">
+            <i class="bx bx-menu bx-sm"></i>
+          </a>
+        </div>
+        <div
+          class="navbar-nav-right d-flex align-items-center"
+          id="navbar-collapse">
+        <div class="navbar-action-buttons d-lg-none d-flex gap-2 p-0">
+          <a
+            href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}"
+            class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow position-relative"
+            style="width: 40px; height: 40px"
+            title="{% if conta_filter %}{% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}{% if conta_atual %}Nova transação em {{ conta_atual.nome }}{% else %}Nova transação{% endif %}{% else %}Nova transação{% endif %}">
+            <i class="fas fa-plus fa-lg"></i>
+          </a>
+          {% if conta_filter %}
+            {% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}
+            {% if conta_atual and conta_atual.saldo_atual > 0 %}
+              <a
+                href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}"
+                class="d-flex text-decoration-none align-items-center justify-content-center bg-primary text-white rounded-circle shadow"
+                style="width: 40px; height: 40px"
+                title="Investimentos em {{ conta_atual.nome }}"
+              >
+                <i class="menu-icon tf-icons bx bx-trending-up m-0"></i>
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+        <div class="navbar-action-buttons d-none d-lg-flex m-auto">
+          <a href="{{ url_for('transaction.add_transaction', conta_id=conta_filter) }}" 
+            class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Nova Transação
+          </a>
+          {% if conta_filter %}
+            {% set conta_atual = contas|selectattr('id', 'equalto', conta_filter)|first %}
+            {% if conta_atual and conta_atual.saldo_atual > 0 %}
+              <a href="{{ url_for('investimento.investimentos', conta_id=conta_filter) }}" 
+                class="btn btn-sm btn-primary">
+                <i class="fas fa-chart-line me-1"></i> Investimentos
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
+        
+          <ul class="navbar-nav flex-row align-items-center ms-auto">
+            <!-- User -->
+            <li class="nav-item navbar-dropdown dropdown-user dropdown">
+              <a
+                class="nav-link dropdown-toggle hide-arrow"
+                href="javascript:void(0);"
+                data-bs-toggle="dropdown"
+              >
+              <div class="avatar avatar-online bg-primary">
+                  <i class="bx bx-user-circle fs-2"></i>
+                </div>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                {% if current_user.is_authenticated %}
+                <li>
+                  <a class="dropdown-item" href="#">
+                    <div class="d-flex">
+                      <div class="flex-shrink-0 me-3"></div>
+                      <div class="flex-grow-1">
+                        <span class="fw-semibold d-none"
+                          >{{ current_user.username }}</span
+                        >
+                        <small class="text-muted">Usuário</small>
+                      </div>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <div class="dropdown-divider"></div>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                    <i class="bx bx-user me-2"></i>
+                    <span class="align-middle">Meu Perfil</span>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                    <i class="bx bx-power-off me-2"></i>
+                    <span class="align-middle">Sair</span>
+                  </a>
+                </li>
+                {% else %}
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('auth.login') }}">
+                    <i class="bx bx-log-in me-2"></i>
+                    <span class="align-middle">Entrar</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('auth.register') }}"
+                  >
+                    <i class="bx bx-user-plus me-2"></i>
+                    <span class="align-middle">Cadastrar</span>
+                  </a>
+                </li>
+                {% endif %}
+                <li>
+                  <div class="dropdown-divider"></div>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item text-danger"
+                    href="javascript:void(0);"
+                    data-bs-toggle="modal"
+                    data-bs-target="#shutdownModal"
+                  >
+                    <i class="bx bx-power-off me-2"></i>
+                    <span class="align-middle">Desligar</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+            <!--/ User -->
+          </ul>
+
+        </div>
+      </nav>
+      <!-- / Navbar -->
+
+      <!-- Content wrapper -->
+      <div class="content-wrapper m-2 pe-1">
+        <!-- Content -->
+        <div class="container-fluid flex-grow-1 p-0 m-0">          
+          {% with messages = get_flashed_messages(with_categories=true) %} 
+            {% if messages %} 
+              {% for category, message in messages %}
+                <div
+                  class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible text-muted fade show"
+                  role="alert"
+                  id="flash-message-{{ loop.index }}"
+                  style="z-index: 9999; position: static;"
+                >
+                  <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                      {% if category == 'success' %}
+                        <i class="fas fa-check-circle text-success"></i>
+                      {% elif category == 'danger' %}
+                        <i class="fas fa-exclamation-circle text-danger"></i>
+                      {% elif category == 'warning' %}
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                      {% elif category == 'info' %}
+                        <i class="fas fa-info-circle text-info"></i>
+                      {% else %}
+                        <i class="fas fa-info-circle text-info"></i>
+                      {% endif %}
+                      {{ message }}
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-close"
+                      data-bs-dismiss="alert"
+                      aria-label="Close"
+                      onclick="dismissMessage('flash-message-{{ loop.index }}')"
+                    ></button>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %} 
+          {% endwith %}
+          
+          {% block index %} {% endblock %}
+        </div>
+        <!-- / Content -->
+
+        <div class="content-backdrop fade"></div>
+      </div>
+      <!-- Footer -->
+      <footer class="content-footer footer bg-footer-theme py-2">
+        <div
+          class="d-flex flex-wrap justify-content-center justify-content-lg-between flex-md-row"
+        >
+          <div class="mb-2 mb-md-0">
+            ©
+            <script>
+              document.write(new Date().getFullYear());
+            </script>
+            <a href="" class="footer-link fw-bolder">Finanças Pessoais</a>
+          </div>
+          <div class="text-muted">
+            Desenvolvido por
+            <a
+              class="footer-link fw-bolder"
+              href="https://www.instagram.com/carlosalbertocode/"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="(31) 98676-6866"
+              >Carlos Alberto Medeiros</a
+            >
+          </div>
+        </div>
+      </footer>
+      <!-- / Footer -->
+      <!-- Content wrapper -->
+    </div>
+    <!-- / Layout page -->
+  </div>
+
+  <!-- Overlay -->
+  <div class="layout-overlay layout-menu-toggle d-none"></div>
+
+  <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+  <div class="drag-target"></div>
+</div>
+
+<!-- Modal de Confirmação de Desligamento -->
+<div class="modal fade" id="shutdownModal" tabindex="-1" aria-labelledby="shutdownModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="shutdownModalLabel">
+          <i class="bx bx-power-off me-2"></i>
+          Confirmar Desligamento
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">Tem certeza que deseja desligar o sistema?</p>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="confirmShutdown()">
+          Desligar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="watermark" id="footer-developer-info">
+  Desenvolvido por Carlos Alberto Medeiros +55 (31) 98676-6866
+</div>
+
+<!-- Sistema de mensagens flash -->
+<script>
+ 
+  // Auto-dismiss para mensagens flash
+  document.addEventListener('DOMContentLoaded', function() {
+    const flashMessages = document.querySelectorAll('[id^="flash-message-"]');
+    
+    flashMessages.forEach(function(message, index) {
+      // Auto-dismiss após 8 segundos
+      setTimeout(function() {
+        if (message && message.parentNode) {
+          dismissMessage(message.id);
+        }
+      }, 6000);
+      
+      // Pausar auto-dismiss quando mouse passar sobre a mensagem
+      message.addEventListener('mouseenter', function() {
+        message.dataset.paused = 'true';
+      });
+      
+      message.addEventListener('mouseleave', function() {
+        message.dataset.paused = 'false';
+      });
+    });
+  });
+  
+  // Função global para mostrar mensagens programaticamente
+  function showFlashMessage(message, category = 'info', duration = 8000) {
+    const container = document.querySelector('.container-fluid.flex-grow-1.p-0');
+    if (!container) return;
+    
+    const messageId = 'flash-message-' + Date.now();
+    const alertClass = 'alert-' + (category || 'info');
+    const iconClass = category === 'success' ? 'fa-check-circle text-success' :
+                     category === 'danger' ? 'fa-exclamation-circle text-danger' :
+                     category === 'warning' ? 'fa-exclamation-triangle text-warning' :
+                     'fa-info-circle text-info';
+    
+    const messageHtml = `
+      <div class="alert ${alertClass} alert-dismissible fade show" 
+           role="alert" 
+           id="${messageId}"
+           style="margin: 0 0 10px 0; z-index: 9999; position: static;">
+        <div class="d-flex align-items-center">
+          <div class="flex-grow-1">
+            <i class="fas ${iconClass} me-2"></i>
+            ${message}
+          </div>
+          <button type="button" 
+                  class="btn-close" 
+                  data-bs-dismiss="alert" 
+                  aria-label="Close"
+                  onclick="dismissMessage('${messageId}')">
+          </button>
+        </div>
+      </div>
+    `;
+    
+    container.insertAdjacentHTML('afterbegin', messageHtml);
+    
+    // Auto-dismiss
+    setTimeout(function() {
+      dismissMessage(messageId);
+    }, duration);
+  }
+  
+  // Ocultar div do desenvolvedor quando chegar ao final da página
+  function handleFooterVisibility() {
+    const footerInfo = document.getElementById('footer-developer-info');
+    if (!footerInfo) return;
+    
+    // Calcular se chegou ao final da página
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollBottom = scrollTop + windowHeight;
+    
+    // Verificar se está no final da página (com margem de 10px)
+    const isAtBottom = scrollBottom >= documentHeight - 10;
+    
+    if (isAtBottom) {
+      footerInfo.style.display = 'none';
+    } else {
+      footerInfo.style.display = '';
+    }
+  }
+  
+  // Adicionar listener de scroll
+  let scrollTimeout;
+  window.addEventListener('scroll', function() {
+    // Usar debounce para melhor performance
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(handleFooterVisibility, 10);
+  });
+  
+  // Verificar na carga inicial
+  document.addEventListener('DOMContentLoaded', function() {
+    handleFooterVisibility();
+  });
+  
+  // Verificar quando a página redimensionar
+  window.addEventListener('resize', function() {
+    handleFooterVisibility();
+  });
+</script>
+
+{% endblock %}

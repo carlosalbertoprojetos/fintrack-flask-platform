@@ -1,0 +1,144 @@
+{% extends 'index.html' %} 
+
+{% block title %}Formas de Pagamento{% endblock %} 
+
+{% block index %}
+
+<div class="col p-lg-0">
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 text-gray-800">Formas de Pagamento</h1>
+    <a href="{{ url_for('transaction.add_payment_method') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> Adicionar
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-body px-2 pb-0">
+
+      {% if methods %}
+      <div class="table-responsive">
+        <table
+          id="paymentMethodsTable"
+          class="table table-hover table-sm m-0"
+        >
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Ativo</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for method in methods %}
+            <tr>
+              <td>{{ method.name }}</td>
+              <td>
+                {% if method.is_active %}
+                <span class="badge bg-success">Ativo</span>
+                {% else %}
+                <span class="badge bg-secondary">Inativo</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <!-- Botões de Ação (Editar/Excluir) -->
+                <div
+                  class="btn-group btn-group-sm d-flex justify-content-center"
+                >
+                  <a
+                    href="{{ url_for('transaction.edit_payment_method', id=method.id) }}"
+                    class="btn btn-sm text-primary p-0"
+                    style="max-width: 25px"
+                    title="Editar"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <form
+                    id="deleteForm_{{ method.id }}"
+                    action="{{ url_for('transaction.delete_payment_method', id=method.id) }}"
+                    method="POST"
+                    style="display: inline"
+                  >
+                    <button
+                      type="button"
+                      class="btn btn-sm text-danger p-0"
+                      style="max-width: 25px"
+                      title="Excluir"
+                      onclick="showDeleteConfirmation('Tem certeza que deseja excluir esta forma de pagamento?', 'deleteForm_{{ method.id }}')"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center">
+          <p class="mb-3">Nenhuma forma de pagamento registrada.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block extra_css %} {{ super() }}
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"
+/>
+{% endblock %} {% block extra_js %} {{ super() }}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"
+></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"
+></script>
+<script>
+  $(document).ready(function () {
+    $("#paymentMethodsTable").DataTable({
+      language: {
+        sEmptyTable: "Nenhum registro encontrado",
+        sInfo: "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+        sInfoEmpty: "Mostrando 0 até 0 de 0 registros",
+        sInfoFiltered: "(Filtrados de _MAX_ registros)",
+        sInfoPostFix: "",
+        sInfoThousands: ".",
+        sLengthMenu: "_MENU_ resultados por página",
+        sLoadingRecords: "Carregando...",
+        sProcessing: "Processando...",
+        sZeroRecords: "Nenhum registro encontrado",
+        sSearch: "Pesquisar",
+        oPaginate: {
+          sNext: "Próximo",
+          sPrevious: "Anterior",
+          sFirst: "Primeiro",
+          sLast: "Último",
+        },
+        oAria: {
+          sSortAscending: ": Ordenar colunas de forma ascendente",
+          sSortDescending: ": Ordenar colunas de forma descendente",
+        },
+      },
+      pageLength: 25,
+      order: [[0, "asc"]], // Ordena pela coluna Nome
+      columnDefs: [
+        { orderable: false, targets: 2 }, // Desabilita ordenação na coluna de ações
+      ],
+      dom: '<"row px-2 d-flex justify-content-between align-items-center"<"col-auto"l><"col-auto"f>>rt<"row px-2"<"col-12 d-flex justify-content-between align-items-center"ip>>',
+      drawCallback: function() {
+        // Adicionar classe m-0 ao elemento de paginação
+        $('.dataTables_paginate .pagination').addClass('m-0');
+      }
+    });
+  });
+</script>
+{% endblock %}

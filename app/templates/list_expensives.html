@@ -1,0 +1,275 @@
+{% extends 'index.html' %}
+
+{% block title %}Descrições{% endblock %}
+
+{% block index %}
+
+<div class="col p-lg-0">
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 text-gray-800">Descrições</h1>
+    <a href="{{ url_for('transaction.add_expense') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> Adicionar
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="GET" class="row g-3">
+        <div class="col-md-4">
+          <label for="category_id" class="form-label">Filtrar por Categoria</label>
+          <select name="category_id" id="category_id" class="form-select form-select-sm">
+            <option value="">Todas as categorias</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category_id == category.id %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary btn-sm me-2">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+          <a href="{{ url_for('transaction.expenses') }}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-times"></i> Limpar
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card m-0">
+    <div class="card-body px-2 pb-0">
+
+      {% if expenses %}
+      <div class="table-responsive">
+        <table class="table table-hover table-sm m-0" id="expensesTable">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Categoria</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for expense in expenses %}
+            <tr data-expense-id="{{ expense.id }}">
+              <td>
+                <div class="editable-field" data-field="name" data-value="{{ expense.name }}">
+                  {{ expense.name }}
+                </div>
+              </td>
+              <td>
+                {% if expense.category %}
+                  <span class="badge {% if expense.category.type == 'receita' %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ expense.category.name }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td class="text-center">                  
+                <!-- Botões de Ação (Editar/Excluir) -->
+                <div class="btn-group btn-group-sm d-flex justify-content-center">
+                  <a
+                    href="{{ url_for('transaction.edit_expense', id=expense.id) }}"
+                    class="btn btn-sm text-primary p-0"
+                    style="max-width: 25px"
+                    title="Editar {{ expense.name }}"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a
+                    href="{{ url_for('transaction.delete_expense', id=expense.id) }}"
+                    class="btn btn-sm text-danger p-0"
+                    style="max-width: 25px"
+                    title="Excluir {{ expense.name }}"
+                    onclick="return confirm('Tem certeza que deseja excluir a descrição {{ expense.name }}?')"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center">
+          <p class="mb-3">Nenhuma descrição predefinida registrada.</p>
+          <a href="{{ url_for('transaction.add_expense') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Criar Primeira Descrição
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  </div>
+  
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"
+></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"
+></script>
+<script>
+  $(document).ready(function () {
+    $("#expensesTable").DataTable({
+      language: {
+        sEmptyTable: "Nenhum registro encontrado",
+        sInfo: "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+        sInfoEmpty: "Mostrando 0 até 0 de 0 registros",
+        sInfoFiltered: "(Filtrados de _MAX_ registros)",
+        sInfoPostFix: "",
+        sInfoThousands: ".",
+        sLengthMenu: "_MENU_ resultados por página",
+        sLoadingRecords: "Carregando...",
+        sProcessing: "Processando...",
+        sZeroRecords: "Nenhum registro encontrado",
+        sSearch: "Pesquisar",
+        oPaginate: {
+          sNext: "Próximo",
+          sPrevious: "Anterior",
+          sFirst: "Primeiro",
+          sLast: "Último",
+        },
+        oAria: {
+          sSortAscending: ": Ordenar colunas de forma ascendente",
+          sSortDescending: ": Ordenar colunas de forma descendente",
+        },
+      },
+      pageLength: 25,
+      order: [[0, "asc"]], // Ordena pela coluna Nome
+      columnDefs: [
+        { orderable: false, targets: 2 }, // Desabilita ordenação na coluna de ações
+      ],
+      dom: '<"row px-2 d-flex justify-content-between align-items-center"<"col-auto"l><"col-auto"f>>rt<"row px-2"<"col-sm-12 d-flex align-items-center justify-content-between"ip>>',
+    });
+
+    // Funcionalidade de edição inline
+    $('.editable-field').on('click', function() {
+      if ($(this).hasClass('editing')) return;
+      
+      const field = $(this);
+      const fieldType = field.data('field');
+      const currentValue = field.data('value');
+      const originalContent = field.html();
+      
+      // Adicionar classe de edição
+      field.addClass('editing');
+      
+      // Criar input
+      const inputElement = $('<input type="text" class="edit-input">').val(currentValue);
+      
+      // Criar botões de ação
+      const saveBtn = $('<button class="btn btn-success btn-sm save-btn">').html('<i class="fas fa-check"></i>');
+      const cancelBtn = $('<button class="btn btn-secondary btn-sm cancel-btn">').html('<i class="fas fa-times"></i>');
+      const actionDiv = $('<div class="mt-2">').append(saveBtn, cancelBtn);
+      
+      // Substituir conteúdo
+      field.html('').append(inputElement, actionDiv);
+      inputElement.focus();
+      
+      // Focar no input
+      setTimeout(() => inputElement.focus(), 100);
+      
+      // Evento de salvar
+      saveBtn.on('click', function() {
+        const newValue = inputElement.val().trim();
+        
+        // Validações
+        if (newValue === '') {
+          alert('Nome não pode estar vazio.');
+          return;
+        }
+        
+        if (newValue.length > 100) {
+          alert('Nome deve ter no máximo 100 caracteres.');
+          return;
+        }
+        
+        // Fazer requisição AJAX
+        const expenseId = field.closest('tr').data('expense-id');
+        const url = `/expenses/edit-name/${expenseId}`;
+        
+        $.ajax({
+          url: url,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ name: newValue }),
+          success: function(response) {
+            if (response.success) {
+              // Atualizar valor e conteúdo
+              field.data('value', newValue);
+              field.html(newValue).removeClass('editing');
+              
+              // Mostrar mensagem de sucesso
+              showFlashMessage(response.message, 'success');
+            } else {
+              alert('Erro: ' + response.message);
+              field.html(originalContent).removeClass('editing');
+            }
+          },
+          error: function(xhr) {
+            let errorMsg = 'Erro ao atualizar campo.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              errorMsg = xhr.responseJSON.message;
+            }
+            alert('Erro: ' + errorMsg);
+            field.html(originalContent).removeClass('editing');
+          }
+        });
+      });
+      
+      // Evento de cancelar
+      cancelBtn.on('click', function() {
+        field.html(originalContent).removeClass('editing');
+      });
+      
+      // Evento de pressionar Enter para salvar
+      inputElement.on('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
+      
+      // Evento de pressionar Escape para cancelar
+      inputElement.on('keydown', function(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelBtn.click();
+        }
+      });
+    });
+    
+    // Função para mostrar mensagens flash
+    function showFlashMessage(message, type) {
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+      const flashDiv = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>`);
+      
+      $('.card-body').prepend(flashDiv);
+      
+      // Auto-remover após 3 segundos
+      setTimeout(() => {
+        flashDiv.fadeOut(() => flashDiv.remove());
+      }, 3000);
+    }
+  });
+</script>
+{% endblock %}
+

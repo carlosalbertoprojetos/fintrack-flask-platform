@@ -1,0 +1,272 @@
+{% extends 'index.html' %}
+
+{% block title %}Tipos de Investimento{% endblock %}
+
+{% block index %}
+
+<div class="col p-lg-0">
+  <div class="d-flex justify-content-between align-items-center">
+    <h1 class="h3 text-gray-800">Tipos de Investimento</h1>
+    <a href="{{ url_for('tipo_investimento.novo_tipo_investimento') }}" class="btn btn-primary btn-sm">
+      <i class="fas fa-plus"></i> Adicionar
+    </a>
+  </div>
+
+  <div class="card m-0">
+    <div class="card-body px-2 pb-0">
+
+      {% if tipos_investimento %}
+      <div class="table-responsive">
+        <table class="table table-hover table-sm m-0" id="tiposInvestimentoTable">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Status</th>
+              <th class="text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tipo in tipos_investimento %}
+            <tr data-tipo-id="{{ tipo.id }}">
+              <td>
+                <div class="editable-field" data-field="nome" data-value="{{ tipo.nome }}">
+                  {{ tipo.nome }}
+                </div>
+              </td>
+              <td>
+                <div class="editable-field" data-field="descricao" data-value="{{ tipo.descricao or '' }}">
+                  {{ tipo.descricao or '-' }}
+                </div>
+              </td>
+              <td>
+                {% if tipo.ativo %}
+                <span class="badge bg-success">Ativo</span>
+                {% else %}
+                <span class="badge bg-secondary">Inativo</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm d-flex justify-content-center">
+                  <a
+                    href="{{ url_for('tipo_investimento.editar_tipo_investimento', tipo_id=tipo.id) }}"
+                    class="btn btn-sm text-primary p-0"
+                    style="max-width: 25px"
+                    title="Editar"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <form
+                    id="deleteForm_{{ tipo.id }}"
+                    action="{{ url_for('tipo_investimento.excluir_tipo_investimento', tipo_id=tipo.id) }}"
+                    method="POST"
+                    style="display: inline"
+                  >
+                    <button
+                      type="button"
+                      class="btn btn-sm text-danger p-0"
+                      style="max-width: 25px"
+                      title="Excluir"
+                      onclick="showDeleteConfirmation('Tem certeza que deseja excluir este tipo de investimento?', 'deleteForm_{{ tipo.id }}')"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card">
+        <div class="card-body text-center">
+          <p class="mb-3">Nenhum tipo de investimento registrado.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  </div>
+  
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"
+></script>
+<script
+  type="text/javascript"
+  src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"
+></script>
+<script>
+  $(document).ready(function () {
+    $("#tiposInvestimentoTable").DataTable({
+      language: {
+        sEmptyTable: "Nenhum registro encontrado",
+        sInfo: "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+        sInfoEmpty: "Mostrando 0 até 0 de 0 registros",
+        sInfoFiltered: "(Filtrados de _MAX_ registros)",
+        sInfoPostFix: "",
+        sInfoThousands: ".",
+        sLengthMenu: "_MENU_ resultados por página",
+        sLoadingRecords: "Carregando...",
+        sProcessing: "Processando...",
+        sZeroRecords: "Nenhum registro encontrado",
+        sSearch: "Pesquisar",
+        oPaginate: {
+          sNext: "Próximo",
+          sPrevious: "Anterior",
+          sFirst: "Primeiro",
+          sLast: "Último",
+        },
+        oAria: {
+          sSortAscending: ": Ordenar colunas de forma ascendente",
+          sSortDescending: ": Ordenar colunas de forma descendente",
+        },
+      },
+      pageLength: 25,
+      order: [[0, "asc"]], // Ordena pela coluna Nome
+      columnDefs: [
+        { orderable: false, targets: 3 }, // Desabilita ordenação na coluna de ações
+      ],
+      dom: '<"row px-2 d-flex justify-content-between align-items-center"<"col-auto"l><"col-auto"f>>rt<"row px-2"<"col-sm-12 d-flex align-items-center justify-content-between"ip>>',
+    });
+
+    // Funcionalidade de edição inline
+    $('.editable-field').on('click', function() {
+      if ($(this).hasClass('editing')) return;
+      
+      const field = $(this);
+      const fieldType = field.data('field');
+      const currentValue = field.data('value');
+      const originalContent = field.html();
+      
+      // Adicionar classe de edição
+      field.addClass('editing');
+      
+      // Criar input ou textarea baseado no tipo de campo
+      let inputElement;
+      if (fieldType === 'descricao') {
+        inputElement = $('<textarea class="edit-textarea">').val(currentValue);
+      } else {
+        inputElement = $('<input type="text" class="edit-input">').val(currentValue);
+      }
+      
+      // Criar botões de ação
+      const saveBtn = $('<button class="btn btn-success btn-sm save-btn">').html('<i class="fas fa-check"></i>');
+      const cancelBtn = $('<button class="btn btn-secondary btn-sm cancel-btn">').html('<i class="fas fa-times"></i>');
+      const actionDiv = $('<div class="mt-2">').append(saveBtn, cancelBtn);
+      
+      // Substituir conteúdo
+      field.html('').append(inputElement, actionDiv);
+      inputElement.focus();
+      
+      // Focar no input
+      setTimeout(() => inputElement.focus(), 100);
+      
+      // Evento de salvar
+      saveBtn.on('click', function() {
+        const newValue = inputElement.val().trim();
+        
+        // Validações
+        if (fieldType === 'nome' && newValue === '') {
+          alert('Nome não pode estar vazio.');
+          return;
+        }
+        
+        if (fieldType === 'nome' && newValue.length > 100) {
+          alert('Nome deve ter no máximo 100 caracteres.');
+          return;
+        }
+        
+        if (fieldType === 'descricao' && newValue.length > 200) {
+          alert('Descrição deve ter no máximo 200 caracteres.');
+          return;
+        }
+        
+        // Fazer requisição AJAX
+        const tipoId = field.closest('tr').data('tipo-id');
+        const url = fieldType === 'nome' 
+          ? `/tipo-investimento/editar-nome/${tipoId}`
+          : `/tipo-investimento/editar-descricao/${tipoId}`;
+        
+        const data = fieldType === 'nome' 
+          ? { nome: newValue }
+          : { descricao: newValue };
+        
+        $.ajax({
+          url: url,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(data),
+          success: function(response) {
+            if (response.success) {
+              // Atualizar valor e conteúdo
+              field.data('value', newValue);
+              const displayValue = fieldType === 'descricao' ? (newValue || '-') : newValue;
+              field.html(displayValue).removeClass('editing');
+              
+              // Mostrar mensagem de sucesso
+              showFlashMessage(response.message, 'success');
+            } else {
+              alert('Erro: ' + response.message);
+              field.html(originalContent).removeClass('editing');
+            }
+          },
+          error: function(xhr) {
+            let errorMsg = 'Erro ao atualizar campo.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              errorMsg = xhr.responseJSON.message;
+            }
+            alert('Erro: ' + errorMsg);
+            field.html(originalContent).removeClass('editing');
+          }
+        });
+      });
+      
+      // Evento de cancelar
+      cancelBtn.on('click', function() {
+        field.html(originalContent).removeClass('editing');
+      });
+      
+      // Evento de pressionar Enter para salvar
+      inputElement.on('keydown', function(e) {
+        if (e.key === 'Enter' && fieldType === 'nome') {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
+      
+      // Evento de pressionar Escape para cancelar
+      inputElement.on('keydown', function(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelBtn.click();
+        }
+      });
+    });
+    
+    // Função para mostrar mensagens flash
+    function showFlashMessage(message, type) {
+      const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+      const flashDiv = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>`);
+      
+      $('.card-body').prepend(flashDiv);
+      
+      // Auto-remover após 3 segundos
+      setTimeout(() => {
+        flashDiv.fadeOut(() => flashDiv.remove());
+      }, 3000);
+    }
+  });
+</script>
+{% endblock %}
+

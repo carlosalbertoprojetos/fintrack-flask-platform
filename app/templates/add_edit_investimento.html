@@ -1,0 +1,50 @@
+{% extends "index.html" %}
+{% block title %}{{ title }} - Finanças Pessoais{% endblock %}
+{% block index %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between bg-primary text-white">
+    <h4 class="mb-0">{{ title }}</h4>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      {{ form.hidden_tag() }}
+      <div class="row mb-3 px-1">
+        <div class="col-md-4 px-1">
+          {{ form.conta_id.label(class="form-label") }}
+          {{ form.conta_id(class="form-select form-select-sm") }}
+          {% for error in form.conta_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <!-- Removido campo descricao -->
+      </div>
+      <div class="row mb-3 px-1">
+        {% if not hide_valor %}
+        <div class="col-md-4 px-1">
+          {{ form.valor.label(class="form-label") }}
+          {{ form.valor(class="form-control form-control-sm") }}
+          {% for error in form.valor.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="col-md-4 px-1">
+          {{ form.saldo_investimento.label(class="form-label") }}
+          {{ form.saldo_investimento(class="form-control form-control-sm") }}
+          {% for error in form.saldo_investimento.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('investimento.investimentos') }}" class="btn btn-secondary btn-sm">Cancelar</a>
+        {% if 'Editar' in title %}
+        <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} 

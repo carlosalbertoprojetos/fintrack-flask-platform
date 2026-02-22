@@ -1,0 +1,341 @@
+{% extends "index.html" %} {% block title %}{% if edit %}Editar{% else %}Nova{%
+endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between bg-primary text-white">
+    <h4 class="mb-0">{% if edit %}Editar{% else %}Nova{% endif %} Transação</h4>
+    <div class="d-flex align-items-center gap-2">
+      {{ form.date }}
+      {% if edit %}
+      <a href="{{ url_for('transaction.replicate_transaction', id=transaction.id) }}" class="btn btn-sm btn-light text-primary border-primary btn-replicar" title="Replicar transação">
+        Replicar
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-body p-2">
+    <form
+      method="POST"
+      id="transactionForm"
+      {%
+      if
+      edit
+      %}action="{{ url_for('transaction.edit_transaction', id=transaction.id) }}"
+      {%
+      endif
+      %}
+    >
+      {{ form.hidden_tag() }}
+      <div class="row mb-3 px-1">
+        <div class="col-md-4 px-1">
+          {{ form.type.label(class="form-label") }} {{
+          form.type(class="form-select form-select-sm", id="transactionType") }}
+          {% for error in form.type.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-4 px-1">
+          {{ form.category_id.label(class="form-label") }} {{
+          form.category_id(class="form-select form-select-sm",
+          id="categorySelect") }} {% for error in form.category_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-4 px-1">
+          {{ form.expense_id.label(class="form-label") }} {{
+          form.expense_id(class="form-select form-select-sm",
+          id="expenseSelect") }} {% for error in form.expense_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="row mb-3 px-1">
+        <div class="col-md-2 px-1" style="max-width: 120px">
+          {{ form.amount.label(class="form-label") }} {{
+          form.amount(class="form-control form-control-sm currency-input text-end",
+          type="text", inputmode="numeric",
+          value=form.amount.data|string|replace('.', ',') if form.amount.data
+          else '0,00') }} {% for error in form.amount.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2 px-1" id="discountValue" style="display: none; max-width: 120px">
+          {{ form.discount.label(class="form-label") }} {{
+          form.discount(class="form-control form-control-sm currency-input text-end",
+          type="text", inputmode="numeric",
+          value=form.discount.data|string|replace('.', ',') if
+          form.discount.data else '0,00') }} {% for error in form.discount.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2 px-1" id="dueDateField" style="display: none">
+          {{ form.due_date.label(class="form-label") }} {{
+          form.due_date(class="form-control form-control-sm", type="date") }} {%
+          for error in form.due_date.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2 px-1">
+          {{ form.payment_method_id.label(class="form-label") }} {{
+          form.payment_method_id(class="form-select form-select-sm") }} {% for
+          error in form.payment_method_id.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-2 px-1">
+          {{ form.payment_date.label(class="form-label") }} {{
+          form.payment_date(class="form-control form-control-sm", type="date")
+          }} {% for error in form.payment_date.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="col-md-1 d-flex flex-column justify-content-center px-1">
+          {{ form.paid.label(class="form-check-label") }} {{
+          form.paid(class="form-check-input") }}
+        </div>
+        <div class="col-md-2 px-1">
+          {{ form.recurrence.label(class="form-label") }} {{
+          form.recurrence(class="form-select form-select-sm") }} {% for error in
+          form.recurrence.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="mb-3">
+        {{ form.details.label(class="form-label") }} {{
+        form.details(class="form-control form-control-sm", rows=3, id="details")
+        }} {% for error in form.details.errors %}
+        <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+      </div>
+      <div class="d-flex justify-content-between">
+        <a href="{% if edit %}{{ url_for('transaction.reports') }}{% else %}{{ url_for('main.dashboard') }}{% endif %}" class="btn btn-secondary btn-sm"
+          >Cancelar</a
+        >
+        {% if edit %}
+        <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+        {% else %}
+        <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+  /* Estilo para o botão Replicar no hover */
+  .btn-replicar:hover {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+    border-color: #fff !important;
+  }
+</style>
+{% endblock %} {% block extra_js %}
+<script>
+  // URLs para buscar categorias e despesas
+  const getCategoriesUrlTemplate =
+    "{{ url_for('transaction.get_categories_by_type', type='__TYPE__') }}";
+  const expensesEndpointBase =
+    "{{ url_for('transaction.get_expenses', category_id=0).replace('0', '') }}";
+
+  // Valores salvos da transação que serão usados para marcar os selects
+  const selectedCategoryId = "{{ form.category_id.data or '' }}";
+  const selectedExpenseId = "{{ form.expense_id.data or '' }}";
+
+  // Função para formatar valor monetário
+  function formatCurrency(value) {
+    if (!value) return "0,00";
+
+    // Remove tudo que não é número ou vírgula/ponto
+    value = value.toString().replace(/[^\d,.-]/g, "");
+
+    // Se o valor já estiver formatado corretamente (contém ponto como separador de milhar e vírgula como decimal), retorna como está
+    if (value.includes(".") && value.includes(",") && value.split(",").length === 2) {
+      // Valida se a formatação está correta (apenas uma vírgula e pontos como separadores de milhar)
+      const parts = value.split(",");
+      if (parts.length === 2 && parts[0].includes(".") && !parts[1].includes(".")) {
+        return value;
+      }
+    }
+
+    // Substitui ponto por vírgula se houver mais de uma vírgula
+    const parts = value.split(/[.,]/);
+    if (parts.length > 2) {
+      value = parts.slice(0, -1).join("") + "," + parts.slice(-1);
+    }
+
+    // Garante que só há uma vírgula
+    value = value.replace(/,/g, (match, offset, string) => {
+      return string.indexOf(",") === offset ? "," : "";
+    });
+
+    // Formata o número com separadores de milhar
+    const parts2 = value.split(",");
+    // Remove todos os pontos existentes antes de adicionar novos
+    parts2[0] = parts2[0].replace(/\./g, "");
+    // Adiciona pontos como separadores de milhar
+    parts2[0] = parts2[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    value = parts2.join(",");
+
+    return value;
+  }
+
+  // Função para converter valor formatado para número
+  function parseCurrency(value) {
+    if (!value) return "";
+    // Remove pontos de milhar e substitui vírgula por ponto para envio ao servidor
+    const parts = value.split(",");
+    const integerPart = parts[0].replace(/\./g, "");
+    const decimalPart = parts.length > 1 ? parts[1].padEnd(2, "0") : "00";
+    return integerPart + "." + decimalPart;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const typeSelect = document.getElementById("transactionType");
+    const categorySelect = document.getElementById("categorySelect");
+    const expenseSelect = document.getElementById("expenseSelect");
+    const dueDateField = document.getElementById("dueDateField");
+    const discountValue = document.getElementById("discountValue");
+    const currencyInputs = document.querySelectorAll(".currency-input");
+
+    // Configurar inputs de moeda
+    currencyInputs.forEach((input) => {
+      // Formatar valor ao carregar
+      if (input.value) {
+        input.value = formatCurrency(input.value);
+      }
+
+      // Formatar valor ao digitar
+      input.addEventListener("input", function (e) {
+        let value = e.target.value;
+        // Se o valor já estiver formatado corretamente, não formata novamente
+        if (!(value.includes(".") && value.includes(",") && value.split(",").length === 2)) {
+          const formattedValue = formatCurrency(value);
+          e.target.value = formattedValue;
+        }
+      });
+
+      // Formatar valor ao perder foco
+      input.addEventListener("blur", function (e) {
+        let value = e.target.value;
+        if (value && value !== "0,00") {
+          // Adiciona zeros após a vírgula se necessário
+          const parts = value.split(",");
+          if (parts.length === 1) {
+            value = value + ",00";
+          } else if (parts[1].length === 1) {
+            value = value + "0";
+          }
+          e.target.value = formatCurrency(value);
+        } else if (!value) {
+          e.target.value = "0,00";
+        }
+      });
+
+      // Converter valor para número antes de enviar o formulário
+      input.form.addEventListener("submit", function (e) {
+        const originalValue = input.value;
+        input.value = parseCurrency(originalValue);
+      });
+    });
+
+    // Função para mostrar/esconder o campo de data de vencimento
+    function toggleDueDateField() {
+      // Mostrar o campo de vencimento se for uma despesa
+      dueDateField.style.display =
+        typeSelect.value === "despesa" ? "block" : "none";
+      // Mostrar o campo de desconto se for uma despesa
+      discountValue.style.display =
+        typeSelect.value === "despesa" ? "block" : "none";
+    }
+
+    // Mostrar/esconder campo de data de vencimento ao carregar a página
+    toggleDueDateField();
+
+    // Mostrar/esconder campo de data de vencimento quando o tipo mudar
+    typeSelect.addEventListener("change", function () {
+      toggleDueDateField();
+      const type = this.value;
+
+      if (!type) {
+        categorySelect.innerHTML =
+          '<option value="">Selecione um tipo</option>';
+        expenseSelect.innerHTML =
+          '<option value="">Selecione uma categoria primeiro</option>';
+        return;
+      }
+
+      categorySelect.innerHTML = '<option value="">Carregando...</option>';
+      expenseSelect.innerHTML =
+        '<option value="">Selecione uma categoria primeiro</option>';
+
+      const url = getCategoriesUrlTemplate.replace("__TYPE__", type);
+
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) throw new Error("Erro ao buscar categorias");
+          return res.json();
+        })
+        .then((data) => {
+          let options = '<option value="">Selecione uma categoria</option>';
+          data.forEach((category) => {
+            const selected =
+              category.id == selectedCategoryId ? "selected" : "";
+            options += `<option value="${category.id}" ${selected}>${category.name}</option>`;
+          });
+          categorySelect.innerHTML = options;
+
+          // Após carregar categorias, aciona carregamento das despesas
+          categorySelect.dispatchEvent(new Event("change"));
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar categorias:", err);
+          categorySelect.innerHTML =
+            '<option value="">Erro ao carregar</option>';
+        });
+    });
+
+    categorySelect.addEventListener("change", function () {
+      const categoryId = this.value;
+
+      if (!categoryId) {
+        expenseSelect.innerHTML =
+          '<option value="">Selecione uma categoria primeiro</option>';
+        return;
+      }
+
+      expenseSelect.innerHTML = '<option value="">Carregando...</option>';
+      const url = expensesEndpointBase + categoryId;
+
+      fetch(url)
+        .then((res) => {
+          if (!res.ok) throw new Error("Erro ao buscar despesas");
+          return res.json();
+        })
+        .then((data) => {
+          let options;
+          if (data.length === 0) {
+            options =
+              '<option value="">Não há descrição para esta Categoria</option>';
+          } else {
+            options = '<option value="">Selecione uma descrição</option>';
+          }
+
+          data.forEach((expense) => {
+            const selected = expense.id == selectedExpenseId ? "selected" : "";
+            options += `<option value="${expense.id}" ${selected}>${expense.name}</option>`;
+          });
+          expenseSelect.innerHTML = options;
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar despesas:", err);
+          expenseSelect.innerHTML =
+            '<option value="">Erro ao carregar</option>';
+        });
+    });
+
+    // Gatilho inicial para carregar categorias com base no tipo já salvo
+    typeSelect.dispatchEvent(new Event("change"));
+  });
+</script>
+{% endblock %}

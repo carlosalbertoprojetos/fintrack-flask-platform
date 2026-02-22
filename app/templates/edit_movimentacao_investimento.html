@@ -1,0 +1,286 @@
+{% extends "index.html" %}
+{% block title %}Editar Movimentação - Finanças Pessoais{% endblock %}
+
+{% block extra_css %}
+{{ super() }}
+<style>
+  /* Estilo para campo ajustado automaticamente */
+  .currency-input.is-adjusted {
+    background-color: #fff3cd !important;
+    border-color: #ffc107 !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
+    transition: all 0.3s ease;
+    animation: highlightField 0.5s ease-in-out;
+  }
+  
+  /* Animação para o campo ajustado */
+  @keyframes highlightField {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+</style>
+{% endblock %}
+
+{% block index %}
+<div class="card">
+  <div class="card-header d-flex justify-content-between bg-primary text-white">
+    <h4 class="mb-0">Editar Movimentação</h4>
+    <div class="text-white">
+      <small>Investimento ID: {{ investimento.id }} | Tipo: {{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }} | Saldo do Investimento: R$ {{ (investimento.saldo_atual or 0.0)|currency }}</small>
+    </div>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      {{ form.hidden_tag() }}
+      
+      <div class="row mb-3 px-1">
+        <div class="col-md-4 px-1">
+          {{ form.data_movimentacao.label(class="form-label") }}
+          {{ form.data_movimentacao(class="form-control form-control-sm", type="date") }}
+          {% if form.data_movimentacao.errors %}
+            {% for error in form.data_movimentacao.errors %}
+              <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+        
+        <div class="col-md-4 px-1">
+          {{ form.tipo_movimentacao.label(class="form-label") }}
+          {{ form.tipo_movimentacao(class="form-control form-control-sm", disabled=true) }}
+          <!-- Campo hidden para manter o valor durante o envio -->
+          <input type="hidden" name="tipo_movimentacao" value="{{ form.tipo_movimentacao.data }}">
+          {% if form.tipo_movimentacao.errors %}
+            {% for error in form.tipo_movimentacao.errors %}
+              <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="col-md-4 px-1">
+          {{ form.valor.label(class="form-label") }}
+          {{ form.valor(class="form-control form-control-sm currency-input text-end", step="0.01", min="0", value=form.valor.data|string|replace('.', ',') if form.valor.data else '0,00') }}
+          {% if form.valor.errors %}
+            {% for error in form.valor.errors %}
+              <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="row mb-3 px-1">
+        <div class="col-md-12 px-1">
+          {{ form.observacoes.label(class="form-label") }}
+          {{ form.observacoes(class="form-control form-control-sm", rows="3") }}
+          {% if form.observacoes.errors %}
+            {% for error in form.observacoes.errors %}
+              <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('investimento.listar_movimentacoes', investimento_id=investimento.id) }}" class="btn btn-secondary btn-sm">Cancelar</a>
+        <button type="submit" class="btn btn-primary btn-sm">Atualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Configurar inputs de moeda
+    const currencyInputs = document.querySelectorAll(".currency-input");
+    
+    currencyInputs.forEach((input) => {
+      // Formatar valor ao carregar
+      if (input.value) {
+        input.value = formatCurrency(input.value);
+      }
+
+      // Formatar valor ao digitar
+      input.addEventListener("input", function (e) {
+        let value = e.target.value;
+        // Se o valor já estiver formatado corretamente, não formata novamente
+        if (!(value.includes(".") && value.includes(",") && value.split(",").length === 2)) {
+          const formattedValue = formatCurrency(value);
+          e.target.value = formattedValue;
+        }
+      });
+
+      // Formatar valor ao perder foco
+      input.addEventListener("blur", function (e) {
+        let value = e.target.value;
+        if (value && value !== "0,00") {
+          // Adiciona zeros após a vírgula se necessário
+          const parts = value.split(",");
+          if (parts.length === 1) {
+            value = value + ",00";
+          } else if (parts[1].length === 1) {
+            value = value + "0";
+          }
+          e.target.value = formatCurrency(value);
+        } else if (!value) {
+          e.target.value = "0,00";
+        }
+      });
+
+      // Converter valor para número antes de enviar o formulário
+      input.form.addEventListener("submit", function (e) {
+        const originalValue = input.value;
+        input.value = parseCurrency(originalValue);
+      });
+    });
+
+    // Função para formatar valor monetário
+    function formatCurrency(value) {
+      if (!value) return "0,00";
+
+      // Remove tudo que não é número ou vírgula/ponto
+      value = value.toString().replace(/[^\d,.-]/g, "");
+
+      // Se o valor já estiver formatado corretamente, retorna como está
+      if (value.includes(".") && value.includes(",") && value.split(",").length === 2) {
+        // Valida se a formatação está correta
+        const parts = value.split(",");
+        if (parts.length === 2 && parts[0].includes(".") && !parts[1].includes(".")) {
+          return value;
+        }
+      }
+
+      // Substitui ponto por vírgula se houver mais de uma vírgula
+      const parts = value.split(/[.,]/);
+      if (parts.length > 2) {
+        value = parts.slice(0, -1).join("") + "," + parts.slice(-1);
+      }
+
+      // Garante que só há uma vírgula
+      value = value.replace(/,/g, (match, offset, string) => {
+        return string.indexOf(",") === offset ? "," : "";
+      });
+
+      // Formata o número com separadores de milhar
+      const parts2 = value.split(",");
+      // Remove todos os pontos existentes antes de adicionar novos
+      parts2[0] = parts2[0].replace(/\./g, "");
+      // Adiciona pontos como separadores de milhar
+      parts2[0] = parts2[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      value = parts2.join(",");
+
+      return value;
+    }
+
+    // Função para converter valor formatado para número
+    function parseCurrency(value) {
+      if (!value) return "";
+      // Remove pontos de milhar e substitui vírgula por ponto para envio ao servidor
+      const parts = value.split(",");
+      const integerPart = parts[0].replace(/\./g, "");
+      const decimalPart = parts.length > 1 ? parts[1].padEnd(2, "0") : "00";
+      return integerPart + "." + decimalPart;
+    }
+
+      // Validação do valor para edição de movimentações
+      function validateEditValue(input) {
+        const tipoMovimentacao = '{{ movimentacao.tipo_movimentacao }}';
+        const saldoConta = parseFloat('{{ conta_info.saldo_atual if conta_info else 0 }}');
+        
+        console.log('Validando valor...');
+        console.log('Tipo de movimentação:', tipoMovimentacao);
+        console.log('Saldo da conta:', saldoConta);
+        console.log('Valor digitado:', input.value);
+        
+        if (tipoMovimentacao === 'aplicacao') {
+          console.log('É uma aplicação, validando...');
+          const valorDigitado = parseFloat(parseCurrency(input.value) || 0);
+          console.log('Valor digitado parseado:', valorDigitado);
+          
+          if (valorDigitado > saldoConta) {
+            console.log('Valor excede saldo da conta!');
+            // Mostrar mensagem de aviso usando o sistema de flash messages
+            showValidationMessage(`O valor da aplicação (R$ ${valorDigitado.toFixed(2).replace('.', ',')}) é maior que o saldo atual da conta (R$ ${saldoConta.toFixed(2).replace('.', ',')}). O valor foi ajustado automaticamente.`, 'warning');
+            
+            // Ajustar valor automaticamente para o saldo da conta
+            const valorAjustado = saldoConta;
+            input.value = formatCurrency(valorAjustado.toString().replace('.', ','));
+            
+            // Adicionar classe visual para indicar que foi ajustado
+            input.classList.add('is-adjusted');
+            setTimeout(() => {
+              input.classList.remove('is-adjusted');
+            }, 3000);
+          } else {
+            console.log('Valor dentro do limite permitido');
+          }
+        } else {
+          console.log('Não é uma aplicação, não validando');
+        }
+      }
+
+      // Função para mostrar mensagens de validação usando o sistema de flash messages
+      function showValidationMessage(message, type = 'info') {
+        // Criar nova mensagem usando o sistema de flash messages
+        const flashContainer = document.querySelector('.container-fluid.flex-grow-1.p-0.m-0');
+        if (flashContainer) {
+          const messageId = 'flash-message-' + Date.now();
+          const alertClass = 'alert-' + (type || 'info');
+          const iconClass = type === 'warning' ? 'fas fa-exclamation-triangle text-warning' : 'fas fa-info-circle text-info';
+          
+          const messageHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" 
+                 role="alert" 
+                 id="${messageId}"
+                 style="z-index: 9999; position: relative; margin: 10px;">
+              <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                  <i class="${iconClass}"></i>
+                  ${message}
+                </div>
+                <button type="button" 
+                        class="btn-close" 
+                        data-bs-dismiss="alert" 
+                        aria-label="Close"
+                        onclick="dismissMessage('${messageId}')">
+                </button>
+              </div>
+            </div>
+          `;
+          
+          flashContainer.insertAdjacentHTML('afterbegin', messageHtml);
+          
+          // Auto-dismiss após 8 segundos (mesmo comportamento das outras mensagens)
+          setTimeout(function() {
+            dismissMessage(messageId);
+          }, 8000);
+        }
+      }
+
+      // Adicionar validação em tempo real para o campo de valor
+      const valorInput = document.querySelector('.currency-input');
+      if (valorInput) {
+        console.log('Campo de valor encontrado, adicionando listeners...');
+        console.log('Tipo de movimentação:', '{{ movimentacao.tipo_movimentacao }}');
+        console.log('Saldo da conta:', '{{ conta_info.saldo_atual if conta_info else 0 }}');
+        
+        // Validar ao digitar
+        valorInput.addEventListener('input', function() {
+          console.log('Evento input acionado, valor:', this.value);
+          validateEditValue(this);
+        });
+        
+        // Validar ao perder foco
+        valorInput.addEventListener('blur', function() {
+          console.log('Evento blur acionado, valor:', this.value);
+          validateEditValue(this);
+        });
+      } else {
+        console.log('Campo de valor não encontrado!');
+      }
+    });
+  </script>
+{% endblock %}
