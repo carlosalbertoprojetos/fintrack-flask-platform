@@ -1,5 +1,7 @@
 # Como Criar Atalho na Área de Trabalho
 
+**Pré-requisito:** usar Python 3.10+.
+
 ## Método 1: Usando o Script Batch (Recomendado)
 
 ### Passo 1: Copiar o Script para a Área de Trabalho
@@ -36,13 +38,13 @@
 Cole o seguinte comando (ajuste o caminho se necessário):
 
 ```
-cmd /c "cd /d C:\PROJETOS\Flask\SFP_alfa && call venv\Scripts\activate.bat && python run.py"
+cmd /c "cd /d C:\PROJETOS\Flask\SFP_alfa && call venv\Scripts\activate.bat && py -3.10 run.py"
 ```
 
 Ou para manter a janela aberta após encerrar:
 
 ```
-cmd /k "cd /d C:\PROJETOS\Flask\SFP_alfa && call venv\Scripts\activate.bat && python run.py"
+cmd /k "cd /d C:\PROJETOS\Flask\SFP_alfa && call venv\Scripts\activate.bat && py -3.10 run.py"
 ```
 
 ### Passo 3: Nomear o Atalho
@@ -77,7 +79,7 @@ Se preferir usar PowerShell:
 ### Erro: "Virtualenv não encontrado"
 
 - Certifique-se de que o ambiente virtual está criado na pasta `venv`
-- Se necessário, crie novamente: `python -m venv venv`
+- Se necessário, crie novamente: `py -3.10 -m venv venv`
 
 ### O navegador não abre automaticamente
 

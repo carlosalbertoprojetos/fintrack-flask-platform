@@ -118,7 +118,7 @@ O **Sistema de Finanças Pessoais Flask** é uma aplicação web completa desenv
 
 ### **Backend**
 
-- **Python 3.8+**: Linguagem principal
+- **Python 3.10+**: Linguagem principal
 - **Flask 2.3.3**: Framework web
 - **SQLAlchemy 2.0.23**: ORM para banco de dados
 - **Flask-Login 0.6.2**: Autenticação de usuários
@@ -240,7 +240,7 @@ financas_pessoais_flask/
 ### **Pré-requisitos**
 
 - **Windows 10/11** ou **Linux** (Ubuntu, Debian, CentOS, etc.)
-- **Python 3.8 ou superior** (será instalado automaticamente se necessário)
+- **Python 3.10 ou superior** (será instalado automaticamente se necessário)
 - **Conexão com internet** (para download de dependências)
 - **Privilégios de administrador** (para instalação)
 
@@ -255,7 +255,7 @@ financas_pessoais_flask/
    ```
 
 2. **O instalador fará automaticamente:**
-   - ✅ Verificar/instalar Python 3.8+ se necessário
+   - ✅ Verificar/instalar Python 3.10+ se necessário
    - ✅ Criar diretório `C:\Financas_Pessoais`
    - ✅ Copiar todos os arquivos do sistema (app, routes, migrations, etc.)
    - ✅ Criar ambiente virtual Python
@@ -427,7 +427,7 @@ SESSION_COOKIE_SECURE = True  # Para HTTPS
    - Verifique permissões da pasta de instalação
 
 2. **Python não Encontrado:**
-   - Instale Python 3.8+ do site oficial
+   - Instale Python 3.10+ do site oficial
    - Adicione Python ao PATH do sistema
 
 3. **Dependências não Instalam:**
@@ -647,9 +647,9 @@ AssertionError: Class <class 'sqlalchemy.sql.elements.SQLCoreOperations'> direct
    python corrigir_sqlalchemy.py
    ```
 
-2. **Solução Recomendada**: Instale Python 3.11 ou 3.12:
+2. **Solução Recomendada**: Instale Python 3.10.x:
    - Baixe em: https://www.python.org/downloads/
    - Desinstale Python 3.13
-   - Instale Python 3.11 ou 3.12
+   - Instale Python 3.10.x
 
 3. **Ver instruções detalhadas**: Leia o arquivo `SOLUCAO_PYTHON_313.md`

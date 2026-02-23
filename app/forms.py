@@ -100,7 +100,9 @@ class TransactionForm(FlaskForm):
         },  # Campo somente leitura
     )
     due_date = DateField(
-        "Data de Vencimento", validators=[Optional()]
+        "Data de Vencimento", 
+        validators=[Optional()],
+        render_kw={"required": False}
     )  # Campo opcional para data de vencimento
     amount = StringField("Valor", validators=[DataRequired()])
     discount = StringField("Desconto", validators=[Optional()], default="0,00")

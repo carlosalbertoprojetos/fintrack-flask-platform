@@ -70,7 +70,7 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
         </div>
         <div class="col-md-2 px-1" id="dueDateField" style="display: none">
           {{ form.due_date.label(class="form-label") }} {{
-          form.due_date(class="form-control form-control-sm", type="date") }} {%
+          form.due_date(class="form-control form-control-sm", type="date", id="due_date") }} {%
           for error in form.due_date.errors %}
           <div class="text-danger">{{ error }}</div>
           {% endfor %}
@@ -247,6 +247,12 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
       // Mostrar o campo de desconto se for uma despesa
       discountValue.style.display =
         typeSelect.value === "despesa" ? "block" : "none";
+      
+      // Garantir que o campo de data de vencimento não seja obrigatório
+      const dueDateInput = document.querySelector('#due_date');
+      if (dueDateInput) {
+        dueDateInput.removeAttribute('required');
+      }
     }
 
     // Mostrar/esconder campo de data de vencimento ao carregar a página
@@ -336,6 +342,28 @@ endif %} Transação - Finanças Pessoais{% endblock %} {% block index %}
 
     // Gatilho inicial para carregar categorias com base no tipo já salvo
     typeSelect.dispatchEvent(new Event("change"));
+    
+    // Garantir que o campo de data de vencimento não seja obrigatório ao carregar
+    const dueDateInput = document.querySelector('#due_date');
+    if (dueDateInput) {
+      dueDateInput.removeAttribute('required');
+    }
+    
+    // Adicionar validação no submit para garantir que o campo não seja obrigatório
+    const transactionForm = document.getElementById('transactionForm');
+    if (transactionForm) {
+      transactionForm.addEventListener('submit', function(e) {
+        const dueDateInput = document.querySelector('#due_date');
+        if (dueDateInput) {
+          // Remover o atributo required antes de enviar
+          dueDateInput.removeAttribute('required');
+          // Se o campo estiver vazio, definir como null para evitar validação
+          if (!dueDateInput.value) {
+            dueDateInput.value = '';
+          }
+        }
+      });
+    }
   });
 </script>
 {% endblock %}

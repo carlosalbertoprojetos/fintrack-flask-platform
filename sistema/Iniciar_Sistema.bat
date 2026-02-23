@@ -41,7 +41,7 @@ if not exist "%PROJECT_DIR%" (
 REM Verificar se o virtualenv existe
 if not exist "venv\Scripts\activate.bat" (
     echo [ERRO] Virtualenv não encontrado!
-    echo [INFO] Execute: python -m venv venv
+    echo [INFO] Execute com Python 3.10+: python -m venv venv
     pause
     exit /b 1
 )
@@ -71,6 +71,23 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set "PYVER=%%v"
+for /f "tokens=1,2 delims=." %%a in ("%PYVER%") do (
+    set "PYMAJOR=%%a"
+    set "PYMINOR=%%b"
+)
+if not "%PYMAJOR%"=="3" (
+    echo [ERRO] Python 3.10+ obrigatorio. Versao atual: %PYVER%
+    pause
+    exit /b 1
+)
+if %PYMINOR% LSS 10 (
+    echo [ERRO] Python 3.10+ obrigatorio. Versao atual: %PYVER%
+    pause
+    exit /b 1
+)
+echo [INFO] Python detectado: %PYVER%
 
 echo [INFO] Iniciando servidor Flask...
 echo [INFO] O navegador será aberto automaticamente em alguns segundos...

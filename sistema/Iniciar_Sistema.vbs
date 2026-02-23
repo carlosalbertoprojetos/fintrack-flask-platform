@@ -29,7 +29,7 @@ End If
 strVenvPath = strProjectDir & "\venv\Scripts\activate.bat"
 If Not objFSO.FileExists(strVenvPath) Then
     MsgBox "[ERRO] Virtualenv não encontrado!" & vbCrLf & _
-           "[INFO] Execute: python -m venv venv", vbCritical, "Erro"
+           "[INFO] Execute com Python 3.10+: python -m venv venv", vbCritical, "Erro"
     WScript.Quit
 End If
 
@@ -44,6 +44,10 @@ objFile.WriteLine "@echo off"
 objFile.WriteLine "title Sistema de Finanças Pessoais"
 objFile.WriteLine "cd /d """ & strProjectDir & """"
 objFile.WriteLine "call venv\Scripts\activate.bat"
+objFile.WriteLine "for /f ""tokens=2 delims= "" %%v in ('python --version 2^>^&1') do set ""PYVER=%%v"""
+objFile.WriteLine "for /f ""tokens=1,2 delims=."" %%a in (""%PYVER%"") do (set ""PYMAJOR=%%a"" & set ""PYMINOR=%%b"")"
+objFile.WriteLine "if not ""%PYMAJOR%""==""3"" exit /b 1"
+objFile.WriteLine "if %PYMINOR% LSS 10 exit /b 1"
 objFile.WriteLine "python run.py"
 objFile.Close
 

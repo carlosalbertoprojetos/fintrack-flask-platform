@@ -32,7 +32,7 @@ if (-not (Test-Path $ProjectPath)) {
 # Verificar se o virtualenv existe
 if (-not (Test-Path $ActivateScript)) {
     Write-Host "[ERRO] Virtualenv não encontrado!" -ForegroundColor Red
-    Write-Host "[INFO] Execute: python -m venv venv" -ForegroundColor Yellow
+    Write-Host "[INFO] Execute com Python 3.10+: python -m venv venv" -ForegroundColor Yellow
     Read-Host "Pressione Enter para sair"
     exit 1
 }
@@ -63,6 +63,21 @@ Write-Host ""
 try {
     $pythonVersion = python --version 2>&1
     Write-Host "[INFO] $pythonVersion" -ForegroundColor Gray
+
+    if ($pythonVersion -notmatch "Python\s+(\d+)\.(\d+)") {
+        Write-Host "[ERRO] Nao foi possivel identificar a versao do Python." -ForegroundColor Red
+        Read-Host "Pressione Enter para sair"
+        exit 1
+    }
+
+    $major = [int]$Matches[1]
+    $minor = [int]$Matches[2]
+
+    if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 10)) {
+        Write-Host "[ERRO] Python 3.10+ obrigatorio. Versao atual: $pythonVersion" -ForegroundColor Red
+        Read-Host "Pressione Enter para sair"
+        exit 1
+    }
 } catch {
     Write-Host "[ERRO] Python não encontrado no ambiente virtual!" -ForegroundColor Red
     Read-Host "Pressione Enter para sair"

@@ -8,6 +8,17 @@ import atexit
 from app import create_app, db, create_backup
 from flask_migrate import Migrate
 
+MIN_PYTHON = (3, 10)
+
+
+def check_python_version():
+    """Valida se a versao minima do Python foi atendida."""
+    if sys.version_info < MIN_PYTHON:
+        current = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        required = f"{MIN_PYTHON[0]}.{MIN_PYTHON[1]}"
+        print(f"[ERRO] Python {required}+ e obrigatorio. Versao atual: {current}")
+        sys.exit(1)
+
 def minimize_console():
     """Minimiza a janela do console"""
     try:
@@ -129,6 +140,7 @@ def backup_on_exit():
     print()
 
 if __name__ == "__main__":
+    check_python_version()
     # Registrar função de backup para diferentes formas de encerramento
     atexit.register(backup_on_exit)
     

@@ -2038,7 +2038,7 @@ def replicate_transaction(id):
         'amount': transaction.amount,
         'discount': transaction.discount or 0,
         'payment_method_id': transaction.payment_method_id or '',
-        'paid': '1' if transaction.paid else '0',
+        'paid': '0',  # Sempre desmarcar o campo 'Pago' ao replicar
         'recurrence': transaction.recurrence or 'nenhuma',
         'details': transaction.details or '',
         'notes': transaction.notes or '',
