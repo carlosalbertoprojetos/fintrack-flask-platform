@@ -1,3 +1,11 @@
 .env
+venv/
 app.db
 instance
+FSA_prompt_gpt-53.md
+COMO_CRIAR_ATALHO.md
+SFP_PRD_prompt_EVOLUIDO.md
+SFP_PRD_prompt.md
+app.db
+
+instance/*

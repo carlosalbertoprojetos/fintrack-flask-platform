@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SocialPlatform {
+  LINKEDIN
+  INSTAGRAM
+  X
+  YOUTUBE
+  TIKTOK
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEWED
+  APPROVED
+  PUBLISHED
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  fullName     String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  workspaces   Workspace[]
+}
+
+model Workspace {
+  id                 String             @id @default(cuid())
+  name               String
+  ownerId            String
+  owner              User               @relation(fields: [ownerId], references: [id])
+  brandDna           BrandDna?
+  contentStrategies  ContentStrategy[]
+  promptTemplates    PromptTemplate[]
+  generatedContents  GeneratedContent[]
+  engagementEvents   EngagementEvent[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model BrandDna {
+  id                 String    @id @default(cuid())
+  workspaceId        String    @unique
+  workspace          Workspace @relation(fields: [workspaceId], references: [id])
+  voiceTone          String
+  authorityPillars   String[]
+  forbiddenPatterns  String[]
+  lexicalPreferences String[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model ContentStrategy {
+  id              String      @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace   @relation(fields: [workspaceId], references: [id])
+  campaignName    String
+  audiencePersona String
+  objective       String
+  ctaStyle        String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model PromptTemplate {
+  id            String      @id @default(cuid())
+  workspaceId   String
+  workspace     Workspace   @relation(fields: [workspaceId], references: [id])
+  module        String
+  version       Int
+  content       String
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  @@unique([workspaceId, module, version])
+}
+
+model GeneratedContent {
+  id                  String          @id @default(cuid())
+  workspaceId         String
+  workspace           Workspace       @relation(fields: [workspaceId], references: [id])
+  strategyId          String?
+  strategy            ContentStrategy? @relation(fields: [strategyId], references: [id])
+  platform            SocialPlatform
+  sourceText          String
+  adaptedText         String
+  imagePrompt         String?
+  shortFormScript     String?
+  persuasionScore     Float?
+  voiceConsistency    Float?
+  status              ContentStatus   @default(DRAFT)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+model EngagementEvent {
+  id               String         @id @default(cuid())
+  workspaceId      String
+  workspace        Workspace      @relation(fields: [workspaceId], references: [id])
+  contentId        String?
+  content          GeneratedContent? @relation(fields: [contentId], references: [id])
+  platform         SocialPlatform
+  impressions      Int?
+  likes            Int?
+  comments         Int?
+  shares           Int?
+  saves            Int?
+  clickThroughRate Float?
+  createdAt        DateTime       @default(now())
+}

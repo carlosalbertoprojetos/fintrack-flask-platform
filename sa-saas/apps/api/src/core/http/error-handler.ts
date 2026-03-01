@@ -1,0 +1,20 @@
+import type { NextFunction, Request, Response } from "express";
+
+export class HttpError extends Error {
+  public readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export function errorHandler(error: unknown, _req: Request, res: Response, _next: NextFunction): void {
+  if (error instanceof HttpError) {
+    res.status(error.status).json({ error: error.message });
+    return;
+  }
+
+  const message = error instanceof Error ? error.message : "Unexpected error";
+  res.status(500).json({ error: message });
+}
