@@ -99,7 +99,7 @@ O **Sistema de Finanças Pessoais Flask** é uma aplicação web completa desenv
 #### **Backup Automático**
 
 - Backup automático do banco de dados
-- Localização: `C:\backup\bk_flask.db`
+- Localização: `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
 - Atualização automática após cada operação
 
 #### **Compatibilidade de Navegadores**
@@ -436,7 +436,7 @@ SESSION_COOKIE_SECURE = True  # Para HTTPS
    - Tente: `pip install -r requirements.txt --no-cache-dir`
 
 4. **Banco de Dados Corrompido:**
-   - Restaure do backup em `C:\backup\bk_flask.db`
+   - Restaure do backup em `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
    - Ou delete `instance/financas.db` para recriar
 
 5. **Porta 5000 Ocupada:**
@@ -518,7 +518,7 @@ financas_pessoais_flask/
 
 ### **Backup Automático**
 
-- Localização: `C:\backup\bk_flask.db`
+- Localização: `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
 - Atualização: Automática após cada operação
 - Frequência: A cada transação salva
 
@@ -653,3 +653,32 @@ AssertionError: Class <class 'sqlalchemy.sql.elements.SQLCoreOperations'> direct
    - Instale Python 3.10.x
 
 3. **Ver instruções detalhadas**: Leia o arquivo `SOLUCAO_PYTHON_313.md`
+
+
+## Arquitetura SFP V3 (Atualizado)
+
+### Principios
+- Ledger imutavel como fonte de verdade para saldo e auditoria.
+- Separacao estrita: rotas HTTP orquestram, services executam regras de negocio.
+- Fechamento mensal bloqueavel por conta/periodo.
+- Simulacao isolada em livro paralelo (sem tocar dados reais).
+- IA local por usuario, sem dependencia de API externa.
+
+### Componentes centrais
+- `app/models.py`: `LedgerEntry`, `MonthlyClosure`, `SimulationSession`, `SimulationLedgerEntry`, `AIModelMetadata`.
+- `services/ledger_service.py`: hash chain, backfill, validacao de integridade e simulacao.
+- `services/transaction_service.py` e `services/investment_service.py`: escrita financeira via ledger.
+- `services/closure_service.py`: lock/unlock e snapshot mensal.
+- `services/projection_service.py`: projecao de fluxo de caixa e score financeiro.
+- `services/data_quality_service.py`: controles de qualidade e consistencia.
+
+### Persistencia e migracao
+- SQLite atual, preparado para PostgreSQL via `DATABASE_URL`.
+- Migracao Alembic V3: `migrations/versions/d2f6e9b1c4a0_sfp_v3_ledger_and_ai_models.py`.
+- Backfill historico disponivel em `LedgerService.backfill_account_ledger`.
+
+### Observabilidade e seguranca
+- Logging estruturado JSON configuravel por ambiente.
+- Rate limiting de login por janela de tempo.
+- Backup configuravel por `SFP_BACKUP_DIR`.
+- `SECRET_KEY` via variavel de ambiente em producao.

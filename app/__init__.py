@@ -2,10 +2,13 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
-from datetime import datetime, timedelta
+from datetime import datetime
 from config import Config
 from flask_mail import Mail
+import json
+import logging
 import os
+from pathlib import Path
 import shutil
 
 db = SQLAlchemy()
@@ -13,6 +16,35 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 mail = Mail()
+
+
+class JsonLogFormatter(logging.Formatter):
+    def format(self, record):
+        payload = {
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=True)
+
+
+def configure_logging(app: Flask):
+    level_name = str(app.config.get("LOG_LEVEL", "INFO")).upper()
+    level = getattr(logging, level_name, logging.INFO)
+    app.logger.handlers.clear()
+    app.logger.setLevel(level)
+
+    handler = logging.StreamHandler()
+    if app.config.get("JSON_LOGS", True):
+        handler.setFormatter(JsonLogFormatter())
+    else:
+        handler.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s %(name)s: %(message)s"))
+
+    app.logger.addHandler(handler)
+    app.logger.propagate = False
 
 
 def format_currency(value):
@@ -258,6 +290,13 @@ def get_database_path():
         return db_path
     return None
 
+
+def get_backup_dir():
+    """Retorna o diretorio de backup configurado para o ambiente."""
+    configured = Config.BACKUP_DIR or str(Path.home() / "Financas_Pessoais" / "backup")
+    return configured
+
+
 def get_quarter_info():
     """Retorna informações sobre o trimestre atual"""
     from datetime import datetime
@@ -293,13 +332,16 @@ def get_quarter_info():
 def create_backup():
     """Cria um backup do banco de dados com nomenclatura por trimestre"""
     try:
+        if not Config.ENABLE_AUTO_BACKUP:
+            return False
+
         db_path = get_database_path()
         if not db_path or not os.path.exists(db_path):
             print("[AVISO] Banco de dados não encontrado para backup")
             return False
         
         # Criar diretório de backup
-        backup_dir = r"C:\backup"
+        backup_dir = get_backup_dir()
         if not os.path.exists(backup_dir):
             try:
                 os.makedirs(backup_dir)
@@ -333,7 +375,10 @@ def create_backup():
 
 def ensure_backup_exists():
     """Ensure that a backup of the database exists with quarterly naming"""
-    backup_dir = r"C:\backup"
+    if not Config.ENABLE_AUTO_BACKUP:
+        return
+
+    backup_dir = get_backup_dir()
     db_path = get_database_path()
 
     # Create backup directory if it doesn't exist
@@ -368,24 +413,17 @@ def ensure_backup_exists():
 
 
 def create_app(config_class=Config):
+    if hasattr(config_class, "validate") and callable(getattr(config_class, "validate")):
+        config_class.validate()
+
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    app.config.from_mapping(DEBUG=True)
-    # Configurações de sessão para compatibilidade entre navegadores
-    app.config['SESSION_COOKIE_SECURE'] = False  # True apenas se usar HTTPS
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-    
-    # Configurações de cookies para compatibilidade
-    app.config['REMEMBER_COOKIE_SECURE'] = False  # True apenas se usar HTTPS
-    app.config['REMEMBER_COOKIE_HTTPONLY'] = True
-    app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
 
 
     # Add custom filter for currency formatting
     app.jinja_env.filters["currency"] = format_currency
+    configure_logging(app)
 
     # Ensure backup exists before initializing the database
     ensure_backup_exists()

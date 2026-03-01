@@ -28,14 +28,39 @@ from sqlalchemy import func, extract, desc, or_, and_, case
 from datetime import datetime
 from calendar import monthrange
 import json
+import time
+from collections import defaultdict, deque
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from decimal import Decimal
+from services.transaction_service import TransactionService
 
 # Blueprints
 main_bp = Blueprint("main", __name__)
 auth_bp = Blueprint("auth", __name__)
 transaction_bp = Blueprint("transaction", __name__)
+
+_login_attempts = defaultdict(deque)
+
+
+def _login_limit_exceeded(identifier: str, max_attempts: int, window_seconds: int):
+    now = time.time()
+    attempts = _login_attempts[identifier]
+    while attempts and (now - attempts[0]) > window_seconds:
+        attempts.popleft()
+    return len(attempts) >= max_attempts
+
+
+def _register_failed_login(identifier: str, window_seconds: int):
+    now = time.time()
+    attempts = _login_attempts[identifier]
+    while attempts and (now - attempts[0]) > window_seconds:
+        attempts.popleft()
+    attempts.append(now)
+
+
+def _clear_login_attempts(identifier: str):
+    _login_attempts.pop(identifier, None)
 
 
 # Funções helper
@@ -653,21 +678,33 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
 
+    from flask import current_app
+
     form = LoginForm()
+    limit_attempts = int(current_app.config.get("LOGIN_RATE_LIMIT_ATTEMPTS", 5))
+    limit_window = int(current_app.config.get("LOGIN_RATE_LIMIT_WINDOW_SECONDS", 300))
+
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
+    username = (form.username.data or "").strip().lower()
+    identifier = f"{client_ip}:{username or 'unknown'}"
+
     if form.validate_on_submit():
+        if _login_limit_exceeded(identifier=identifier, max_attempts=limit_attempts, window_seconds=limit_window):
+            flash("Muitas tentativas de login. Aguarde alguns minutos.", "danger")
+            return render_template("login.html", form=form), 429
+
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
-            login_user(user, remember=True)
+            _clear_login_attempts(identifier)
+            login_user(user, remember=bool(form.remember_me.data))
             next_page = request.args.get("next")
             return redirect(next_page or url_for("main.dashboard"))
-        else:
-            flash("Nome de usuário ou senha inválidos", "danger")
-            # Garantir que a mensagem seja exibida apenas na página de login
-            # Não fazer redirect, renderizar o template diretamente
-            return render_template("login.html", form=form)
+
+        _register_failed_login(identifier=identifier, window_seconds=limit_window)
+        flash("Nome de usuario ou senha invalidos", "danger")
+        return render_template("login.html", form=form)
 
     return render_template("login.html", form=form)
-
 
 @auth_bp.route("/logout")
 @login_required
@@ -1830,196 +1867,157 @@ def transactions():
     )
 
 
-@transaction_bp.route("/transactions/add", methods=["GET", "POST"])
+def _build_transaction_payload(form, conta_id):
+    return {
+        "type": form.type.data,
+        "date": form.date.data,
+        "due_date": form.due_date.data,
+        "payment_date": form.payment_date.data,
+        "amount": float(form.amount.data),
+        "discount": float(form.discount.data) if form.discount.data else 0.0,
+        "paid": bool(form.paid.data),
+        "category_id": form.category_id.data,
+        "expense_id": form.expense_id.data if form.expense_id.data and form.expense_id.data > 0 else None,
+        "description": form.description.data,
+        "payment_method_id": form.payment_method_id.data,
+        "recurrence": form.recurrence.data,
+        "details": form.details.data,
+        "notes": form.notes.data,
+        "conta_id": conta_id,
+    }
+
+
+@transaction_bp.route("/transactions/add", methods=["GET", "POST"] )
 @login_required
 def add_transaction():
     form = TransactionForm()
+    conta_id_from_url = request.args.get("conta_id", type=int)
 
-    # Obter conta_id da URL se fornecido
-    conta_id_from_url = request.args.get('conta_id', type=int)
-
-    # Preencher as opções de categorias
     form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
-    # Preencher as opções de formas de pagamento
     form.payment_method_id.choices = [
         (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
     ]
-    # Preencher as opções de descrições predefinidas
-    form.expense_id.choices = [(0, "Selecione uma descrição")] + [
+    form.expense_id.choices = [(0, "Selecione uma descricao")] + [
         (exp.id, exp.name) for exp in Expense.query.all()
     ]
-    # Preencher as opções de contas
     form.conta_id.choices = [(c.id, c.nome) for c in Conta.query.filter_by(user_id=current_user.id).all()]
 
-    # Se conta_id foi fornecido na URL, pré-selecionar essa conta
     if conta_id_from_url:
         form.conta_id.data = conta_id_from_url
-    
-    # Pré-preencher campos se vier de uma replicação (GET request com parâmetros)
-    if request.method == 'GET' and request.args:
-        if request.args.get('type'):
-            form.type.data = request.args.get('type')
-        if request.args.get('category_id'):
-            form.category_id.data = int(request.args.get('category_id'))
-        if request.args.get('expense_id'):
-            expense_id = request.args.get('expense_id')
+
+    if request.method == "GET" and request.args:
+        if request.args.get("type"):
+            form.type.data = request.args.get("type")
+        if request.args.get("category_id"):
+            form.category_id.data = int(request.args.get("category_id"))
+        if request.args.get("expense_id"):
+            expense_id = request.args.get("expense_id")
             if expense_id:
                 form.expense_id.data = int(expense_id)
-        if request.args.get('description'):
-            form.description.data = request.args.get('description')
-        if request.args.get('amount'):
-            # Converter para formato brasileiro (vírgula como decimal, ponto como milhar)
-            amount = float(request.args.get('amount'))
-            # Formatar com 2 casas decimais, vírgula como separador decimal
-            amount_str = f"{amount:.2f}".replace('.', ',')
-            # Adicionar pontos como separadores de milhar
-            parts = amount_str.split(',')
-            integer_part = parts[0]
-            # Adicionar pontos a cada 3 dígitos
-            integer_part = '{:,}'.format(int(integer_part)).replace(',', '.')
+        if request.args.get("description"):
+            form.description.data = request.args.get("description")
+        if request.args.get("amount"):
+            amount = float(request.args.get("amount"))
+            amount_str = f"{amount:.2f}".replace(".", ",")
+            parts = amount_str.split(",")
+            integer_part = "{:,}".format(int(parts[0])).replace(",", ".")
             form.amount.data = f"{integer_part},{parts[1]}"
-        if request.args.get('discount'):
-            discount = float(request.args.get('discount'))
-            # Formatar com 2 casas decimais, vírgula como separador decimal
-            discount_str = f"{discount:.2f}".replace('.', ',')
-            # Adicionar pontos como separadores de milhar
-            parts = discount_str.split(',')
-            integer_part = parts[0]
-            # Adicionar pontos a cada 3 dígitos
-            integer_part = '{:,}'.format(int(integer_part)).replace(',', '.')
+        if request.args.get("discount"):
+            discount = float(request.args.get("discount"))
+            discount_str = f"{discount:.2f}".replace(".", ",")
+            parts = discount_str.split(",")
+            integer_part = "{:,}".format(int(parts[0])).replace(",", ".")
             form.discount.data = f"{integer_part},{parts[1]}"
-        if request.args.get('payment_method_id'):
-            payment_method_id = request.args.get('payment_method_id')
+        if request.args.get("payment_method_id"):
+            payment_method_id = request.args.get("payment_method_id")
             if payment_method_id:
                 form.payment_method_id.data = int(payment_method_id)
-        if request.args.get('paid'):
-            form.paid.data = request.args.get('paid') == '1'
-        if request.args.get('recurrence'):
-            form.recurrence.data = request.args.get('recurrence')
-        if request.args.get('details'):
-            form.details.data = request.args.get('details')
-        if request.args.get('notes'):
-            form.notes.data = request.args.get('notes')
-        if request.args.get('conta_id'):
-            conta_id = request.args.get('conta_id')
+        if request.args.get("paid"):
+            form.paid.data = request.args.get("paid") == "1"
+        if request.args.get("recurrence"):
+            form.recurrence.data = request.args.get("recurrence")
+        if request.args.get("details"):
+            form.details.data = request.args.get("details")
+        if request.args.get("notes"):
+            form.notes.data = request.args.get("notes")
+        if request.args.get("conta_id"):
+            conta_id = request.args.get("conta_id")
             if conta_id:
                 form.conta_id.data = int(conta_id)
-        if request.args.get('date'):
-            form.date.data = datetime.strptime(request.args.get('date'), '%Y-%m-%d').date()
-        if request.args.get('due_date'):
-            form.due_date.data = datetime.strptime(request.args.get('due_date'), '%Y-%m-%d').date()
-        if request.args.get('payment_date'):
-            form.payment_date.data = datetime.strptime(request.args.get('payment_date'), '%Y-%m-%d').date()
+        if request.args.get("date"):
+            form.date.data = datetime.strptime(request.args.get("date"), "%Y-%m-%d").date()
+        if request.args.get("due_date"):
+            form.due_date.data = datetime.strptime(request.args.get("due_date"), "%Y-%m-%d").date()
+        if request.args.get("payment_date"):
+            form.payment_date.data = datetime.strptime(request.args.get("payment_date"), "%Y-%m-%d").date()
 
     if form.validate_on_submit():
         if not form.category_id.data or form.category_id.data == 0:
-            flash("Selecione uma categoria válida.", "danger")
+            flash("Selecione uma categoria valida.", "danger")
             return render_template("add_edit_transaction.html", form=form, edit=False)
 
-        # Usar conta_id da URL ou da conta atualmente selecionada
         if conta_id_from_url:
             conta_id = conta_id_from_url
         else:
-            # Obter a conta atualmente selecionada
             conta_atual = get_current_conta()
             if not conta_atual:
-                flash("Você precisa ter pelo menos uma conta cadastrada.", "warning")
+                flash("Voce precisa ter pelo menos uma conta cadastrada.", "warning")
                 return redirect(url_for("conta.listar_contas"))
             conta_id = conta_atual.id
 
-        # Os valores já foram validados e convertidos no form.validate_on_submit()
-        amount = float(form.amount.data)
-        discount = float(form.discount.data) if form.discount.data else 0.0
-
-        transaction = Transaction(
-            type=form.type.data,
-            date=form.date.data,
-            due_date=form.due_date.data,
-            category_id=form.category_id.data,
-            expense_id=(
-                form.expense_id.data
-                if form.expense_id.data and form.expense_id.data > 0
-                else None
-            ),
-            description=form.description.data,
-            amount=amount,
-            discount=discount,
-            payment_method_id=form.payment_method_id.data,
-            paid=form.paid.data,
-            payment_date=form.payment_date.data,
-            recurrence=form.recurrence.data,
-            details=form.details.data,  # Adicionar campo details
-            notes=form.notes.data,  # Adicionar campo notes
-            user_id=current_user.id,
-            conta_id=conta_id,  # Vincular à conta selecionada
-        )
-
-        db.session.add(transaction)
-        db.session.commit()
-        Conta.recalcular_saldos()
-        flash("Transação adicionada com sucesso!", "success")
-        return redirect(url_for("main.dashboard"))
+        payload = _build_transaction_payload(form, conta_id)
+        try:
+            TransactionService.create_transaction(user_id=current_user.id, payload=payload)
+            flash("Transacao adicionada com sucesso!", "success")
+            return redirect(url_for("main.dashboard"))
+        except ValueError as exc:
+            db.session.rollback()
+            flash(str(exc), "danger")
 
     return render_template("add_edit_transaction.html", form=form, edit=False)
 
 
-@transaction_bp.route("/transactions/edit/<int:id>", methods=["GET", "POST"])
+@transaction_bp.route("/transactions/edit/<int:id>", methods=["GET", "POST"] )
 @login_required
 def edit_transaction(id):
-    transaction = Transaction.query.filter_by(
-        id=id, user_id=current_user.id
-    ).first_or_404()
+    transaction = Transaction.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     form = TransactionForm(obj=transaction)
 
-    # Preencher as opções de categorias
     form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
-    # Preencher as opções de formas de pagamento
     form.payment_method_id.choices = [
         (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
     ]
-    # Preencher as opções de descrições predefinidas
-    form.expense_id.choices = [(0, "Selecione uma descrição")] + [
+    form.expense_id.choices = [(0, "Selecione uma descricao")] + [
         (exp.id, exp.name) for exp in Expense.query.all()
     ]
-    # Preencher as opções de contas
     form.conta_id.choices = [(c.id, c.nome) for c in Conta.query.filter_by(user_id=current_user.id).all()]
 
     if form.validate_on_submit():
-        # Os valores já foram validados e convertidos no form.validate_on_submit()
-        amount = float(form.amount.data)
-        discount = float(form.discount.data) if form.discount.data else 0.0
+        conta_id = form.conta_id.data if form.conta_id.data else transaction.conta_id
+        payload = _build_transaction_payload(form, conta_id)
+        try:
+            TransactionService.update_transaction(user_id=current_user.id, tx=transaction, payload=payload)
+            flash("Transacao atualizada com sucesso!", "success")
+            return redirect(url_for("transaction.reports"))
+        except ValueError as exc:
+            db.session.rollback()
+            flash(str(exc), "danger")
 
-        transaction.type = form.type.data
-        transaction.date = form.date.data
-        transaction.due_date = form.due_date.data
-        transaction.category_id = form.category_id.data
-        transaction.expense_id = (
-            form.expense_id.data
-            if form.expense_id.data and form.expense_id.data > 0
-            else None
-        )
-        transaction.description = form.description.data
-        transaction.amount = amount
-        transaction.discount = discount
-        transaction.payment_method_id = form.payment_method_id.data
-        transaction.paid = form.paid.data
-        transaction.payment_date = form.payment_date.data
-        transaction.recurrence = form.recurrence.data
-        transaction.details = form.details.data  # Adicionado para salvar detalhes na edição
-        transaction.notes = form.notes.data  # Adicionar campo notes na edição
-        transaction.conta_id = form.conta_id.data if form.conta_id.data else None
-
-        db.session.commit()
-        Conta.recalcular_saldos()
-        flash("Transação atualizada com sucesso!", "success")
-        return redirect(url_for("transaction.reports"))
-
-    # Definir o valor atual da conta no formulário
     form.conta_id.data = transaction.conta_id
-    
-    return render_template(
-        "add_edit_transaction.html", form=form, transaction=transaction, edit=True
-    )
+    return render_template("add_edit_transaction.html", form=form, transaction=transaction, edit=True)
+
+
+@transaction_bp.route("/transactions/delete/<int:id>")
+@login_required
+def delete_transaction(id):
+    transaction = Transaction.query.filter_by(id=id, user_id=current_user.id).first_or_404()
+    try:
+        TransactionService.delete_transaction(user_id=current_user.id, tx=transaction)
+        flash("Transacao excluida com sucesso!", "success")
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "danger")
+    return redirect(url_for("transaction.reports"))
 
 
 @transaction_bp.route("/transactions/replicate/<int:id>")
@@ -2059,17 +2057,6 @@ def replicate_transaction(id):
     return redirect(url)
 
 
-@transaction_bp.route("/transactions/delete/<int:id>")
-@login_required
-def delete_transaction(id):
-    transaction = Transaction.query.filter_by(
-        id=id, user_id=current_user.id
-    ).first_or_404()
-    db.session.delete(transaction)
-    db.session.commit()
-    Conta.recalcular_saldos()
-    flash("Transação excluída com sucesso!", "success")
-    return redirect(url_for("transaction.reports"))
 
 
 @transaction_bp.route("/expenses/by-category/<int:category_id>")
