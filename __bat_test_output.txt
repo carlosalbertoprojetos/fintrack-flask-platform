@@ -1,0 +1,56 @@
+============================================================
+  INICIANDO SISTEMA DE FINANCAS PESSOAIS
+============================================================
+
+[INFO] Ativando ambiente virtual...
+[OK] Ambiente virtual ativado
+
+[INFO] Python detectado: 3.10.0
+
+[INFO] Iniciando servidor Flask...
+[INFO] O navegador sera aberto automaticamente em alguns segundos...
+
+============================================================
+  Para encerrar o sistema, pressione Ctrl+C
+============================================================
+
+============================================================
+  SISTEMA DE FINANÇAS PESSOAIS
+============================================================
+
+[INFO] Inicializando aplicação...
+[OK] Middleware de compatibilidade entre navegadores aplicado
+Usuário admin commitado com sucesso!
+TODOS os dados padrão criados com sucesso para o usuário admin!
+[INFO] Verificando banco de dados...
+[INFO] Usuários cadastrados: 1
+[INFO] Recalculando saldos de 2 contas...
+[OK] Saldos recalculados com sucesso
+[OK] Banco de dados verificado e pronto
+
+[OK] Aplicação inicializada com sucesso!
+
+============================================================
+  SERVIDOR INICIADO
+============================================================
+
+  URL: http://127.0.0.1:5000
+
+  Credenciais padrão (se for o primeiro acesso):
+    Usuário: admin
+    Senha: admin123
+
+  Para encerrar o sistema:
+    - Pressione Ctrl+C nesta janela, ou
+    - Use o botão 'Encerrar Sistema' na interface
+
+============================================================
+
+ * Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+
+Microsoft Windows [versÃ£o 10.0.26200.7922]
+Pressione qualquer tecla para continuar. . . 

@@ -685,17 +685,25 @@ def login():
     limit_window = int(current_app.config.get("LOGIN_RATE_LIMIT_WINDOW_SECONDS", 300))
 
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
-    username = (form.username.data or "").strip().lower()
-    identifier = f"{client_ip}:{username or 'unknown'}"
+    login_value = (form.username.data or "").strip()
+    login_key = login_value.lower()
+    identifier = f"{client_ip}:{login_key or 'unknown'}"
 
     if form.validate_on_submit():
         if _login_limit_exceeded(identifier=identifier, max_attempts=limit_attempts, window_seconds=limit_window):
             flash("Muitas tentativas de login. Aguarde alguns minutos.", "danger")
             return render_template("login.html", form=form), 429
 
-        user = User.query.filter_by(username=form.username.data).first()
+        user = User.query.filter(
+            or_(
+                func.lower(User.username) == login_key,
+                func.lower(User.email) == login_key,
+            )
+        ).first()
         if user and user.check_password(form.password.data):
             _clear_login_attempts(identifier)
+            _clear_login_attempts(f"{client_ip}:{(user.username or '').strip().lower()}")
+            _clear_login_attempts(f"{client_ip}:{(user.email or '').strip().lower()}")
             login_user(user, remember=bool(form.remember_me.data))
             next_page = request.args.get("next")
             return redirect(next_page or url_for("main.dashboard"))

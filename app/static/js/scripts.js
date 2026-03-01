@@ -20,7 +20,10 @@ const CONFIG = {
   TAB_CHANNEL_NAME: 'financas_pessoais_tabs',
   TAB_COUNT_KEY: 'financas_pessoais_tab_count',
   TAB_ID_KEY: 'current_tab_id',
+  TAB_REGISTRY_KEY: 'financas_pessoais_tab_registry',
   LAST_UPDATE_KEY: 'last_tab_update',
+  TAB_HEARTBEAT_MS: 15000,
+  TAB_STALE_MS: 45000,
   SHUTDOWN_TIMEOUT: 15000,
   MENU_EXPAND_DELAY: 300,
   DROPDOWN_CHECK_DELAY: 100,
@@ -35,6 +38,7 @@ const AppState = {
   initialized: false,
   tabChannel: null,
   currentTabId: null,
+  tabHeartbeatTimer: null,
   domCache: new Map(),
   activeListeners: new Map(),
 };
@@ -79,6 +83,90 @@ function safeQuerySelectorAll(selector) {
  */
 function generateTabId() {
   return `tab_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
+ * Lê registro de abas do sistema
+ */
+function getTabRegistry() {
+  try {
+    const raw = localStorage.getItem(CONFIG.TAB_REGISTRY_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
+  } catch (e) {
+    console.warn('Registro de abas inválido, recriando:', e);
+    return {};
+  }
+}
+
+/**
+ * Persiste registro de abas do sistema
+ */
+function setTabRegistry(registry) {
+  localStorage.setItem(CONFIG.TAB_REGISTRY_KEY, JSON.stringify(registry));
+}
+
+/**
+ * Remove entradas inválidas/antigas do registro
+ */
+function pruneTabRegistry(registry) {
+  const now = Date.now();
+  let changed = false;
+
+  Object.entries(registry).forEach(([tabId, meta]) => {
+    const updatedAt = meta && typeof meta.updatedAt === 'number' ? meta.updatedAt : 0;
+    if (!updatedAt || now - updatedAt > CONFIG.TAB_STALE_MS) {
+      delete registry[tabId];
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    setTabRegistry(registry);
+  }
+  return registry;
+}
+
+/**
+ * Sincroniza contador legado com o registro real
+ */
+function syncTabCountFromRegistry() {
+  const count = Object.keys(pruneTabRegistry(getTabRegistry())).length;
+  localStorage.setItem(CONFIG.TAB_COUNT_KEY, count.toString());
+  localStorage.setItem(CONFIG.LAST_UPDATE_KEY, Date.now().toString());
+  return count;
+}
+
+/**
+ * Registra aba atual no conjunto de abas ativas do sistema
+ */
+function registerTab(tabId) {
+  if (!tabId) return;
+  const registry = pruneTabRegistry(getTabRegistry());
+  registry[tabId] = {
+    origin: window.location.origin,
+    path: window.location.pathname,
+    updatedAt: Date.now(),
+  };
+  setTabRegistry(registry);
+  syncTabCountFromRegistry();
+}
+
+/**
+ * Remove aba do registro global
+ */
+function unregisterTab(tabId) {
+  if (!tabId) return;
+  const registry = getTabRegistry();
+  if (registry[tabId]) {
+    delete registry[tabId];
+    setTabRegistry(registry);
+  }
+  syncTabCountFromRegistry();
 }
 
 /**
@@ -133,52 +221,40 @@ function initTabCounter() {
       sessionStorage.setItem(CONFIG.TAB_ID_KEY, tabId);
     }
     AppState.currentTabId = tabId;
+    registerTab(tabId);
+    AppState.tabHeartbeatTimer = setInterval(() => {
+      registerTab(tabId);
+    }, CONFIG.TAB_HEARTBEAT_MS);
 
     // Configurar BroadcastChannel
     const channel = new BroadcastChannel(CONFIG.TAB_CHANNEL_NAME);
     AppState.tabChannel = channel;
     window.financasTabChannel = channel;
 
-    // Incrementar contador com timestamp para evitar race conditions
-    const timestamp = Date.now();
-    const currentCount = parseInt(
-      localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '0'
-    );
-    const newCount = currentCount + 1;
-    
-    localStorage.setItem(CONFIG.TAB_COUNT_KEY, newCount.toString());
-    localStorage.setItem(CONFIG.LAST_UPDATE_KEY, timestamp.toString());
-
-
-
     // Listener para mensagens de outras abas
     channel.addEventListener('message', handleTabMessage);
 
     // Solicitar contagem atualizada
-    channel.postMessage({ 
-      type: 'request_tab_count', 
-      tabId 
+    channel.postMessage({
+      type: 'request_tab_count',
+      tabId
     });
 
     // Cleanup ao fechar aba
     const beforeUnloadHandler = () => {
       try {
-        channel.postMessage({ 
-          type: 'tab_closing', 
-          tabId 
+        channel.postMessage({
+          type: 'tab_closing',
+          tabId
         });
       } catch (e) {
         console.warn('Erro ao notificar fechamento de aba:', e);
       }
 
-      const count = parseInt(
-        localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '0'
-      );
-      if (count > 0) {
-        localStorage.setItem(
-          CONFIG.TAB_COUNT_KEY, 
-          (count - 1).toString()
-        );
+      unregisterTab(tabId);
+      if (AppState.tabHeartbeatTimer) {
+        clearInterval(AppState.tabHeartbeatTimer);
+        AppState.tabHeartbeatTimer = null;
       }
 
       try {
@@ -190,27 +266,26 @@ function initTabCounter() {
 
     window.addEventListener('beforeunload', beforeUnloadHandler);
     AppState.activeListeners.set('beforeunload', beforeUnloadHandler);
-
   } catch (error) {
     console.error('Erro na inicialização do contador de abas:', error);
-    // Fallback: usar apenas localStorage
-    const currentCount = parseInt(
-      localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '0'
-    );
-    localStorage.setItem(
-      CONFIG.TAB_COUNT_KEY, 
-      (currentCount + 1).toString()
-    );
-    
+
+    // Fallback: ao menos manter o registro em storage
+    let tabId = sessionStorage.getItem(CONFIG.TAB_ID_KEY);
+    if (!tabId) {
+      tabId = generateTabId();
+      sessionStorage.setItem(CONFIG.TAB_ID_KEY, tabId);
+    }
+    AppState.currentTabId = tabId;
+    registerTab(tabId);
+    AppState.tabHeartbeatTimer = setInterval(() => {
+      registerTab(tabId);
+    }, CONFIG.TAB_HEARTBEAT_MS);
+
     window.addEventListener('beforeunload', () => {
-      const count = parseInt(
-        localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '0'
-      );
-      if (count > 0) {
-        localStorage.setItem(
-          CONFIG.TAB_COUNT_KEY, 
-          (count - 1).toString()
-        );
+      unregisterTab(tabId);
+      if (AppState.tabHeartbeatTimer) {
+        clearInterval(AppState.tabHeartbeatTimer);
+        AppState.tabHeartbeatTimer = null;
       }
     });
   }
@@ -227,15 +302,13 @@ function handleTabMessage(event) {
       if (AppState.tabChannel) {
         AppState.tabChannel.postMessage({
           type: 'tab_count_response',
-          count: parseInt(
-            localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
-          )
+          count: syncTabCountFromRegistry()
         });
       }
       break;
 
     case 'tab_count_response':
-      if (count && count > 0) {
+      if (typeof count === 'number' && count >= 0) {
         localStorage.setItem(CONFIG.TAB_COUNT_KEY, count.toString());
         console.log(
           `Contador de abas atualizado via BroadcastChannel: ${count}`
@@ -245,28 +318,21 @@ function handleTabMessage(event) {
 
     case 'tab_closing':
       if (senderTabId !== AppState.currentTabId) {
-        const currentCount = parseInt(
-          localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
+        unregisterTab(senderTabId);
+        const remaining = parseInt(
+          localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '0'
         );
-        if (currentCount > 0) {
-          localStorage.setItem(
-            CONFIG.TAB_COUNT_KEY, 
-            (currentCount - 1).toString()
-          );
-          console.log(
-            `Aba ${senderTabId} fechada. Total restante: ${currentCount - 1}`
-          );
-        }
+        console.log(`Aba ${senderTabId} fechada. Total restante: ${remaining}`);
       }
       break;
 
     case 'close_localhost_tabs':
       // Verificar se esta aba é do localhost:5000
       const currentUrl = window.location.href;
-      const isLocalhostApp = currentUrl.startsWith('http://127.0.0.1:5000') || 
-                            currentUrl.startsWith('http://localhost:5000');
+      const isSystemTab = currentUrl.startsWith(window.location.origin);
+      const sameAppOrigin = !event.data.appOrigin || event.data.appOrigin === window.location.origin;
       
-      if (isLocalhostApp && senderTabId !== AppState.currentTabId) {
+      if (isSystemTab && sameAppOrigin && senderTabId !== AppState.currentTabId) {
         console.log('Recebida mensagem para fechar aba do localhost');
         // Aguardar um pouco antes de fechar para dar tempo da mensagem ser processada
         setTimeout(() => {
@@ -296,6 +362,12 @@ function handleTabMessage(event) {
 function detectBrowserTabCount() {
   return new Promise((resolve) => {
     try {
+      const countFromRegistry = syncTabCountFromRegistry();
+      if (countFromRegistry > 0) {
+        resolve(countFromRegistry);
+        return;
+      }
+
       if (!AppState.tabChannel) {
         const channel = new BroadcastChannel(CONFIG.TAB_CHANNEL_NAME);
         AppState.tabChannel = channel;
@@ -310,10 +382,7 @@ function detectBrowserTabCount() {
       });
 
       const timeout = setTimeout(() => {
-        const storedCount = parseInt(
-          localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
-        );
-        resolve(storedCount);
+        resolve(syncTabCountFromRegistry() || 1);
       }, 100);
 
       const messageHandler = (event) => {
@@ -328,10 +397,7 @@ function detectBrowserTabCount() {
 
     } catch (error) {
       console.warn('Erro na detecção de abas:', error);
-      const storedCount = parseInt(
-        localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
-      );
-      resolve(storedCount);
+      resolve(syncTabCountFromRegistry() || 1);
     }
   });
 }
@@ -340,15 +406,11 @@ function detectBrowserTabCount() {
  * Decrementa contador de abas
  */
 function decrementTabCount() {
-  const currentCount = parseInt(
-    localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
-  );
-  if (currentCount > 0) {
-    localStorage.setItem(
-      CONFIG.TAB_COUNT_KEY, 
-      (currentCount - 1).toString()
-    );
+  if (AppState.currentTabId) {
+    unregisterTab(AppState.currentTabId);
+    return;
   }
+  syncTabCountFromRegistry();
 }
 
 /**
@@ -356,6 +418,7 @@ function decrementTabCount() {
  */
 function cleanupTabStorage() {
   localStorage.removeItem(CONFIG.TAB_COUNT_KEY);
+  localStorage.removeItem(CONFIG.TAB_REGISTRY_KEY);
   sessionStorage.removeItem(CONFIG.TAB_ID_KEY);
   localStorage.removeItem(CONFIG.LAST_UPDATE_KEY);
 }
@@ -367,10 +430,9 @@ async function closeTabOrBrowser() {
   try {
     // Verificar se a URL atual começa com http://127.0.0.1:5000
     const currentUrl = window.location.href;
-    const isLocalhostApp = currentUrl.startsWith('http://127.0.0.1:5000') || 
-                          currentUrl.startsWith('http://localhost:5000');
+    const isSystemTab = currentUrl.startsWith(window.location.origin);
     
-    if (!isLocalhostApp) {
+    if (!isSystemTab) {
       console.log('Esta aba não é do aplicativo local, não será fechada.');
       return;
     }
@@ -388,11 +450,10 @@ async function closeTabOrBrowser() {
     } catch (error) {
       console.warn('Erro ao detectar abas, usando fallback:', error);
       clearTimeout(closeTimeout);
-      // Fallback: usar localStorage
-      tabCount = parseInt(
-        localStorage.getItem(CONFIG.TAB_COUNT_KEY) || '1'
-      );
+      // Fallback: usar registro das abas do sistema
+      tabCount = syncTabCountFromRegistry() || 1;
     }
+    tabCount = Math.max(1, Number(tabCount) || 1);
 
     // Notificar outras abas do aplicativo para fecharem
     if (AppState.tabChannel) {
@@ -400,6 +461,7 @@ async function closeTabOrBrowser() {
         AppState.tabChannel.postMessage({
           type: 'close_localhost_tabs',
           source: 'shutdown',
+          appOrigin: window.location.origin,
           tabId: AppState.currentTabId
         });
       } catch (e) {
@@ -1221,5 +1283,3 @@ window.dismissMessage = dismissMessage;
 // ============================================================================
 
 initializeApp();
-
-

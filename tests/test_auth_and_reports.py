@@ -77,6 +77,20 @@ def test_login_success_redirects_dashboard(client, app_ctx):
     assert response.location.endswith("/dashboard")
 
 
+def test_login_accepts_email_and_case_insensitive_identifier(client, app_ctx):
+    _create_user("AuthCase", "AuthCase@Example.com", "abc12345")
+    db.session.commit()
+
+    response = client.post(
+        "/auth/login",
+        data={"username": "  authcase@example.COM  ", "password": "abc12345"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 302
+    assert response.location.endswith("/dashboard")
+
+
 def test_login_invalid_credentials_renders_login(client, app_ctx):
     _create_user("auth2", "auth2@example.com", "abc12345")
     db.session.commit()
