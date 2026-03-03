@@ -540,7 +540,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 
 <script>
     // Função para inicializar o sistema de abas de relatórios usando Bootstrap
@@ -741,7 +741,7 @@
                     callback();
                 } else if (attempts >= maxAttempts) {
                     clearInterval(checkInterval);
-                    console.error('Chart.js não foi carregado após múltiplas tentativas');
+                    console.warn('Chart.js não foi carregado após múltiplas tentativas; usando fallback offline.'); callback();
                 }
             }, 100);
         }

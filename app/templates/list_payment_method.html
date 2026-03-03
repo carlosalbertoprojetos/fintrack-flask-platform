@@ -87,21 +87,19 @@
 </div>
 
 {% endblock %} {% block extra_css %} {{ super() }}
-<link
-  rel="stylesheet"
-  type="text/css"
-  href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"
-/>
+<script>
+  if (window.APP_USE_CDN_ASSETS && navigator.onLine) {
+    document.write('<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />');
+  }
+</script>
 {% endblock %} {% block extra_js %} {{ super() }}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script
-  type="text/javascript"
-  src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"
-></script>
-<script
-  type="text/javascript"
-  src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"
-></script>
+<script>
+  if (window.APP_USE_CDN_ASSETS && navigator.onLine) {
+    document.write('<script src="https://code.jquery.com/jquery-3.7.1.min.js"><\\/script>');
+    document.write('<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"><\\/script>');
+    document.write('<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"><\\/script>');
+  }
+</script>
 <script>
   $(document).ready(function () {
     $("#paymentMethodsTable").DataTable({

@@ -763,7 +763,7 @@
               callback();
           } else if (attempts >= maxAttempts) {
               clearInterval(checkInterval);
-              console.error('Chart.js não foi carregado após múltiplas tentativas');
+              console.warn('Chart.js não foi carregado após múltiplas tentativas; usando fallback offline.'); callback();
           }
       }, 100);
   }
