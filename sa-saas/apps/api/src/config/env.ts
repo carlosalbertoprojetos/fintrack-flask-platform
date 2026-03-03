@@ -1,5 +1,19 @@
-import "dotenv/config";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import dotenv from "dotenv";
 import { z } from "zod";
+
+const envCandidates = [
+  path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "../../.env")
+];
+
+for (const candidate of envCandidates) {
+  if (existsSync(candidate)) {
+    dotenv.config({ path: candidate });
+    break;
+  }
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

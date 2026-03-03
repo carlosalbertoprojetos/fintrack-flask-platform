@@ -66,6 +66,7 @@ model ContentStrategy {
   audiencePersona String
   objective       String
   ctaStyle        String
+  generatedContents GeneratedContent[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 }
@@ -96,6 +97,7 @@ model GeneratedContent {
   persuasionScore     Float?
   voiceConsistency    Float?
   status              ContentStatus   @default(DRAFT)
+  engagementEvents    EngagementEvent[]
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 }
