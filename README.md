@@ -244,7 +244,7 @@ financas_pessoais_flask/
 - **Conexão com internet** (para download de dependências)
 - **Privilégios de administrador** (para instalação)
 
-### **🚀 Instalação Automática (Recomendada)**
+### **Instalação Automática (Recomendada)**
 
 #### **Método 1: Instalador Corrigido (Windows)**
 
@@ -255,15 +255,15 @@ financas_pessoais_flask/
    ```
 
 2. **O instalador fará automaticamente:**
-   - ✅ Verificar/instalar Python 3.10+ se necessário
-   - ✅ Criar diretório `C:\Financas_Pessoais`
-   - ✅ Copiar todos os arquivos do sistema (app, routes, migrations, etc.)
-   - ✅ Criar ambiente virtual Python
-   - ✅ Instalar todas as dependências (Flask, SQLAlchemy, etc.)
-   - ✅ Criar scripts de inicialização
-   - ✅ Criar atalho na área de trabalho
-   - ✅ Testar o sistema
-   - ✅ Iniciar o sistema automaticamente
+   -  Verificar/instalar Python 3.10+ se necessário
+   -  Criar diretório `C:\Financas_Pessoais`
+   -  Copiar todos os arquivos do sistema (app, routes, migrations, etc.)
+   -  Criar ambiente virtual Python
+   -  Instalar todas as dependências (Flask, SQLAlchemy, etc.)
+   -  Criar scripts de inicialização
+   -  Criar atalho na área de trabalho
+   -  Testar o sistema
+   -  Iniciar o sistema automaticamente
 
 #### **Método 2: Instalador Python (Windows/Linux)**
 
@@ -279,7 +279,7 @@ financas_pessoais_flask/
    - Instalará todas as dependências
    - Criará atalho na área de trabalho
 
-### **📋 Instalação Manual (Desenvolvedores)**
+### **Instalação Manual (Desenvolvedores)**
 
 1. **Clone o Repositório**
    ```bash
@@ -313,7 +313,7 @@ financas_pessoais_flask/
    - **Usuário:** admin
    - **Senha:** admin123
 
-### **🎯 Primeiro Acesso**
+### **Primeiro Acesso**
 
 Após a instalação:
 
@@ -452,7 +452,7 @@ SESSION_COOKIE_SECURE = True  # Para HTTPS
 7. **"log_message() got an unexpected keyword argument 'end'"**
    - **Causa:** Versão antiga do instalador com erro de função
    - **Solução:** Use a versão corrigida do `instalar_sistema.py`
-   - **Status:** ✅ **CORRIGIDO** na versão atual
+   - **Status:**  **CORRIGIDO** na versão atual
 
 8. **"Não é possível acessar esse site"**
    - **Causa:** Servidor Flask não iniciou corretamente
@@ -476,10 +476,10 @@ dir C:\Financas_Pessoais
 # Teste o sistema
 cd C:\Financas_Pessoais
 call venv\Scripts\activate.bat
-python -c "from app import create_app; print('✅ Sistema OK!')"
+python -c "from app import create_app; print(' Sistema OK!')"
 ```
 
-## 📦 Distribuição do Sistema
+##  Distribuição do Sistema
 
 ### **Arquivos Necessários para Instalação**
 
@@ -633,7 +633,7 @@ Para suporte técnico ou dúvidas:
 **Versão:** 2.0.0  
 **Última Atualização:** Janeiro 2025
 
-## ⚠️ Problema com Python 3.13?
+##  Problema com Python 3.13?
 
 Se você encontrar o erro:
 ```
