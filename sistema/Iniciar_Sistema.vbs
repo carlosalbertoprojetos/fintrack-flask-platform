@@ -1,62 +1,21 @@
 Set objShell = CreateObject("WScript.Shell")
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 
-' Obter o diretório onde o script está localizado
-strScriptPath = objFSO.GetParentFolderName(WScript.ScriptFullName)
-' O script está em sistema/, então o projeto está um nível acima
-strProjectDir = objFSO.GetParentFolderName(strScriptPath)
+strScriptDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
+strProjectDir = objFSO.GetParentFolderName(strScriptDir)
+strBatchFile = objFSO.BuildPath(strScriptDir, "Iniciar_Sistema.bat")
 
-' Normalizar o caminho (remover ..)
-If Right(strProjectDir, 1) = "\" Then
-    strProjectDir = Left(strProjectDir, Len(strProjectDir) - 1)
+If Not objFSO.FileExists(strBatchFile) Then
+    MsgBox "[ERRO] Arquivo de inicializacao nao encontrado!" & vbCrLf & _
+           "[INFO] Caminho esperado: " & strBatchFile, vbCritical, "Erro"
+    WScript.Quit 1
 End If
 
-' Verificar se o diretório existe
 If Not objFSO.FolderExists(strProjectDir) Then
-    ' Tentar caminho padrão
-    strProjectDir = "C:\PROJETOS\Flask\SFP_alfa"
+    MsgBox "[ERRO] Diretorio do projeto nao encontrado!" & vbCrLf & _
+           "[INFO] Caminho esperado: " & strProjectDir, vbCritical, "Erro"
+    WScript.Quit 1
 End If
 
-' Verificar se o diretório existe
-If Not objFSO.FolderExists(strProjectDir) Then
-    MsgBox "[ERRO] Diretório do projeto não encontrado!" & vbCrLf & _
-           "[INFO] Caminho tentado: " & strProjectDir & vbCrLf & _
-           "[INFO] Por favor, edite o script e ajuste o caminho do projeto", vbCritical, "Erro"
-    WScript.Quit
-End If
-
-' Verificar se o virtualenv existe
-strVenvPath = strProjectDir & "\venv\Scripts\activate.bat"
-If Not objFSO.FileExists(strVenvPath) Then
-    MsgBox "[ERRO] Virtualenv não encontrado!" & vbCrLf & _
-           "[INFO] Execute com Python 3.10+: python -m venv venv", vbCritical, "Erro"
-    WScript.Quit
-End If
-
-' Mudar para o diretório do projeto
 objShell.CurrentDirectory = strProjectDir
-
-' Criar um arquivo batch temporário que será executado de forma oculta
-strBatchFile = objFSO.GetSpecialFolder(2) & "\" & objFSO.GetTempName & ".bat"
-
-Set objFile = objFSO.CreateTextFile(strBatchFile, True)
-objFile.WriteLine "@echo off"
-objFile.WriteLine "title Sistema de Finanças Pessoais"
-objFile.WriteLine "cd /d """ & strProjectDir & """"
-objFile.WriteLine "call venv\Scripts\activate.bat"
-objFile.WriteLine "for /f ""tokens=2 delims= "" %%v in ('python --version 2^>^&1') do set ""PYVER=%%v"""
-objFile.WriteLine "for /f ""tokens=1,2 delims=."" %%a in (""%PYVER%"") do (set ""PYMAJOR=%%a"" & set ""PYMINOR=%%b"")"
-objFile.WriteLine "if not ""%PYMAJOR%""==""3"" exit /b 1"
-objFile.WriteLine "if %PYMINOR% LSS 10 exit /b 1"
-objFile.WriteLine "python run.py"
-objFile.Close
-
-' Executar o batch de forma oculta (0 = oculto)
-objShell.Run """" & strBatchFile & """", 0, False
-
-' Aguardar um pouco e depois deletar o arquivo temporário
-WScript.Sleep 2000
-On Error Resume Next
-objFSO.DeleteFile strBatchFile
-On Error Goto 0
-
+objShell.Run Chr(34) & strBatchFile & Chr(34), 0, False

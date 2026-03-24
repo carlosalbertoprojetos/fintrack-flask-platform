@@ -1,4 +1,4 @@
-﻿(function (window, document) {
+(function (window, document) {
   'use strict';
 
   function getTargetFromTrigger(trigger) {
@@ -36,6 +36,35 @@
       return next;
     }
     return null;
+  }
+
+  function positionDropdownMenu(toggle, menu) {
+    if (!toggle || !menu) return;
+
+    menu.setAttribute('data-bs-popper', 'static');
+    menu.style.maxWidth = Math.max(220, window.innerWidth - 16) + 'px';
+
+    if (menu.classList.contains('dropdown-menu-end')) {
+      menu.style.left = 'auto';
+      menu.style.right = '0';
+    } else {
+      menu.style.left = '0';
+      menu.style.right = 'auto';
+    }
+
+    menu.style.top = 'calc(100% + 0.5rem)';
+
+    var rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth - 8) {
+      menu.style.right = '0.5rem';
+      menu.style.left = 'auto';
+    }
+
+    rect = menu.getBoundingClientRect();
+    if (rect.left < 8) {
+      menu.style.left = '0.5rem';
+      menu.style.right = 'auto';
+    }
   }
 
   function createModalInstance(element) {
@@ -109,6 +138,7 @@
       if (!this._menu || !this._toggle) return;
       hideAllDropdowns(this._toggle);
       this._menu.classList.add('show');
+      positionDropdownMenu(this._toggle, this._menu);
       var parent = this._menu.closest('.dropdown');
       if (parent) parent.classList.add('show');
       this._toggle.setAttribute('aria-expanded', 'true');
@@ -117,6 +147,11 @@
     Dropdown.prototype.hide = function () {
       if (!this._menu || !this._toggle) return;
       this._menu.classList.remove('show');
+      this._menu.style.left = '';
+      this._menu.style.right = '';
+      this._menu.style.top = '';
+      this._menu.style.maxWidth = '';
+      this._menu.removeAttribute('data-bs-popper');
       var parent = this._menu.closest('.dropdown');
       if (parent) parent.classList.remove('show');
       this._toggle.setAttribute('aria-expanded', 'false');
@@ -503,3 +538,4 @@
     window.jQuery = $;
   }
 })(window, document);
+

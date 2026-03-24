@@ -40,7 +40,7 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/core.css') }}"
+      href="{{ url_for('static', filename='css/core.css') }}?v=3.5"
     />
     <link
       rel="stylesheet"
@@ -100,7 +100,7 @@
         document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"><\\/script>');
       }
     </script>
-    <script src="{{ url_for('static', filename='js/offline-shims.js') }}?v=1.1"></script>
+    <script src="{{ url_for('static', filename='js/offline-shims.js') }}?v=1.2"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}?v=3.4"></script>
     <!-- Garantir que confirmShutdown esteja disponível -->
     <script>
@@ -155,3 +155,4 @@
     {% block extra_js %}{% endblock %}
   </body>
 </html>
+

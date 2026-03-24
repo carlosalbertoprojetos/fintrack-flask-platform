@@ -174,7 +174,7 @@ financas_pessoais_flask/
 │   ├── tipo_conta.py            # Tipos de conta
 │   └── tipo_investimento.py     # Tipos de investimento
 ├── migrations/                  # Migrações do banco
-├── instance/                    # Instância da aplicação
+ instance/                    # Instncia da aplicao
 ├── build/                       # Arquivos de build
 ├── dist/                        # Distribuição
 ├── venv/                        # Ambiente virtual
@@ -290,8 +290,7 @@ financas_pessoais_flask/
 2. **Crie Ambiente Virtual**
    ```bash
    # Windows
-   python -m venv venv
-   venv\Scripts\activate
+   py -3.10 -m venv venv
    
    # Linux
    python3 -m venv venv
@@ -300,12 +299,20 @@ financas_pessoais_flask/
 
 3. **Instale Dependências**
    ```bash
+   # Windows
+   .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt
+   
+   # Linux
    pip install -r requirements.txt
    ```
 
 4. **Execute a Aplicação**
    ```bash
-   python run.py
+   # Windows
+   run.bat
+
+   # Alternativa direta
+   .\\venv\\Scripts\\python.exe run.py
    ```
 
 5. **Acesse o Sistema**
@@ -428,8 +435,8 @@ SESSION_COOKIE_SECURE = True  # Para HTTPS
 
 2. **Python não Encontrado:**
    - Instale Python 3.10+ do site oficial
-   - Adicione Python ao PATH do sistema
-
+   - No Windows, prefira `run.bat` ou `.\\venv\\Scripts\\python.exe run.py`
+   - Não dependa do comando `python` no PATH
 3. **Dependências não Instalam:**
    - Verifique conexão com internet
    - Execute: `pip install --upgrade pip`
@@ -456,14 +463,13 @@ SESSION_COOKIE_SECURE = True  # Para HTTPS
 
 8. **"Não é possível acessar esse site"**
    - **Causa:** Servidor Flask não iniciou corretamente
-   - **Solução:** Verifique se o ambiente virtual está ativado
-   - **Comando:** `call venv\Scripts\activate.bat && python run.py`
+   - **Solução:** Execute `run.bat` na raiz do projeto
+   - **Alternativa:** `.\\venv\\Scripts\\python.exe run.py`
 
-9. **"Ambiente virtual não está sendo ativado"**
-   - **Causa:** Script de inicialização com problema
-   - **Solução:** Use os scripts corrigidos com verificações robustas
-   - **Verificação:** Script mostra "Ambiente virtual ativado com sucesso!"
-
+9. **"Ambiente virtual não está sendo validado"**
+   - **Causa:** `venv` inconsistente ou `python.exe` quebrado
+   - **Solução:** Use os scripts corrigidos; eles tentam reparar o ambiente automaticamente
+   - **Verificação:** O script mostra `Ambiente virtual pronto`
 ### **Verificação de Instalação**
 
 Para verificar se a instalação está correta:
@@ -471,14 +477,15 @@ Para verificar se a instalação está correta:
 ```bash
 # Verifique se todos os diretórios existem
 dir C:\Financas_Pessoais
-# Deve conter: app, routes, migrations, venv, run.py
+# Deve conter: app, routes, migrations, venv, run.py, run.bat
 
 # Teste o sistema
 cd C:\Financas_Pessoais
-call venv\Scripts\activate.bat
-python -c "from app import create_app; print('✅ Sistema OK!')"
-```
+.\\venv\\Scripts\\python.exe -c "from app import create_app; print('Sistema OK!')"
 
+# Inicialização recomendada
+run.bat
+```
 ## 📦 Distribuição do Sistema
 
 ### **Arquivos Necessários para Instalação**
@@ -545,15 +552,17 @@ copy backup\bk_flask.db instance\financas.db
 git clone https://github.com/seu-usuario/financas_pessoais_flask.git
 
 # Crie ambiente virtual
-python -m venv venv
-venv\Scripts\activate
+py -3.10 -m venv venv
 
 # Instale dependências de desenvolvimento
-pip install -r requirements.txt
-pip install pytest flask-testing
+.\\venv\\Scripts\\python.exe -m pip install -r requirements.txt
+.\\venv\\Scripts\\python.exe -m pip install pytest flask-testing
 
 # Execute em modo desenvolvimento
-python run.py
+run.bat
+
+# Alternativa direta
+.\\venv\\Scripts\\python.exe run.py
 ```
 
 ### **Adicionando Novas Funcionalidades**
@@ -569,10 +578,10 @@ python run.py
 
 ```bash
 # Execute testes
-python -m pytest tests/
+.\\venv\\Scripts\\python.exe -m pytest tests/
 
 # Teste específico
-python -m pytest tests/test_models.py
+.\\venv\\Scripts\\python.exe -m pytest tests/test_models.py
 ```
 
 ## Build e Distribuição
@@ -682,3 +691,7 @@ AssertionError: Class <class 'sqlalchemy.sql.elements.SQLCoreOperations'> direct
 - Rate limiting de login por janela de tempo.
 - Backup configuravel por `SFP_BACKUP_DIR`.
 - `SECRET_KEY` via variavel de ambiente em producao.
+
+
+
+
