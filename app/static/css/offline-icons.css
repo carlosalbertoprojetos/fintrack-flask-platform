@@ -6,6 +6,7 @@
 .bx-cog::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Ccircle%20cx%3D'12'%20cy%3D'12'%20r%3D'3'%2F%3E%3Cpath%20d%3D'M12%202v3'%2F%3E%3Cpath%20d%3D'M12%2019v3'%2F%3E%3Cpath%20d%3D'M4.93%204.93l2.12%202.12'%2F%3E%3Cpath%20d%3D'M16.95%2016.95l2.12%202.12'%2F%3E%3Cpath%20d%3D'M2%2012h3'%2F%3E%3Cpath%20d%3D'M19%2012h3'%2F%3E%3Cpath%20d%3D'M4.93%2019.07l2.12-2.12'%2F%3E%3Cpath%20d%3D'M16.95%207.05l2.12-2.12'%2F%3E%3C%2Fsvg%3E");}
 .bx-chevron-down::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.5'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M6%209l6%206%206-6'%2F%3E%3C%2Fsvg%3E");}
 .bx-chevron-left::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.5'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M15%206l-6%206%206%206'%2F%3E%3C%2Fsvg%3E");}
+.bx-chevron-right::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.5'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M9%206l6%206-6%206'%2F%3E%3C%2Fsvg%3E");}
 .bx-receipt::before,.fa-clipboard-list::before,.fa-list::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M6%202h12v20l-2-1-2%201-2-1-2%201-2-1-2%201z'%2F%3E%3Cpath%20d%3D'M9%207h6'%2F%3E%3Cpath%20d%3D'M9%2011h6'%2F%3E%3Cpath%20d%3D'M9%2015h4'%2F%3E%3C%2Fsvg%3E");}
 .bx-wallet::before,.bx-wallet-alt::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Crect%20x%3D'2'%20y%3D'6'%20width%3D'20'%20height%3D'14'%20rx%3D'2'%2F%3E%3Cpath%20d%3D'M2%2010h20'%2F%3E%3Ccircle%20cx%3D'16.5'%20cy%3D'13'%20r%3D'1'%2F%3E%3C%2Fsvg%3E");}
 .bx-category::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M20%2012l-8%208-8-8%208-8z'%2F%3E%3Ccircle%20cx%3D'12'%20cy%3D'12'%20r%3D'2'%2F%3E%3C%2Fsvg%3E");}
@@ -31,3 +32,26 @@
 .fa-exclamation-circle::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Ccircle%20cx%3D'12'%20cy%3D'12'%20r%3D'9'%2F%3E%3Cpath%20d%3D'M12%207v6'%2F%3E%3Ccircle%20cx%3D'12'%20cy%3D'16.5'%20r%3D'1'%2F%3E%3C%2Fsvg%3E");}
 .fa-dollar-sign::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M12%203v18'%2F%3E%3Cpath%20d%3D'M16%207c0-2-2-3-4-3s-4%201-4%203%202%203%204%203%204%201%204%203-2%203-4%203-4-1-4-3'%2F%3E%3C%2Fsvg%3E");}
 .fa-circle::before{--offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'black'%3E%3Ccircle%20cx%3D'12'%20cy%3D'12'%20r%3D'8'%2F%3E%3C%2Fsvg%3E");}
+
+/* Desktop menu toggle: explicit SVG rendering for the sidebar toggle icon */
+.layout-menu-toggle .sidebar-toggle-icon{
+  transform:none !important;
+  width:1.1rem !important;
+  height:1.1rem !important;
+  min-width:1.1rem;
+  min-height:1.1rem;
+}
+
+.layout-menu-toggle .sidebar-toggle-icon::before{
+  width:100%;
+  height:100%;
+}
+
+.layout-menu-toggle .sidebar-toggle-icon.bx-chevron-left::before{
+  --offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.5'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M15%206l-6%206%206%206'%2F%3E%3C%2Fsvg%3E");
+}
+
+.layout-menu-toggle .sidebar-toggle-icon.bx-chevron-right::before{
+  --offline-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2.5'%20stroke-linecap%3D'round'%20stroke-linejoin%3D'round'%3E%3Cpath%20d%3D'M9%206l6%206-6%206'%2F%3E%3C%2Fsvg%3E");
+}
+

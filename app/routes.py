@@ -139,14 +139,14 @@ def dashboard():
     # Obter o filtro de conta da URL
     conta_filter = request.args.get('conta_id', type=int)
     
-    # Se não há filtro na URL, usar a última conta acessada ou a primeira conta
+    # Se não há filtro na URL, usar a Última conta acessada ou a primeira conta
     if conta_filter is None:
         # Tentar obter da sessão usando get_current_conta
         conta_atual = get_current_conta()
         if conta_atual:
             conta_filter = conta_atual.id
         elif contas:
-            # Se não há última conta na sessão, usar a primeira conta
+            # Se não há Última conta na sessão, usar a primeira conta
             conta_filter = contas[0].id
     
     # Verificar se a conta filtrada existe
@@ -164,7 +164,7 @@ def dashboard():
         # Criar flash message informando qual conta está selecionada
         # conta_selecionada = next((c for c in contas if c.id == conta_filter), None)
         # if conta_selecionada:
-        #     flash(f'Vocâ acessou a conta {conta_selecionada.nome}.', 'info')
+        #     flash(f'Você acessou a conta {conta_selecionada.nome}.', 'info')
     
     # Obter o mês e ano atual
     current_month = datetime.now().month
@@ -200,11 +200,11 @@ def dashboard():
         EXIBIR investimentos que NÃO se enquadrem nos critérios:
         - Tipo de movimentação seja igual a 'Resgate' E
         - Saldo atual seja igual a 0 E
-        - Data da última movimentação (mês/ano) seja menor ao do mês/ano atual
+        - Data da Última movimentação (mês/ano) seja menor ao do mês/ano atual
         """
         from app.models import MovimentacaoInvestimento
         
-        # Buscar a última movimentação do investimento
+        # Buscar a Última movimentação do investimento
         ultima_movimentacao = MovimentacaoInvestimento.query.filter_by(
             investimento_id=investimento.id,
             user_id=current_user.id
@@ -216,7 +216,7 @@ def dashboard():
         # Verificar se o investimento se enquadra nos critérios para NÃO exibir
         # Critério 1: Tipo de movimentação seja igual a 'Resgate'
         # Critério 2: Saldo atual seja igual a 0
-        # Critério 3: Data da última movimentação (mês/ano) seja menor ao do mês/ano atual
+        # Critério 3: Data da Última movimentação (mês/ano) seja menor ao do mês/ano atual
         
         if (ultima_movimentacao.tipo_movimentacao == 'resgate' and 
             ultima_movimentacao.saldo_atual == 0.0 and
@@ -268,23 +268,23 @@ def dashboard():
     #         f"Valor: {exp.amount}, Desconto: {exp.discount}, Categoria: {exp.category.name}"
     #     )
 
-    # Debug: Procurar especificamente por despesas de água
+    # Debug: Procurar especificamente por despesas de Água
     agua_expenses = Transaction.query.filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "despesa",
         or_(
             Transaction.expense.has(name="Água"),
-            Transaction.description.ilike("%água%"),
+            Transaction.description.ilike("%Água%"),
         ),
     ).all()
-    # print("\nDespesas de água encontradas:")
+    # print("\nDespesas de Água encontradas:")
     # for exp in agua_expenses:
     #     print(
     #         f"Vencimento: {exp.due_date}, Descrição: {exp.expense.name if exp.expense else exp.description}, "
     #         f"Valor: {exp.amount}, Desconto: {exp.discount}, Categoria: {exp.category.name}"
     #     )
 
-    # Buscar transações do mês atual para estatísticas mensais
+    # Buscar transações do mês atual para estatésticas mensais
     monthly_transactions = (
         Transaction.query.filter(
             Transaction.user_id == current_user.id,
@@ -419,14 +419,17 @@ def dashboard():
     
     top_income_categories = top_income_categories_query.group_by(Category.name).order_by(func.sum(Transaction.amount).desc()).all()
 
-    # Obter dados para o gráfico de evolução mensal (últimos 6 meses)
+    # Obter dados para o grafico de evolucao mensal (ultimos e proximos 6 meses)
     monthly_data = []
-    for i in range(5, -1, -1):
-        month = current_month - i
+    for offset in range(-5, 7):
+        month = current_month + offset
         year = current_year
         while month <= 0:
             month += 12
             year -= 1
+        while month > 12:
+            month -= 12
+            year += 1
 
         month_income_query = db.session.query(func.sum(Transaction.amount)).filter(
             Transaction.user_id == current_user.id,
@@ -472,7 +475,7 @@ def dashboard():
     income_chart_json = json.dumps(income_chart_data, ensure_ascii=False)
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False)
 
-    # Calcular estatísticas adicionais
+    # Calcular estatésticas adicionais
     # Total de transações: considerar transações com due_date ou payment_date no mês atual
     total_transactions_query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
@@ -969,12 +972,12 @@ def reports():
     # Obter o filtro de conta da URL
     conta_filter = request.args.get('conta_id', type=int)
     
-    # Se não há filtro na URL, usar a última conta acessada ou a primeira conta
+    # Se não há filtro na URL, usar a Última conta acessada ou a primeira conta
     if conta_filter is None:
         # Tentar obter da sessão
         conta_filter = session.get('last_conta_id')
         if conta_filter is None and contas:
-            # Se não há última conta na sessão, usar a primeira conta
+            # Se não há Última conta na sessão, usar a primeira conta
             conta_filter = contas[0].id
     
     # Verificar se a conta filtrada existe
@@ -1049,7 +1052,7 @@ def reports():
             ),
         )
     else:
-        # Para relatório anual, atualizar a lógica também
+        # Para relatério anual, atualizar a lógica também
         query = Transaction.query.filter(
             Transaction.user_id == current_user.id,
             or_(
@@ -1189,7 +1192,7 @@ def reports():
             - Primeira movimentação seja igual ou posterior ao mês/ano selecionado no filtro
             - Tipo de movimentação seja igual a 'Resgate' E
             - Saldo atual seja igual a 0 E
-            - Data da última movimentação (mês/ano) seja menor ao do mês/ano selecionado no filtro
+            - Data da Última movimentação (mês/ano) seja menor ao do mês/ano selecionado no filtro
             """
             from app.models import MovimentacaoInvestimento
             
@@ -1209,7 +1212,7 @@ def reports():
                  primeira_movimentacao.data_movimentacao.month > month)):
                 return False  # NÃO exibir este investimento
             
-            # Buscar a última movimentação do investimento
+            # Buscar a Última movimentação do investimento
             ultima_movimentacao = MovimentacaoInvestimento.query.filter_by(
                 investimento_id=investimento.id,
                 user_id=current_user.id
@@ -1218,7 +1221,7 @@ def reports():
             # Verificar se o investimento se enquadra nos critérios para NÃO exibir
             # Critério 1: Tipo de movimentação seja igual a 'Resgate'
             # Critério 2: Saldo atual seja igual a 0
-            # Critério 3: Data da última movimentação (mês/ano) seja menor ao do mês/ano selecionado no filtro
+            # Critério 3: Data da Última movimentação (mês/ano) seja menor ao do mês/ano selecionado no filtro
             
             if (ultima_movimentacao.tipo_movimentacao == 'resgate' and 
                 ultima_movimentacao.saldo_atual == 0.0 and
@@ -1328,10 +1331,10 @@ def reports():
                 }
             )
 
-    # Buscar investimentos da conta selecionada para relatório anual
+    # Buscar investimentos da conta selecionada para relatério anual
     investimentos = []
     
-    # Função para verificar se um investimento deve ser exibido (relatório anual)
+    # Função para verificar se um investimento deve ser exibido (relatério anual)
     def deve_exibir_investimento_reports_anual(investimento, year):
         """
         Verifica se um investimento deve ser exibido baseado nos critérios:
@@ -1339,7 +1342,7 @@ def reports():
         - Primeira movimentação seja igual ou posterior ao ano selecionado no filtro
         - Tipo de movimentação seja igual a 'Resgate' E
         - Saldo atual seja igual a 0 E
-        - Data da última movimentação (ano) seja menor ao do ano selecionado no filtro
+        - Data da Última movimentação (ano) seja menor ao do ano selecionado no filtro
         """
         from app.models import MovimentacaoInvestimento
         
@@ -1357,7 +1360,7 @@ def reports():
         if primeira_movimentacao.data_movimentacao.year > year:
             return False  # NÃO exibir este investimento
         
-        # Buscar a última movimentação do investimento
+        # Buscar a Última movimentação do investimento
         ultima_movimentacao = MovimentacaoInvestimento.query.filter_by(
             investimento_id=investimento.id,
             user_id=current_user.id
@@ -1366,7 +1369,7 @@ def reports():
         # Verificar se o investimento se enquadra nos critérios para NÃO exibir
         # Critério 1: Tipo de movimentação seja igual a 'Resgate'
         # Critério 2: Saldo atual seja igual a 0
-        # Critério 3: Data da última movimentação (ano) seja menor ao do ano selecionado no filtro
+        # Critério 3: Data da Última movimentação (ano) seja menor ao do ano selecionado no filtro
         
         if (ultima_movimentacao.tipo_movimentacao == 'resgate' and 
             ultima_movimentacao.saldo_atual == 0.0 and
@@ -1423,7 +1426,7 @@ def reports():
                 if deve_exibir_investimento_reports_anual(investimento, year):
                     investimentos.append(investimento)
 
-    # Return para relatório anual (fora do bloco if conta_filter)
+    # Return para relatério anual (fora do bloco if conta_filter)
     return render_template(
         "reports.html",
         contas=contas,
@@ -2104,3 +2107,6 @@ def require_account():
         flash("Cadastre ao menos uma conta para acessar esta funcionalidade.", "warning")
         return redirect(url_for("conta.listar_contas"))
     return None
+
+
+

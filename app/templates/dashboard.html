@@ -8,6 +8,57 @@
   <style>
     .chart-area {
       height: 350px !important;
+      width: 100%;
+    }
+
+    .chart-area-wide {
+      height: 420px !important;
+      width: 100%;
+    }
+
+    .chart-area-wide canvas {
+      width: 100% !important;
+    }
+
+    .category-chart-col {
+      display: flex;
+    }
+
+    .category-chart-col > .card {
+      width: 100%;
+      min-height: 460px;
+    }
+
+    .category-chart-col > .card .card-body {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .category-chart-canvas {
+      height: 280px;
+      width: 100%;
+      flex: 0 0 280px;
+    }
+
+    .category-chart-canvas canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .category-chart-legend {
+      margin-top: 1.5rem;
+      min-height: 72px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0.5rem 0.75rem;
+    }
+
+    .category-chart-legend span {
+      display: inline-flex;
+      align-items: center;
     }
 
     .watermark {
@@ -484,7 +535,7 @@
       <div class="col px-0">
         <div class="row mb-4">
           {% if top_income_categories %}
-          <div class="{% if top_expense_categories %}col-md-6{% else %}col-12{% endif %}">
+          <div class="{% if top_expense_categories %}col-md-6{% else %}col-12{% endif %} category-chart-col">
             <div class="card shadow mb-2">
               <div class="card-header">
                 <h6 class="m-0 font-weight-bold text-primary">
@@ -492,10 +543,10 @@
                 </h6>
               </div>
               <div class="card-body">
-                <div class="chart-pie pt-4 pb-2">
+                <div class="chart-pie pt-4 pb-2 category-chart-canvas">
                   <canvas id="incomeChart"></canvas>
                 </div>
-                <div class="mt-4 text-center small">
+                <div class="mt-4 text-center small category-chart-legend">
                   {% for category, total in top_income_categories %}
                   <span class="mr-2">
                     <i
@@ -511,7 +562,7 @@
           </div>
           {% endif %}
           {% if top_expense_categories %}
-          <div class="{% if top_income_categories %}col-md-6{% else %}col-12{% endif %}">
+          <div class="{% if top_income_categories %}col-md-6{% else %}col-12{% endif %} category-chart-col">
             <div class="card shadow mb-2">
               <div class="card-header">
                 <h6 class="m-0 font-weight-bold text-primary">
@@ -519,10 +570,10 @@
                 </h6>
               </div>
               <div class="card-body">
-                <div class="chart-pie pt-4 pb-2">
+                <div class="chart-pie pt-4 pb-2 category-chart-canvas">
                   <canvas id="expenseChart"></canvas>
                 </div>
-                <div class="mt-4 text-center small">
+                <div class="mt-4 text-center small category-chart-legend">
                   {% for category, total in top_expense_categories %}
                   <span class="mr-2">
                     <i
@@ -545,21 +596,16 @@
     <!-- Evolução Mensal -->
     {% if monthly_data_json and monthly_data_json != '[]' and monthly_data_json != 'null' and monthly_data_json != '""' %}
     <div class="row mx-0">
-      <div class="col px-0">
-        <div class="row mb-4">
-          <div class="col-12">
-        <div class="card shadow mb-2">
-
-              <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">
-                  Evolução Financeira (Últimos 6 meses)
-                </h6>
-              </div>
-              <div class="card-body">
-                <div class="chart-area">
-                  <canvas id="monthlyChart"></canvas>
-                </div>
-              </div>
+      <div class="col-12 px-0">
+        <div class="card shadow mb-2 w-100">
+          <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-primary">
+              Evolução Financeira (Últimos e próximos 6 meses)
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="chart-area chart-area-wide">
+              <canvas id="monthlyChart"></canvas>
             </div>
           </div>
         </div>
@@ -826,3 +872,12 @@
   });
 </script>
 {% endblock %}
+
+
+
+
+
+
+
+
+

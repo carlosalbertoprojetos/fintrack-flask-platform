@@ -158,7 +158,7 @@ def initialize_user_default_data(user):
             {"name": "Água", "category_id": "Serviços"},
             {"name": "Gás", "category_id": "Serviços"},
             {"name": "Roupas", "category_id": "Compras"},
-            {"name": "Eletrônicos", "category_id": "Compras"},
+            {"name": "Eletrúnicos", "category_id": "Compras"},
         ]
         
         for expensive_data in expensives_data:
@@ -575,9 +575,55 @@ def create_app(config_class=Config):
                     psutil_available = False
                     print("psutil não disponível, usando métodos alternativos...")
                 
+                browser_runtime_file = os.path.join(app.instance_path, 'runtime', 'browser_runtime.json')
+
+                def close_tracked_browser():
+                    import json
+                    import shutil
+
+                    if not os.path.exists(browser_runtime_file):
+                        print('[INFO] Nenhum navegador gerenciado para encerrar.')
+                        return
+
+                    try:
+                        with open(browser_runtime_file, 'r', encoding='utf-8') as runtime_handle:
+                            metadata = json.load(runtime_handle)
+                    except Exception as browser_read_error:
+                        print(f'[AVISO] Nao foi possivel ler dados do navegador gerenciado: {browser_read_error}')
+                        metadata = {}
+
+                    browser_pid = int(metadata.get('pid') or 0)
+                    profile_dir = metadata.get('profile_dir')
+
+                    if browser_pid > 0:
+                        try:
+                            print(f'[INFO] Fechando navegador gerenciado (PID {browser_pid})...')
+                            if os.name == 'nt':
+                                subprocess.run(
+                                    ['taskkill', '/F', '/T', '/PID', str(browser_pid)],
+                                    capture_output=True,
+                                    timeout=5,
+                                    shell=False,
+                                )
+                            else:
+                                os.kill(browser_pid, signal.SIGTERM)
+                            print('[OK] Navegador encerrado com sucesso')
+                        except Exception as browser_kill_error:
+                            print(f'[AVISO] Nao foi possivel encerrar o navegador gerenciado: {browser_kill_error}')
+
+                    if profile_dir:
+                        shutil.rmtree(profile_dir, ignore_errors=True)
+
+                    try:
+                        os.remove(browser_runtime_file)
+                    except OSError:
+                        pass
+
+                time.sleep(0.5)  # Aguardar a resposta HTTP sair
+                close_tracked_browser()
                 print("[INFO] Fechando CMD...")
-                time.sleep(0.5)  # Aguardar apenas 0.5 segundos
-                
+                time.sleep(0.2)
+
                 print("Encerrando o servidor...")
                 
                 # No Windows, fechar o CMD de forma rápida e direta
@@ -715,7 +761,7 @@ def create_app(config_class=Config):
                 {"name": "Água", "category_id": "Serviços"},
                 {"name": "Gás", "category_id": "Serviços"},
                 {"name": "Roupas", "category_id": "Compras"},
-                {"name": "Eletrônicos", "category_id": "Compras"},
+                {"name": "Eletrúnicos", "category_id": "Compras"},
             ]
             for expensive_data in expensives_data:
                 category = Category.query.filter_by(name=expensive_data["category_id"]).first()
@@ -750,3 +796,5 @@ def create_app(config_class=Config):
             initialize_user_default_data(user)
 
     return app
+
+

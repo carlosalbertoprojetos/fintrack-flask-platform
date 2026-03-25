@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 
 from app import db
 from app.models import Category, Conta, PaymentMethod, TipoConta, Transaction, User
@@ -104,6 +104,18 @@ def test_login_invalid_credentials_renders_login(client, app_ctx):
     assert response.status_code == 200
 
 
+def test_login_page_displays_demo_credentials(client):
+    response = client.get("/auth/login")
+
+    body = response.get_data(as_text=True)
+    assert response.status_code == 200
+    assert "admin123" in body
+    assert "demo123" in body
+    assert "Entrar como demo" in body
+    assert 'data-demo-username="demo"' in body
+    assert 'data-demo-username="admin"' in body
+
+
 def test_register_creates_user_and_redirects(monkeypatch, client, app_ctx):
     import app as app_pkg
 
@@ -206,3 +218,44 @@ def test_reports_routes_return_200_for_authenticated_user(client, app_ctx):
     assert response_pm.status_code == 200
     assert response_discounts.status_code == 200
     assert response_pm_exp.status_code == 200
+
+def test_dashboard_and_reports_pages_include_local_chart_runtime(client, app_ctx):
+    user = _create_user("charts1", "charts1@example.com")
+    conta = _create_account(user)
+    _seed_transactions(user, conta)
+    login_client(client, user)
+
+    response_dashboard = client.get("/dashboard")
+    response_reports_monthly = client.get("/transactions/reports?type=monthly")
+    response_reports_annual = client.get("/transactions/reports?type=annual")
+
+    dashboard_body = response_dashboard.get_data(as_text=True)
+    reports_monthly_body = response_reports_monthly.get_data(as_text=True)
+    reports_annual_body = response_reports_annual.get_data(as_text=True)
+
+    assert response_dashboard.status_code == 200
+    assert response_reports_monthly.status_code == 200
+    assert response_reports_annual.status_code == 200
+
+    assert "js/chart-lite.js" in dashboard_body
+    assert "js/chart-lite.js" in reports_monthly_body
+    assert "js/chart-lite.js" in reports_annual_body
+
+    assert "new Chart(" in dashboard_body
+    assert "chart-area-wide" in dashboard_body
+    assert "category-chart-col" in dashboard_body
+    assert "category-chart-canvas" in dashboard_body
+    assert "category-chart-legend" in dashboard_body
+    assert "new Chart(" in reports_monthly_body
+    assert "category-chart-col" in reports_monthly_body
+    assert "category-chart-canvas" in reports_monthly_body
+    assert "category-chart-legend" in reports_monthly_body
+    assert "new Chart(" in reports_annual_body
+    assert 'id="expenseChart"' in reports_monthly_body
+    assert 'id="incomeChart"' in reports_monthly_body
+    assert 'id="monthlyChart"' in reports_annual_body
+
+
+
+
+

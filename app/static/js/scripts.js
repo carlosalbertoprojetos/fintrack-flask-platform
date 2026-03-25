@@ -755,6 +755,25 @@ function initMenuDropdowns() {
 }
 
 /**
+ * Sincroniza a direção do ícone do toggle lateral
+ */
+function syncSidebarToggleIcon() {
+  const layoutWrapper = safeQuerySelector('.layout-wrapper');
+  const toggleIcon = safeQuerySelector('.sidebar-toggle-icon');
+
+  if (!layoutWrapper || !toggleIcon) {
+    return;
+  }
+
+  const expandedIcon = toggleIcon.dataset.expandedIcon || 'bx-chevron-left';
+  const collapsedIcon = toggleIcon.dataset.collapsedIcon || 'bx-chevron-right';
+  const isCollapsed = layoutWrapper.classList.contains('layout-menu-collapsed');
+
+  toggleIcon.classList.remove(expandedIcon, collapsedIcon);
+  toggleIcon.classList.add(isCollapsed ? collapsedIcon : expandedIcon);
+}
+
+/**
  * Inicializa menu principal
  */
 function initMenu() {
@@ -771,8 +790,11 @@ function initMenu() {
   const layoutWrapper = safeQuerySelector('.layout-wrapper');
 
   if (menuToggle && layoutWrapper) {
+    syncSidebarToggleIcon();
+
     const desktopToggleHandler = () => {
       layoutWrapper.classList.toggle('layout-menu-collapsed');
+      syncSidebarToggleIcon();
     };
     menuToggle.addEventListener('click', desktopToggleHandler);
     AppState.activeListeners.set('menu-toggle', desktopToggleHandler);

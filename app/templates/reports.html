@@ -4,6 +4,49 @@
 
 {% block index %}
 
+<style>
+  .category-chart-col {
+    display: flex;
+  }
+
+  .category-chart-col > .card {
+    width: 100%;
+    min-height: 460px;
+  }
+
+  .category-chart-col > .card .card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .category-chart-canvas {
+    height: 280px;
+    width: 100%;
+    flex: 0 0 280px;
+  }
+
+  .category-chart-canvas canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .category-chart-legend {
+    margin-top: 1.5rem;
+    min-height: 72px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .category-chart-legend span {
+    display: inline-flex;
+    align-items: center;
+  }
+</style>
+
 <div class="container-fluid p-0">
     <div class="col p-lg-0">
       <div class="d-flex justify-content-between align-items-center">
@@ -32,7 +75,7 @@
                             aria-selected="{% if conta_filter == conta.id %}true{% else %}false{% endif %}"
                             onclick="switchTabReports('{{ conta.id }}', '{{ conta.nome|e }}')"
                             data-conta-id="{{ conta.id }}"
-                            aria-label="Visualizar relatórios da conta {{ conta.nome }}">
+                            aria-label="Visualizar relatérios da conta {{ conta.nome }}">
                         {{ conta.nome }}
                     </button>
                     </li>
@@ -377,16 +420,16 @@
     {% if income_by_category or expense_by_category %}
     <div class="row mb-4">
         {% if income_by_category %}
-        <div class="{% if expense_by_category %}col-md-6{% else %}col-12{% endif %}">
+        <div class="{% if expense_by_category %}col-md-6{% else %}col-12{% endif %} category-chart-col">
             <div class="card shadow mb-2">
                 <div class="card-header">
                     <h6 class="m-0 font-weight-bold text-primary">Receitas por Categoria</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
+                    <div class="chart-pie pt-4 pb-2 category-chart-canvas">
                         <canvas id="incomeChart"></canvas>
                     </div>
-                    <div class="mt-4 text-center small">
+                    <div class="mt-4 text-center small category-chart-legend">
                         {% for item in income_by_category %}
                         <span class="mr-2">
                             <i class="fas fa-circle" style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
@@ -399,16 +442,16 @@
         </div>
         {% endif %}
         {% if expense_by_category %}
-        <div class="{% if income_by_category %}col-md-6{% else %}col-12{% endif %}">
+        <div class="{% if income_by_category %}col-md-6{% else %}col-12{% endif %} category-chart-col">
             <div class="card shadow mb-2">
                 <div class="card-header">
                     <h6 class="m-0 font-weight-bold text-primary">Despesas por Categoria</h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
+                    <div class="chart-pie pt-4 pb-2 category-chart-canvas">
                         <canvas id="expenseChart"></canvas>
                     </div>
-                    <div class="mt-4 text-center small">
+                    <div class="mt-4 text-center small category-chart-legend">
                         {% for item in expense_by_category %}
                         <span class="mr-2">
                             <i class="fas fa-circle" style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"></i>
@@ -530,7 +573,7 @@
     </div>
     {% else %}
     <div class="alert alert-info">
-        Selecione uma categoria para visualizar o relatório detalhado.
+        Selecione uma categoria para visualizar o relatério detalhado.
     </div>
     {% endif %}
     {% endif %}
@@ -543,7 +586,7 @@
 
 
 <script>
-    // Função para inicializar o sistema de abas de relatórios usando Bootstrap
+    // Função para inicializar o sistema de abas de relatérios usando Bootstrap
     function initReportsTabs() {
         const tabsContainer = document.getElementById('contaTabs');
         if (tabsContainer) {
@@ -564,7 +607,7 @@
     // Função para criar os gráficos
     function createCharts() {
         {% if report_type == 'monthly' %}
-        // Dados para os gráficos do relatório mensal
+        // Dados para os gráficos do relatério mensal
         let expenseData = [];
         let incomeData = [];
         
@@ -643,7 +686,7 @@
         {% endif %}
 
         {% if report_type == 'annual' %}
-        // Dados para os gráficos do relatório anual
+        // Dados para os gráficos do relatério anual
         let monthlyData = [];
         
         try {
@@ -773,3 +816,5 @@
 </script>
 
 {% endblock %}
+
+
