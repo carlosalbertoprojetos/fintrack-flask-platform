@@ -226,9 +226,9 @@ def ensure_accounts(user: User) -> dict[str, Conta]:
 
 
 def load_resources(user: User) -> dict[str, dict[str, object]]:
-    categories = {item.name: item for item in Category.query.all()}
-    expenses = {item.name: item for item in Expense.query.all()}
-    payment_methods = {item.name: item for item in PaymentMethod.query.all()}
+    categories = {item.name: item for item in Category.query.filter_by(user_id=user.id).all()}
+    expenses = {item.name: item for item in Expense.query.filter_by(user_id=user.id).all()}
+    payment_methods = {item.name: item for item in PaymentMethod.query.filter_by(user_id=user.id).all()}
     investment_types = {item.nome: item for item in TipoInvestimento.query.filter_by(user_id=user.id).all()}
     accounts = ensure_accounts(user)
 

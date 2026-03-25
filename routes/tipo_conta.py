@@ -6,6 +6,9 @@ from app.forms import TipoContaForm
 
 tipo_conta_bp = Blueprint('tipo_conta', __name__)
 
+def _user_tipo_conta_or_404(item_id: int):
+    return TipoConta.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+
 @tipo_conta_bp.route('/tipos-conta', methods=['GET'])
 @login_required
 def listar_tipos_conta():
@@ -34,7 +37,7 @@ def novo_tipo_conta():
 @tipo_conta_bp.route('/tipo-conta/editar/<int:tipo_id>', methods=['GET', 'POST'])
 @login_required
 def editar_tipo_conta(tipo_id):
-    tipo_conta = TipoConta.query.get_or_404(tipo_id)
+    tipo_conta = _user_tipo_conta_or_404(tipo_id)
     
     if tipo_conta.user_id != current_user.id:
         flash('Acesso não autorizado.', 'danger')
@@ -55,7 +58,7 @@ def editar_tipo_conta(tipo_id):
 @tipo_conta_bp.route('/tipo-conta/excluir/<int:tipo_id>', methods=['POST'])
 @login_required
 def excluir_tipo_conta(tipo_id):
-    tipo_conta = TipoConta.query.get_or_404(tipo_id)
+    tipo_conta = _user_tipo_conta_or_404(tipo_id)
     
     if tipo_conta.user_id != current_user.id:
         flash('Acesso não autorizado.', 'danger')

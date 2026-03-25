@@ -60,11 +60,11 @@ def test_get_expenses_requires_login(client):
 
 def test_get_expenses_returns_json_for_authenticated_user(client, app_ctx):
     user = _create_user("u3", "u3@example.com")
-    category = Category(name="Alimentacao", type="despesa", exclusive=True)
+    category = Category(name="Alimentacao", type="despesa", exclusive=True, user_id=user.id)
     db.session.add(category)
     db.session.flush()
 
-    expense = Expense(name="Supermercado", category_id=category.id)
+    expense = Expense(name="Supermercado", category_id=category.id, user_id=user.id)
     db.session.add(expense)
     db.session.commit()
     login_client(client, user)
@@ -81,8 +81,8 @@ def test_get_categories_by_type_includes_non_exclusive(client, app_ctx):
     user = _create_user("u4", "u4@example.com")
     db.session.add_all(
         [
-            Category(name="Salario", type="receita", exclusive=True),
-            Category(name="Diversos", type="despesa", exclusive=False),
+            Category(name="Salario", type="receita", exclusive=True, user_id=user.id),
+            Category(name="Diversos", type="despesa", exclusive=False, user_id=user.id),
         ]
     )
     db.session.commit()
@@ -96,11 +96,62 @@ def test_get_categories_by_type_includes_non_exclusive(client, app_ctx):
     assert "Diversos" in names
 
 
+
+
+def test_lookup_pages_and_endpoints_only_return_authenticated_user_data(client, app_ctx):
+    user_a = _create_user("scope-a", "scope-a@example.com")
+    user_b = _create_user("scope-b", "scope-b@example.com")
+
+    category_a = Category(name="Mercado A", type="despesa", exclusive=True, user_id=user_a.id)
+    category_b = Category(name="Mercado B", type="despesa", exclusive=True, user_id=user_b.id)
+    db.session.add_all([category_a, category_b])
+    db.session.flush()
+
+    expense_a = Expense(name="Compra A", category_id=category_a.id, user_id=user_a.id)
+    expense_b = Expense(name="Compra B", category_id=category_b.id, user_id=user_b.id)
+    payment_a = PaymentMethod(name="Pix A", is_active=True, user_id=user_a.id)
+    payment_b = PaymentMethod(name="Pix B", is_active=True, user_id=user_b.id)
+    db.session.add_all([expense_a, expense_b, payment_a, payment_b])
+    db.session.commit()
+
+    login_client(client, user_a)
+
+    categories_page = client.get("/transactions/categories")
+    assert categories_page.status_code == 200
+    categories_html = categories_page.get_data(as_text=True)
+    assert "Mercado A" in categories_html
+    assert "Mercado B" not in categories_html
+
+    expenses_page = client.get("/transactions/expenses")
+    assert expenses_page.status_code == 200
+    expenses_html = expenses_page.get_data(as_text=True)
+    assert "Compra A" in expenses_html
+    assert "Compra B" not in expenses_html
+
+    payment_methods_page = client.get("/transactions/payment_methods")
+    assert payment_methods_page.status_code == 200
+    payment_methods_html = payment_methods_page.get_data(as_text=True)
+    assert "Pix A" in payment_methods_html
+    assert "Pix B" not in payment_methods_html
+
+    categories_json = client.get("/transactions/categories/by-type/despesa")
+    assert categories_json.status_code == 200
+    names = [item["name"] for item in categories_json.get_json()]
+    assert "Mercado A" in names
+    assert "Mercado B" not in names
+
+    expenses_json = client.get(f"/transactions/expenses/by-category/{category_b.id}")
+    assert expenses_json.status_code == 200
+    assert expenses_json.get_json() == []
+
+    forbidden_edit = client.get(f"/transactions/category/edit/{category_b.id}")
+    assert forbidden_edit.status_code == 404
+
 def test_replicate_transaction_redirects_with_prefilled_query(client, app_ctx):
     user = _create_user("u5", "u5@example.com")
     conta = _create_account_for_user(user)
-    category = Category(name="Mercado", type="despesa", exclusive=True)
-    payment = PaymentMethod(name="Pix", is_active=True)
+    category = Category(name="Mercado", type="despesa", exclusive=True, user_id=user.id)
+    payment = PaymentMethod(name="Pix", is_active=True, user_id=user.id)
     db.session.add_all([category, payment])
     db.session.flush()
 

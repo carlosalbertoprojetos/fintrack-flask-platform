@@ -53,9 +53,9 @@ def _seed_user_and_accounts(username: str, email: str):
     )
     db.session.add_all([conta_1, conta_2])
 
-    cat_receita = Category(name=f"Receita-{username}", type="receita", exclusive=True)
-    cat_despesa = Category(name=f"Despesa-{username}", type="despesa", exclusive=True)
-    pagamento = PaymentMethod(name=f"Pix-{username}", is_active=True)
+    cat_receita = Category(name=f"Receita-{username}", type="receita", exclusive=True, user_id=user.id)
+    cat_despesa = Category(name=f"Despesa-{username}", type="despesa", exclusive=True, user_id=user.id)
+    pagamento = PaymentMethod(name=f"Pix-{username}", is_active=True, user_id=user.id)
     tipo_inv = TipoInvestimento(nome=f"CDB-{username}", descricao="Renda fixa", ativo=True, user_id=user.id)
     db.session.add_all([cat_receita, cat_despesa, pagamento, tipo_inv])
     db.session.commit()
@@ -285,6 +285,38 @@ def test_transaction_service_rejects_foreign_user(app_ctx):
     with pytest.raises(ValueError, match="nao pertence"):
         TransactionService.delete_transaction(user_id=user_b.id, tx=tx)
 
+
+
+
+def test_transaction_service_rejects_foreign_lookup_ids(app_ctx):
+    user_a, conta_a, _, _, cat_despesa_a, pagamento_a, _ = _seed_user_and_accounts(
+        "svc-scope-a",
+        "svc-scope-a@example.com",
+    )
+    user_b, _, _, _, cat_despesa_b, pagamento_b, _ = _seed_user_and_accounts(
+        "svc-scope-b",
+        "svc-scope-b@example.com",
+    )
+
+    with pytest.raises(ValueError, match="Categoria nao pertence"):
+        TransactionService.create_transaction(
+            user_id=user_a.id,
+            payload=_tx_payload(
+                conta_id=conta_a.id,
+                category_id=cat_despesa_b.id,
+                payment_method_id=pagamento_a.id,
+            ),
+        )
+
+    with pytest.raises(ValueError, match="Forma de pagamento nao pertence"):
+        TransactionService.create_transaction(
+            user_id=user_a.id,
+            payload=_tx_payload(
+                conta_id=conta_a.id,
+                category_id=cat_despesa_a.id,
+                payment_method_id=pagamento_b.id,
+            ),
+        )
 
 def test_investment_service_lifecycle_and_permissions(app_ctx):
     user, conta_1, _, _, _, _, tipo_inv = _seed_user_and_accounts("svc-inv", "svc-inv@example.com")

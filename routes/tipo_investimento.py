@@ -6,6 +6,9 @@ from app.forms import TipoInvestimentoForm
 
 tipo_investimento_bp = Blueprint('tipo_investimento', __name__)
 
+def _user_tipo_investimento_or_404(item_id: int):
+    return TipoInvestimento.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
+
 @tipo_investimento_bp.route('/tipos-investimento', methods=['GET'])
 @login_required
 def listar_tipos_investimento():
@@ -34,7 +37,7 @@ def novo_tipo_investimento():
 @tipo_investimento_bp.route('/tipo-investimento/editar/<int:tipo_id>', methods=['GET', 'POST'])
 @login_required
 def editar_tipo_investimento(tipo_id):
-    tipo_investimento = TipoInvestimento.query.get_or_404(tipo_id)
+    tipo_investimento = _user_tipo_investimento_or_404(tipo_id)
     
     if tipo_investimento.user_id != current_user.id:
         flash('Acesso não autorizado.', 'danger')
@@ -55,7 +58,7 @@ def editar_tipo_investimento(tipo_id):
 @tipo_investimento_bp.route('/tipo-investimento/editar-nome/<int:tipo_id>', methods=['POST'])
 @login_required
 def editar_nome_inline(tipo_id):
-    tipo_investimento = TipoInvestimento.query.get_or_404(tipo_id)
+    tipo_investimento = _user_tipo_investimento_or_404(tipo_id)
     
     if tipo_investimento.user_id != current_user.id:
         return jsonify({'success': False, 'message': 'Acesso não autorizado.'}), 403
@@ -78,7 +81,7 @@ def editar_nome_inline(tipo_id):
 @tipo_investimento_bp.route('/tipo-investimento/editar-descricao/<int:tipo_id>', methods=['POST'])
 @login_required
 def editar_descricao_inline(tipo_id):
-    tipo_investimento = TipoInvestimento.query.get_or_404(tipo_id)
+    tipo_investimento = _user_tipo_investimento_or_404(tipo_id)
     
     if tipo_investimento.user_id != current_user.id:
         return jsonify({'success': False, 'message': 'Acesso não autorizado.'}), 403
@@ -101,7 +104,7 @@ def editar_descricao_inline(tipo_id):
 @tipo_investimento_bp.route('/tipo-investimento/excluir/<int:tipo_id>', methods=['POST'])
 @login_required
 def excluir_tipo_investimento(tipo_id):
-    tipo_investimento = TipoInvestimento.query.get_or_404(tipo_id)
+    tipo_investimento = _user_tipo_investimento_or_404(tipo_id)
     
     if tipo_investimento.user_id != current_user.id:
         flash('Acesso não autorizado.', 'danger')

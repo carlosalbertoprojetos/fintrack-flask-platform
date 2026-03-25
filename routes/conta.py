@@ -10,6 +10,10 @@ from services.ledger_service import LedgerService
 conta_bp = Blueprint('conta', __name__)
 
 
+def _user_conta_or_404(conta_id: int):
+    return Conta.query.filter_by(id=conta_id, user_id=current_user.id).first_or_404()
+
+
 @conta_bp.route('/contas', methods=['GET'])
 @login_required
 def listar_contas():
@@ -53,10 +57,7 @@ def add_conta():
 @conta_bp.route('/conta/editar/<int:conta_id>', methods=['GET', 'POST'])
 @login_required
 def editar_conta(conta_id):
-    conta = Conta.query.get_or_404(conta_id)
-    if conta.user_id != current_user.id:
-        flash('Acesso nao autorizado.', 'danger')
-        return redirect(url_for('conta.listar_contas'))
+    conta = _user_conta_or_404(conta_id)
 
     form = ContaForm(obj=conta)
     tipos_conta = TipoConta.query.filter_by(user_id=current_user.id, ativo=True).all()
@@ -80,10 +81,8 @@ def editar_conta(conta_id):
 @conta_bp.route('/conta/editar-nome/<int:conta_id>', methods=['POST'])
 @login_required
 def editar_nome_inline(conta_id):
-    conta = Conta.query.get_or_404(conta_id)
+    conta = _user_conta_or_404(conta_id)
 
-    if conta.user_id != current_user.id:
-        return jsonify({'success': False, 'message': 'Acesso nao autorizado.'}), 403
 
     novo_nome = request.json.get('nome')
     if not novo_nome or len(novo_nome.strip()) == 0:
@@ -104,10 +103,7 @@ def editar_nome_inline(conta_id):
 @conta_bp.route('/conta/excluir/<int:conta_id>', methods=['POST'])
 @login_required
 def excluir_conta(conta_id):
-    conta = Conta.query.get_or_404(conta_id)
-    if conta.user_id != current_user.id:
-        flash('Acesso nao autorizado.', 'danger')
-        return redirect(url_for('conta.listar_contas'))
+    conta = _user_conta_or_404(conta_id)
 
     total_contas = Conta.query.filter_by(user_id=current_user.id).count()
     if total_contas <= 1:

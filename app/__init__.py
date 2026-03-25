@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 import shutil
+from sqlalchemy import inspect, text
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -87,11 +88,10 @@ def format_currency(value):
 
 
 def initialize_user_default_data(user):
-    """Inicializa TODOS os dados padrão para um novo usuário"""
+    """Inicializa dados padrao isolados por usuario."""
     try:
         from app.models import TipoConta, TipoInvestimento, Conta, Category, PaymentMethod, Expense
-        
-        # 1. CRIAR CATEGORIAS PADRÃO (se não existirem globalmente)
+
         categories_data = [
             {"name": "Salário", "type": "receita", "exclusive": True, "icon": "bx-money", "color": "#28a745"},
             {"name": "Freelance", "type": "receita", "exclusive": True, "icon": "bx-briefcase", "color": "#17a2b8"},
@@ -108,15 +108,11 @@ def initialize_user_default_data(user):
             {"name": "Outros", "type": "receita", "exclusive": False, "icon": "bx-plus", "color": "#6c757d"},
             {"name": "Diversos", "type": "despesa", "exclusive": False, "icon": "bx-dots-horizontal-rounded", "color": "#6c757d"},
         ]
-        
         for category_data in categories_data:
-            # Verificar se a categoria já existe globalmente
-            existing_category = Category.query.filter_by(name=category_data["name"]).first()
+            existing_category = Category.query.filter_by(user_id=user.id, name=category_data["name"]).first()
             if not existing_category:
-                category = Category(**category_data)
-                db.session.add(category)
-        
-        # 2. CRIAR FORMAS DE PAGAMENTO PADRÃO (se não existirem globalmente)
+                db.session.add(Category(user_id=user.id, **category_data))
+
         payments_data = [
             {"name": "Dinheiro", "is_active": True},
             {"name": "Pix", "is_active": True},
@@ -128,72 +124,57 @@ def initialize_user_default_data(user):
             {"name": "Transferência", "is_active": True},
             {"name": "Outros", "is_active": True},
         ]
-        
         for payment_data in payments_data:
-            # Verificar se a forma de pagamento já existe globalmente
-            existing_payment = PaymentMethod.query.filter_by(name=payment_data["name"]).first()
+            existing_payment = PaymentMethod.query.filter_by(user_id=user.id, name=payment_data["name"]).first()
             if not existing_payment:
-                payment = PaymentMethod(**payment_data)
-                db.session.add(payment)
-        
-        # 3. CRIAR DESPESAS PADRÃO (se não existirem globalmente)
-        expensives_data = [
-            {"name": "CDB", "category_id": "Investimentos"},
-            {"name": "Ações", "category_id": "Investimentos"},
-            {"name": "Fundos", "category_id": "Investimentos"},
-            {"name": "Supermercado", "category_id": "Alimentação"},
-            {"name": "Restaurante", "category_id": "Alimentação"},
-            {"name": "Aluguel", "category_id": "Moradia"},
-            {"name": "Condomínio", "category_id": "Moradia"},
-            {"name": "IPTU", "category_id": "Moradia"},
-            {"name": "Combustível", "category_id": "Transporte"},
-            {"name": "Manutenção", "category_id": "Transporte"},
-            {"name": "Farmácia", "category_id": "Saúde"},
-            {"name": "Médico", "category_id": "Saúde"},
-            {"name": "Curso", "category_id": "Educação"},
-            {"name": "Material", "category_id": "Educação"},
-            {"name": "Internet", "category_id": "Serviços"},
-            {"name": "Telefone", "category_id": "Serviços"},
-            {"name": "Energia", "category_id": "Serviços"},
-            {"name": "Água", "category_id": "Serviços"},
-            {"name": "Gás", "category_id": "Serviços"},
-            {"name": "Roupas", "category_id": "Compras"},
-            {"name": "Eletrúnicos", "category_id": "Compras"},
+                db.session.add(PaymentMethod(user_id=user.id, **payment_data))
+
+        db.session.flush()
+
+        categories_by_name = {
+            item.name: item for item in Category.query.filter_by(user_id=user.id).all()
+        }
+        expenses_data = [
+            {"name": "CDB", "category_name": "Investimentos"},
+            {"name": "Ações", "category_name": "Investimentos"},
+            {"name": "Fundos", "category_name": "Investimentos"},
+            {"name": "Supermercado", "category_name": "Alimentação"},
+            {"name": "Restaurante", "category_name": "Alimentação"},
+            {"name": "Aluguel", "category_name": "Moradia"},
+            {"name": "Condomínio", "category_name": "Moradia"},
+            {"name": "IPTU", "category_name": "Moradia"},
+            {"name": "Combustível", "category_name": "Transporte"},
+            {"name": "Manutenção", "category_name": "Transporte"},
+            {"name": "Farmácia", "category_name": "Saúde"},
+            {"name": "Médico", "category_name": "Saúde"},
+            {"name": "Curso", "category_name": "Educação"},
+            {"name": "Material", "category_name": "Educação"},
+            {"name": "Internet", "category_name": "Serviços"},
+            {"name": "Telefone", "category_name": "Serviços"},
+            {"name": "Energia", "category_name": "Serviços"},
+            {"name": "Água", "category_name": "Serviços"},
+            {"name": "Gás", "category_name": "Serviços"},
+            {"name": "Roupas", "category_name": "Compras"},
+            {"name": "Eletrônicos", "category_name": "Compras"},
         ]
-        
-        for expensive_data in expensives_data:
-            # Verificar se a despesa já existe globalmente
-            existing_expense = Expense.query.filter_by(name=expensive_data["name"]).first()
-            if not existing_expense:
-                category = Category.query.filter_by(name=expensive_data["category_id"]).first()
-                if category:
-                    expense = Expense(name=expensive_data["name"], category_id=category.id)
-                    db.session.add(expense)
-        
-        # 4. CRIAR TIPOS DE CONTA PARA O USUÁRIO
+        for expense_data in expenses_data:
+            existing_expense = Expense.query.filter_by(user_id=user.id, name=expense_data["name"]).first()
+            if existing_expense:
+                continue
+            category = categories_by_name.get(expense_data["category_name"])
+            if category:
+                db.session.add(Expense(user_id=user.id, name=expense_data["name"], category_id=category.id))
+
         tipos_conta_data = [
             {"nome": "Banco Físico", "descricao": "Físico", "ativo": True},
             {"nome": "Banco Virtual", "descricao": "Virtual", "ativo": True},
             {"nome": "Investimento", "descricao": "Corretora", "ativo": True},
         ]
-        
         for tipo_data in tipos_conta_data:
-            # Verificar se o tipo já existe para este usuário
-            existing_tipo = TipoConta.query.filter_by(
-                nome=tipo_data["nome"], 
-                user_id=user.id
-            ).first()
-            
+            existing_tipo = TipoConta.query.filter_by(nome=tipo_data["nome"], user_id=user.id).first()
             if not existing_tipo:
-                tipo_conta = TipoConta(
-                    nome=tipo_data["nome"],
-                    descricao=tipo_data["descricao"],
-                    ativo=tipo_data["ativo"],
-                    user_id=user.id
-                )
-                db.session.add(tipo_conta)
-        
-        # 5. CRIAR TIPOS DE INVESTIMENTO PARA O USUÁRIO
+                db.session.add(TipoConta(user_id=user.id, **tipo_data))
+
         tipos_investimento_data = [
             {"nome": "CDB", "descricao": "Certificado de Depósito Bancário", "ativo": True},
             {"nome": "Ações", "descricao": "Investimento em ações", "ativo": True},
@@ -201,84 +182,261 @@ def initialize_user_default_data(user):
             {"nome": "Tesouro Direto", "descricao": "Títulos públicos", "ativo": True},
             {"nome": "Poupança", "descricao": "Conta poupança", "ativo": True},
         ]
-        
         for tipo_data in tipos_investimento_data:
-            # Verificar se o tipo já existe para este usuário
-            existing_tipo = TipoInvestimento.query.filter_by(
-                nome=tipo_data["nome"], 
-                user_id=user.id
-            ).first()
-            
+            existing_tipo = TipoInvestimento.query.filter_by(nome=tipo_data["nome"], user_id=user.id).first()
             if not existing_tipo:
-                tipo_investimento = TipoInvestimento(
-                    nome=tipo_data["nome"],
-                    descricao=tipo_data["descricao"],
-                    ativo=tipo_data["ativo"],
-                    user_id=user.id
-                )
-                db.session.add(tipo_investimento)
-        
-        # Fazer commit dos tipos e dados globais
+                db.session.add(TipoInvestimento(user_id=user.id, **tipo_data))
+
         db.session.commit()
-        
-        # 6. CRIAR CONTAS PADRÃO PARA O USUÁRIO (apenas se não houver nenhuma conta)
-        # Verificar se o usuário já tem alguma conta
-        existing_contas_count = Conta.query.filter_by(user_id=user.id).count()
-        
-        # Só criar contas padrão se o usuário não tiver nenhuma conta
-        if existing_contas_count == 0:
-            tipo_banco_fisico = TipoConta.query.filter_by(
-                nome="Banco Físico", 
-                user_id=user.id
-            ).first()
-            
-            tipo_banco_virtual = TipoConta.query.filter_by(
-                nome="Banco Virtual", 
-                user_id=user.id
-            ).first()
-            
+
+        if Conta.query.filter_by(user_id=user.id).count() == 0:
+            tipo_banco_fisico = TipoConta.query.filter_by(nome="Banco Físico", user_id=user.id).first()
+            tipo_banco_virtual = TipoConta.query.filter_by(nome="Banco Virtual", user_id=user.id).first()
             contas_data = [
-                {
-                    "nome": "Inter", 
-                    "tipo_id": tipo_banco_virtual.id if tipo_banco_virtual else None,
-                    "saldo_inicial": 0.00,
-                    "saldo_atual": 0.00
-                },
-                {
-                    "nome": "Banco do Brasil", 
-                    "tipo_id": tipo_banco_fisico.id if tipo_banco_fisico else None,
-                    "saldo_inicial": 0.00,
-                    "saldo_atual": 0.00
-                },
+                {"nome": "Inter", "tipo_id": tipo_banco_virtual.id if tipo_banco_virtual else None, "saldo_inicial": 0.0, "saldo_atual": 0.0},
+                {"nome": "Banco do Brasil", "tipo_id": tipo_banco_fisico.id if tipo_banco_fisico else None, "saldo_inicial": 0.0, "saldo_atual": 0.0},
             ]
-            
             for conta_data in contas_data:
-                if conta_data["tipo_id"]:
-                    # Verificar se a conta já existe para este usuário (verificação adicional)
-                    existing_conta = Conta.query.filter_by(
-                        nome=conta_data["nome"], 
-                        user_id=user.id
-                    ).first()
-                    
-                    if not existing_conta:
-                        conta = Conta(
-                            nome=conta_data["nome"],
-                            tipo_id=conta_data["tipo_id"],
-                            saldo_inicial=conta_data["saldo_inicial"],
-                            saldo_atual=conta_data["saldo_atual"],
-                            user_id=user.id
-                        )
-                        db.session.add(conta)
-        
-        # Commit final
+                if not conta_data["tipo_id"]:
+                    continue
+                existing_conta = Conta.query.filter_by(nome=conta_data["nome"], user_id=user.id).first()
+                if not existing_conta:
+                    db.session.add(Conta(user_id=user.id, **conta_data))
+
         db.session.commit()
-        print(f"TODOS os dados padrão criados com sucesso para o usuário {user.username}!")
+        print(f"TODOS os dados padrao criados com sucesso para o usuario {user.username}!")
         return True
-        
     except Exception as e:
         db.session.rollback()
-        print(f"Erro ao criar dados padrão para o usuário {user.username}: {str(e)}")
+        print(f"Erro ao criar dados padrao para o usuario {user.username}: {str(e)}")
         return False
+
+
+def _ensure_user_scoped_lookup_columns():
+    inspector = inspect(db.engine)
+    required_columns = {
+        "categories": "ALTER TABLE categories ADD COLUMN user_id INTEGER",
+        "expenses": "ALTER TABLE expenses ADD COLUMN user_id INTEGER",
+        "payment_method": "ALTER TABLE payment_method ADD COLUMN user_id INTEGER",
+    }
+    for table_name, ddl in required_columns.items():
+        columns = {column["name"] for column in inspector.get_columns(table_name)}
+        if "user_id" not in columns:
+            db.session.execute(text(ddl))
+    db.session.commit()
+
+
+def _migrate_lookup_records_to_user_scope():
+    from app.models import User, Category, Expense, PaymentMethod, Transaction
+
+    users = User.query.order_by(User.id).all()
+    if not users:
+        return False
+
+    def owner_ids_for_transaction_field(field_name, value):
+        rows = (
+            db.session.query(Transaction.user_id)
+            .filter(getattr(Transaction, field_name) == value)
+            .distinct()
+            .order_by(Transaction.user_id)
+            .all()
+        )
+        owner_ids = [row[0] for row in rows if row[0] is not None]
+        return owner_ids or [users[0].id]
+
+    category_map = {}
+    for category in Category.query.order_by(Category.id).all():
+        owner_ids = owner_ids_for_transaction_field("category_id", category.id)
+        original_id = category.id
+        base_owner_id = owner_ids[0]
+        category.user_id = base_owner_id
+        category_map[(original_id, base_owner_id)] = category.id
+        for owner_id in owner_ids[1:]:
+            clone = Category.query.filter_by(
+                user_id=owner_id,
+                name=category.name,
+                type=category.type,
+                exclusive=category.exclusive,
+            ).first()
+            if clone is None:
+                clone = Category(
+                    user_id=owner_id,
+                    name=category.name,
+                    type=category.type,
+                    exclusive=category.exclusive,
+                    icon=category.icon,
+                    color=category.color,
+                )
+                db.session.add(clone)
+                db.session.flush()
+            Transaction.query.filter_by(category_id=original_id, user_id=owner_id).update(
+                {"category_id": clone.id}, synchronize_session=False
+            )
+            category_map[(original_id, owner_id)] = clone.id
+
+    for expense in Expense.query.order_by(Expense.id).all():
+        original_id = expense.id
+        original_category_id = expense.category_id
+        owner_ids = owner_ids_for_transaction_field("expense_id", original_id)
+        base_owner_id = owner_ids[0]
+        expense.user_id = base_owner_id
+        expense.category_id = category_map.get((original_category_id, base_owner_id), original_category_id)
+        for owner_id in owner_ids[1:]:
+            scoped_category_id = category_map.get((original_category_id, owner_id), original_category_id)
+            clone = Expense.query.filter_by(
+                user_id=owner_id,
+                name=expense.name,
+                category_id=scoped_category_id,
+            ).first()
+            if clone is None:
+                clone = Expense(user_id=owner_id, name=expense.name, category_id=scoped_category_id)
+                db.session.add(clone)
+                db.session.flush()
+            Transaction.query.filter_by(expense_id=original_id, user_id=owner_id).update(
+                {"expense_id": clone.id}, synchronize_session=False
+            )
+
+    for payment_method in PaymentMethod.query.order_by(PaymentMethod.id).all():
+        original_id = payment_method.id
+        owner_ids = owner_ids_for_transaction_field("payment_method_id", original_id)
+        base_owner_id = owner_ids[0]
+        payment_method.user_id = base_owner_id
+        for owner_id in owner_ids[1:]:
+            clone = PaymentMethod.query.filter_by(user_id=owner_id, name=payment_method.name).first()
+            if clone is None:
+                clone = PaymentMethod(user_id=owner_id, name=payment_method.name, is_active=payment_method.is_active)
+                db.session.add(clone)
+                db.session.flush()
+            Transaction.query.filter_by(payment_method_id=original_id, user_id=owner_id).update(
+                {"payment_method_id": clone.id}, synchronize_session=False
+            )
+
+    db.session.commit()
+    return True
+
+
+def repair_default_lookup_data():
+    """Corrige cadastros padrao afetados por problemas antigos de encoding."""
+    from app.models import Category, Conta, Expense, Investimento, PaymentMethod, TipoConta, TipoInvestimento, Transaction
+
+    def _legacy_mojibake(value):
+        return value.encode("utf-8").decode("latin1")
+
+    category_name_map = {
+        _legacy_mojibake("Salário"): "Salário",
+        _legacy_mojibake("Alimentação"): "Alimentação",
+        _legacy_mojibake("Saúde"): "Saúde",
+        _legacy_mojibake("Educação"): "Educação",
+        _legacy_mojibake("Serviços"): "Serviços",
+    }
+    payment_name_map = {
+        _legacy_mojibake("Cartão Débito"): "Cartão Débito",
+        _legacy_mojibake("Cartão Crédito"): "Cartão Crédito",
+        _legacy_mojibake("Crediário"): "Crediário",
+        _legacy_mojibake("Transferência"): "Transferência",
+    }
+    expense_name_map = {
+        _legacy_mojibake("Ações"): "Ações",
+        _legacy_mojibake("Condomínio"): "Condomínio",
+        _legacy_mojibake("Combustível"): "Combustível",
+        _legacy_mojibake("Manutenção"): "Manutenção",
+        _legacy_mojibake("Farmácia"): "Farmácia",
+        _legacy_mojibake("Médico"): "Médico",
+        _legacy_mojibake("Água"): "Água",
+        _legacy_mojibake("Gás"): "Gás",
+        _legacy_mojibake("Eletrônicos"): "Eletrônicos",
+        "Eletrúnicos": "Eletrônicos",
+    }
+    tipo_conta_name_map = {
+        _legacy_mojibake("Banco Físico"): "Banco Físico",
+    }
+    tipo_conta_description_map = {
+        _legacy_mojibake("Físico"): "Físico",
+    }
+    tipo_investimento_name_map = {
+        _legacy_mojibake("Ações"): "Ações",
+        _legacy_mojibake("Poupança"): "Poupança",
+    }
+    tipo_investimento_description_map = {
+        _legacy_mojibake("Certificado de Depósito Bancário"): "Certificado de Depósito Bancário",
+        _legacy_mojibake("Investimento em ações"): "Investimento em ações",
+        _legacy_mojibake("Títulos públicos"): "Títulos públicos",
+        _legacy_mojibake("Conta poupança"): "Conta poupança",
+    }
+
+    for category in Category.query.all():
+        corrected_name = category_name_map.get(category.name)
+        if not corrected_name:
+            continue
+        target = Category.query.filter_by(
+            user_id=category.user_id,
+            name=corrected_name,
+            type=category.type,
+            exclusive=category.exclusive,
+        ).first()
+        if target and target.id != category.id:
+            Expense.query.filter_by(category_id=category.id, user_id=category.user_id).update({"category_id": target.id}, synchronize_session=False)
+            Transaction.query.filter_by(category_id=category.id, user_id=category.user_id).update({"category_id": target.id}, synchronize_session=False)
+            db.session.delete(category)
+        else:
+            category.name = corrected_name
+
+    for payment in PaymentMethod.query.all():
+        corrected_name = payment_name_map.get(payment.name)
+        if not corrected_name:
+            continue
+        target = PaymentMethod.query.filter_by(user_id=payment.user_id, name=corrected_name).first()
+        if target and target.id != payment.id:
+            Transaction.query.filter_by(payment_method_id=payment.id, user_id=payment.user_id).update({"payment_method_id": target.id}, synchronize_session=False)
+            db.session.delete(payment)
+        else:
+            payment.name = corrected_name
+
+    for tipo in TipoConta.query.all():
+        corrected_name = tipo_conta_name_map.get(tipo.nome, tipo.nome)
+        corrected_description = tipo_conta_description_map.get(tipo.descricao, tipo.descricao)
+        if corrected_name == tipo.nome and corrected_description == tipo.descricao:
+            continue
+        target = TipoConta.query.filter_by(nome=corrected_name, user_id=tipo.user_id).first()
+        if target and target.id != tipo.id:
+            Conta.query.filter_by(tipo_id=tipo.id, user_id=tipo.user_id).update({"tipo_id": target.id}, synchronize_session=False)
+            if not target.descricao:
+                target.descricao = corrected_description
+            db.session.delete(tipo)
+        else:
+            tipo.nome = corrected_name
+            tipo.descricao = corrected_description
+
+    for tipo in TipoInvestimento.query.all():
+        corrected_name = tipo_investimento_name_map.get(tipo.nome, tipo.nome)
+        corrected_description = tipo_investimento_description_map.get(tipo.descricao, tipo.descricao)
+        if corrected_name == tipo.nome and corrected_description == tipo.descricao:
+            continue
+        target = TipoInvestimento.query.filter_by(nome=corrected_name, user_id=tipo.user_id).first()
+        if target and target.id != tipo.id:
+            Investimento.query.filter_by(tipo_investimento_id=tipo.id).update({"tipo_investimento_id": target.id}, synchronize_session=False)
+            if not target.descricao:
+                target.descricao = corrected_description
+            db.session.delete(tipo)
+        else:
+            tipo.nome = corrected_name
+            tipo.descricao = corrected_description
+
+    db.session.flush()
+
+    for expense in Expense.query.all():
+        corrected_name = expense_name_map.get(expense.name, expense.name)
+        if corrected_name == expense.name:
+            continue
+        target = Expense.query.filter_by(user_id=expense.user_id, name=corrected_name, category_id=expense.category_id).first()
+        if target and target.id != expense.id:
+            Transaction.query.filter_by(expense_id=expense.id, user_id=expense.user_id).update({"expense_id": target.id}, synchronize_session=False)
+            db.session.delete(expense)
+        else:
+            expense.name = corrected_name
+
+    db.session.commit()
+    return True
 
 
 def get_database_path():
@@ -696,104 +854,34 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db.create_all()
+        _ensure_user_scoped_lookup_columns()
 
-        # Importar Category aqui para evitar importação circular
-        from app.models import Category, PaymentMethod, Expense
-
-        # Adicionar categorias padrão apenas se não houver nenhuma
-        if Category.query.count() == 0:
-            categories_data = [
-                {"name": "Salário", "type": "receita", "exclusive": True, "icon": "bx-money", "color": "#28a745"},
-                {"name": "Freelance", "type": "receita", "exclusive": True, "icon": "bx-briefcase", "color": "#17a2b8"},
-                {"name": "Investimentos", "type": "receita", "exclusive": True, "icon": "bx-trending-up", "color": "#20c997"},
-                {"name": "Outros Rendimentos", "type": "receita", "exclusive": True, "icon": "bx-plus-circle", "color": "#6f42c1"},
-                {"name": "Alimentação", "type": "despesa", "exclusive": True, "icon": "bx-food-menu", "color": "#dc3545"},
-                {"name": "Moradia", "type": "despesa", "exclusive": True, "icon": "bx-home", "color": "#fd7e14"},
-                {"name": "Transporte", "type": "despesa", "exclusive": True, "icon": "bx-car", "color": "#ffc107"},
-                {"name": "Lazer", "type": "despesa", "exclusive": True, "icon": "bx-game", "color": "#e83e8c"},
-                {"name": "Saúde", "type": "despesa", "exclusive": True, "icon": "bx-heart", "color": "#6f42c1"},
-                {"name": "Educação", "type": "despesa", "exclusive": True, "icon": "bx-book", "color": "#17a2b8"},
-                {"name": "Serviços", "type": "despesa", "exclusive": True, "icon": "bx-wrench", "color": "#20c997"},
-                {"name": "Compras", "type": "despesa", "exclusive": True, "icon": "bx-shopping-bag", "color": "#28a745"},
-                {"name": "Outros", "type": "receita", "exclusive": False, "icon": "bx-plus", "color": "#6c757d"},
-                {"name": "Diversos", "type": "despesa", "exclusive": False, "icon": "bx-dots-horizontal-rounded", "color": "#6c757d"},
-            ]
-            for category_data in categories_data:
-                category = Category(**category_data)
-                db.session.add(category)
-
-        # Adicionar formas de pagamento padrão apenas se não houver nenhuma
-        if PaymentMethod.query.count() == 0:
-            payments_data = [
-                {"name": "Dinheiro", "is_active": True},
-                {"name": "Pix", "is_active": True},
-                {"name": "Cartão Débito", "is_active": True},
-                {"name": "Cartão Crédito", "is_active": True},
-                {"name": "Boleto", "is_active": True},
-                {"name": "Cheque", "is_active": True},
-                {"name": "Crediário", "is_active": True},
-                {"name": "Transferência", "is_active": True},
-                {"name": "Outros", "is_active": True},
-            ]
-            for payment_data in payments_data:
-                db.session.add(PaymentMethod(**payment_data))
-
-        # Adicionar despesas padrão apenas se não houver nenhuma
-        if Expense.query.count() == 0:
-            expensives_data = [
-                {"name": "CDB", "category_id": "Investimentos"},
-                {"name": "Ações", "category_id": "Investimentos"},
-                {"name": "Fundos", "category_id": "Investimentos"},
-                {"name": "Supermercado", "category_id": "Alimentação"},
-                {"name": "Restaurante", "category_id": "Alimentação"},
-                {"name": "Aluguel", "category_id": "Moradia"},
-                {"name": "Condomínio", "category_id": "Moradia"},
-                {"name": "IPTU", "category_id": "Moradia"},
-                {"name": "Combustível", "category_id": "Transporte"},
-                {"name": "Manutenção", "category_id": "Transporte"},
-                {"name": "Farmácia", "category_id": "Saúde"},
-                {"name": "Médico", "category_id": "Saúde"},
-                {"name": "Curso", "category_id": "Educação"},
-                {"name": "Material", "category_id": "Educação"},
-                {"name": "Internet", "category_id": "Serviços"},
-                {"name": "Telefone", "category_id": "Serviços"},
-                {"name": "Energia", "category_id": "Serviços"},
-                {"name": "Água", "category_id": "Serviços"},
-                {"name": "Gás", "category_id": "Serviços"},
-                {"name": "Roupas", "category_id": "Compras"},
-                {"name": "Eletrúnicos", "category_id": "Compras"},
-            ]
-            for expensive_data in expensives_data:
-                category = Category.query.filter_by(name=expensive_data["category_id"]).first()
-                if not category:
-                    continue
-                expense = Expense(name=expensive_data["name"], category_id=category.id)
-                db.session.add(expense)
-
-        # Criar usuário padrão se não existir nenhum
         from app.models import User
+
         if User.query.count() == 0:
             admin_user = User(
                 username="admin",
                 email="admin@sistema.com",
-                password_hash="pbkdf2:sha256:260000$dummy$dummy"  # Senha temporária
+                password_hash="pbkdf2:sha256:260000$dummy$dummy",
             )
-            admin_user.set_password("admin123")  # Senha padrão
+            admin_user.set_password("admin123")
             db.session.add(admin_user)
-            print("Usuário admin criado com sucesso!")
+            print("Usu?rio admin criado com sucesso!")
 
-        # Fazer commit do usuário primeiro para garantir que ele existe
         try:
             db.session.commit()
-            print("Usuário admin commitado com sucesso!")
+            print("Usu?rio admin commitado com sucesso!")
         except Exception as e:
-            print(f"Erro ao commitar usuário admin: {str(e)}")
+            print(f"Erro ao commitar usu?rio admin: {str(e)}")
             db.session.rollback()
 
-        # Inicializar dados padrão para usuários existentes (apenas na primeira execução)
+        _migrate_lookup_records_to_user_scope()
+
         users = User.query.all()
         for user in users:
             initialize_user_default_data(user)
+
+        repair_default_lookup_data()
 
     return app
 

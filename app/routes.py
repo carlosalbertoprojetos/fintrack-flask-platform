@@ -7,6 +7,7 @@ from flask import (
     request,
     jsonify,
     session,
+    Response,
 )
 from urllib.parse import urlencode
 from flask_login import login_user, logout_user, login_required, current_user
@@ -93,6 +94,30 @@ def get_current_conta():
     if conta_id:
         return Conta.query.get(conta_id)
     return None
+
+
+def _user_categories_query():
+    return Category.query.filter_by(user_id=current_user.id)
+
+
+def _user_expenses_query():
+    return Expense.query.filter_by(user_id=current_user.id)
+
+
+def _user_payment_methods_query():
+    return PaymentMethod.query.filter_by(user_id=current_user.id)
+
+
+def _user_category_or_404(category_id):
+    return _user_categories_query().filter_by(id=category_id).first_or_404()
+
+
+def _user_expense_or_404(expense_id):
+    return _user_expenses_query().filter_by(id=expense_id).first_or_404()
+
+
+def _user_payment_method_or_404(method_id):
+    return _user_payment_methods_query().filter_by(id=method_id).first_or_404()
 
 
 # Rotas principais
@@ -733,7 +758,7 @@ def categories():
     selected_type = request.args.get("type", "")
 
     # Base query
-    query = Category.query
+    query = _user_categories_query()
 
     # Apply type filter if selected
     if selected_type:
@@ -763,6 +788,7 @@ def add_category():
             exclusive=form.exclusive.data,
             icon=form.icon.data,
             color=form.color.data,
+            user_id=current_user.id,
         )
 
         db.session.add(category)
@@ -783,7 +809,7 @@ def add_category():
 @transaction_bp.route("/category/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_category(id):
-    category = Category.query.get_or_404(id)
+    category = _user_category_or_404(id)
     form = CategoryForm(obj=category)
 
     if form.validate_on_submit():
@@ -802,10 +828,10 @@ def edit_category(id):
 @transaction_bp.route("/category/delete/<int:id>")
 @login_required
 def delete_category(id):
-    category = Category.query.get_or_404(id)
+    category = _user_category_or_404(id)
 
     # Verificar se a categoria está sendo usada em alguma transação
-    if Transaction.query.filter_by(category_id=category.id).first():
+    if Transaction.query.filter_by(category_id=category.id, user_id=current_user.id).first():
         flash(
             "Não é possível excluir uma categoria que está sendo usada em transações.",
             "danger",
@@ -824,7 +850,7 @@ def expenses():
     category_id = request.args.get("category_id", type=int)
 
     # Base query
-    query = Expense.query.order_by(desc(Expense.id))
+    query = _user_expenses_query().order_by(desc(Expense.id))
 
     # Apply category filter if specified
     if category_id:
@@ -833,7 +859,7 @@ def expenses():
     expenses = query.all()
 
     # Preencher as opções de categorias
-    categories = Category.query.all()
+    categories = _user_categories_query().all()
 
     context = {
         "expenses": expenses,
@@ -851,11 +877,11 @@ def add_expense():
     form = ExpenseForm()
     
     # Preencher as opções de categorias
-    categories = Category.query.all()
+    categories = _user_categories_query().all()
     form.category_id.choices = [(cat.id, cat.name) for cat in categories]
 
     if form.validate_on_submit():
-        expense = Expense(name=form.name.data, category_id=form.category_id.data)
+        expense = Expense(name=form.name.data, category_id=form.category_id.data, user_id=current_user.id)
 
         db.session.add(expense)
         db.session.commit()
@@ -871,11 +897,11 @@ def add_expense():
 @transaction_bp.route("/expenses/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_expense(id):
-    expense = Expense.query.get_or_404(id)
+    expense = _user_expense_or_404(id)
     form = ExpenseForm(obj=expense)
 
     # Retorna as opções da categoria ANTES da validação
-    categories = Category.query.all()
+    categories = _user_categories_query().all()
     form.category_id.choices = [(0, "Selecione uma categoria")] + [
         (c.id, c.name) for c in categories
     ]
@@ -898,10 +924,10 @@ def edit_expense(id):
 @transaction_bp.route("/expenses/delete/<int:id>")
 @login_required
 def delete_expense(id):
-    expense = Expense.query.get_or_404(id)
+    expense = _user_expense_or_404(id)
 
     # Verificar se a descrição está sendo usada em alguma transação
-    if Transaction.query.filter_by(expense_id=expense.id).first():
+    if Transaction.query.filter_by(expense_id=expense.id, user_id=current_user.id).first():
         flash(
             "Não é possível excluir uma descrição que está sendo usada em transações.",
             "danger",
@@ -916,7 +942,7 @@ def delete_expense(id):
 @transaction_bp.route("/payment_methods", methods=["GET"])
 @login_required
 def list_payment_methods():
-    methods = PaymentMethod.query.all()
+    methods = _user_payment_methods_query().all()
     return render_template("list_payment_method.html", methods=methods)
 
 
@@ -926,7 +952,7 @@ def add_payment_method():
     form = PaymentMethodForm()
     if form.validate_on_submit():
         payment_method = PaymentMethod(
-            name=form.name.data, is_active=form.is_active.data
+            name=form.name.data, is_active=form.is_active.data, user_id=current_user.id
         )
         db.session.add(payment_method)
         db.session.commit()
@@ -938,7 +964,7 @@ def add_payment_method():
 @transaction_bp.route("/payment_methods/edit/<int:id>", methods=["GET", "POST"])
 @login_required
 def edit_payment_method(id):
-    method = PaymentMethod.query.get_or_404(id)
+    method = _user_payment_method_or_404(id)
     form = PaymentMethodForm(obj=method)
     if form.validate_on_submit():
         method.name = form.name.data
@@ -952,7 +978,7 @@ def edit_payment_method(id):
 @transaction_bp.route("/payment_methods/delete/<int:id>", methods=["POST"])
 @login_required
 def delete_payment_method(id):
-    method = PaymentMethod.query.get_or_404(id)
+    method = _user_payment_method_or_404(id)
     db.session.delete(method)
     db.session.commit()
     flash("Método de pagamento removido!", "danger")
@@ -1022,7 +1048,7 @@ def reports():
             return 0.0
 
     # Obter todas as formas de pagamento para o select
-    payment_methods = PaymentMethod.query.filter_by(is_active=True).all()
+    payment_methods = _user_payment_methods_query().filter_by(is_active=True).all()
 
     # Construir a consulta base
     if report_type != "annual":
@@ -1449,12 +1475,159 @@ def reports():
     )
 
 
+def _export_serialize(value):
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return float(value)
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+
 @transaction_bp.route("/export")
 @login_required
 def export_data():
-    # Implementação futura para exportação de dados
-    flash("Funcionalidade de exportação será implementada em breve!", "info")
-    return redirect(url_for("transaction.reports"))
+    from app.models import Investimento, MovimentacaoInvestimento, TipoConta, TipoInvestimento
+
+    user_id = current_user.id
+
+    categories = _user_categories_query().order_by(Category.id.asc()).all()
+    expenses = _user_expenses_query().order_by(Expense.id.asc()).all()
+    payment_methods = _user_payment_methods_query().order_by(PaymentMethod.id.asc()).all()
+    tipos_conta = TipoConta.query.filter_by(user_id=user_id).order_by(TipoConta.id.asc()).all()
+    contas = Conta.query.filter_by(user_id=user_id).order_by(Conta.id.asc()).all()
+    tipos_investimento = TipoInvestimento.query.filter_by(user_id=user_id).order_by(TipoInvestimento.id.asc()).all()
+    movimentacoes = (
+        MovimentacaoInvestimento.query.filter_by(user_id=user_id)
+        .order_by(MovimentacaoInvestimento.id.asc())
+        .all()
+    )
+    investimento_ids = sorted({mov.investimento_id for mov in movimentacoes})
+    investimentos = (
+        Investimento.query.filter(Investimento.id.in_(investimento_ids))
+        .order_by(Investimento.id.asc())
+        .all()
+        if investimento_ids
+        else []
+    )
+    transactions = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.id.asc()).all()
+
+    export_payload = {
+        "exported_at": datetime.utcnow().isoformat() + "Z",
+        "user": {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email,
+        },
+        "tipos_conta": [
+            {
+                "id": item.id,
+                "nome": item.nome,
+                "descricao": item.descricao,
+                "ativo": item.ativo,
+            }
+            for item in tipos_conta
+        ],
+        "contas": [
+            {
+                "id": item.id,
+                "nome": item.nome,
+                "tipo_id": item.tipo_id,
+                "saldo_inicial": _export_serialize(item.saldo_inicial),
+                "saldo_atual": _export_serialize(item.saldo_atual),
+            }
+            for item in contas
+        ],
+        "categories": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "type": item.type,
+                "exclusive": item.exclusive,
+                "icon": item.icon,
+                "color": item.color,
+            }
+            for item in categories
+        ],
+        "expenses": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "category_id": item.category_id,
+            }
+            for item in expenses
+        ],
+        "payment_methods": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "is_active": item.is_active,
+            }
+            for item in payment_methods
+        ],
+        "tipos_investimento": [
+            {
+                "id": item.id,
+                "nome": item.nome,
+                "descricao": item.descricao,
+                "ativo": item.ativo,
+            }
+            for item in tipos_investimento
+        ],
+        "investimentos": [
+            {
+                "id": item.id,
+                "tipo_investimento_id": item.tipo_investimento_id,
+                "data_abertura": _export_serialize(item.data_abertura),
+                "saldo_atual": _export_serialize(item.saldo_atual),
+            }
+            for item in investimentos
+        ],
+        "movimentacoes_investimento": [
+            {
+                "id": item.id,
+                "investimento_id": item.investimento_id,
+                "conta_id": item.conta_id,
+                "data_movimentacao": _export_serialize(item.data_movimentacao),
+                "tipo_movimentacao": item.tipo_movimentacao,
+                "valor": _export_serialize(item.valor),
+                "saldo_anterior": _export_serialize(item.saldo_anterior),
+                "saldo_atual": _export_serialize(item.saldo_atual),
+                "observacoes": item.observacoes,
+            }
+            for item in movimentacoes
+        ],
+        "transactions": [
+            {
+                "id": item.id,
+                "type": item.type,
+                "date": _export_serialize(item.date),
+                "due_date": _export_serialize(item.due_date),
+                "payment_date": _export_serialize(item.payment_date),
+                "amount": _export_serialize(item.amount),
+                "discount": _export_serialize(item.discount),
+                "paid": item.paid,
+                "description": item.description,
+                "details": item.details,
+                "notes": item.notes,
+                "recurrence": item.recurrence,
+                "conta_id": item.conta_id,
+                "category_id": item.category_id,
+                "expense_id": item.expense_id,
+                "payment_method_id": item.payment_method_id,
+            }
+            for item in transactions
+        ],
+    }
+
+    filename = f"financas_user_{user_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+    payload = json.dumps(export_payload, ensure_ascii=False, indent=2)
+    return Response(
+        payload,
+        mimetype="application/json; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def send_reset_email(user):
@@ -1553,7 +1726,7 @@ def payment_method_report():
     total_final = sum(get_final_value(t) for t in transactions)
 
     # Obter todas as formas de pagamento para o select
-    payment_methods = PaymentMethod.query.all()
+    payment_methods = _user_payment_methods_query().all()
 
     # Função auxiliar para garantir valor float
     def safe_float(value):
@@ -1754,7 +1927,7 @@ def payment_method_expense_report():
     total_original = sum(float(t.amount or 0) for t in transactions)
 
     # Obter todas as formas de pagamento para o select
-    payment_methods = PaymentMethod.query.filter_by(is_active=True).all()
+    payment_methods = _user_payment_methods_query().filter_by(is_active=True).all()
 
     # Preparar transações para o template
     transactions_for_template = []
@@ -1904,12 +2077,12 @@ def add_transaction():
     form = TransactionForm()
     conta_id_from_url = request.args.get("conta_id", type=int)
 
-    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
+    form.category_id.choices = [(cat.id, cat.name) for cat in _user_categories_query().all()]
     form.payment_method_id.choices = [
-        (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
+        (pm.id, pm.name) for pm in _user_payment_methods_query().filter_by(is_active=True).all()
     ]
     form.expense_id.choices = [(0, "Selecione uma descricao")] + [
-        (exp.id, exp.name) for exp in Expense.query.all()
+        (exp.id, exp.name) for exp in _user_expenses_query().all()
     ]
     form.conta_id.choices = [(c.id, c.nome) for c in Conta.query.filter_by(user_id=current_user.id).all()]
 
@@ -1994,12 +2167,12 @@ def edit_transaction(id):
     transaction = Transaction.query.filter_by(id=id, user_id=current_user.id).first_or_404()
     form = TransactionForm(obj=transaction)
 
-    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
+    form.category_id.choices = [(cat.id, cat.name) for cat in _user_categories_query().all()]
     form.payment_method_id.choices = [
-        (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
+        (pm.id, pm.name) for pm in _user_payment_methods_query().filter_by(is_active=True).all()
     ]
     form.expense_id.choices = [(0, "Selecione uma descricao")] + [
-        (exp.id, exp.name) for exp in Expense.query.all()
+        (exp.id, exp.name) for exp in _user_expenses_query().all()
     ]
     form.conta_id.choices = [(c.id, c.nome) for c in Conta.query.filter_by(user_id=current_user.id).all()]
 
@@ -2073,7 +2246,7 @@ def replicate_transaction(id):
 @transaction_bp.route("/expenses/by-category/<int:category_id>")
 @login_required
 def get_expenses(category_id):
-    expenses = Expense.query.filter_by(category_id=category_id).all()
+    expenses = _user_expenses_query().filter_by(category_id=category_id).all()
     return jsonify([{"id": exp.id, "name": exp.name} for exp in expenses])
 
 
@@ -2082,12 +2255,12 @@ def get_expenses(category_id):
 def get_categories_by_type(type):
     try:
         # Buscar categorias do tipo específico
-        type_categories = Category.query.filter_by(type=type).all()
+        type_categories = _user_categories_query().filter_by(type=type).all()
 
         # Buscar categorias não exclusivas (que podem ser usadas em qualquer tipo)
         # Garantir que exclusive seja False (não None)
-        non_exclusive_categories = Category.query.filter(
-            Category.exclusive.is_(False)  # Usar is_ para comparação com False
+        non_exclusive_categories = _user_categories_query().filter(
+            Category.exclusive.is_(False)
         ).all()
 
         # Combinar as duas listas, evitando duplicatas

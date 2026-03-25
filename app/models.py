@@ -58,11 +58,13 @@ class Category(db.Model):
     __tablename__ = "categories"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     name = db.Column(db.String(64), nullable=False)
     type = db.Column(db.String(20), nullable=False)
     exclusive = db.Column(db.Boolean, default=False)
     icon = db.Column(db.String(50), nullable=True)
     color = db.Column(db.String(20), nullable=True)
+    user = db.relationship("User", backref="categories")
 
     def __repr__(self):
         return f"<Category {self.name}>"
@@ -72,9 +74,11 @@ class Expense(db.Model):
     __tablename__ = "expenses"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     name = db.Column(db.String(64), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
     category = db.relationship("Category", backref="expenses")
+    user = db.relationship("User", backref="expenses")
 
     def __repr__(self):
         return f"<Expense {self.name}>"
@@ -84,8 +88,10 @@ class PaymentMethod(db.Model):
     __tablename__ = "payment_method"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
     name = db.Column(db.String(64), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
+    user = db.relationship("User", backref="payment_methods")
 
     def __repr__(self):
         return f"<PaymentMethod {self.name}>"

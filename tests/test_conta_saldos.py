@@ -27,9 +27,9 @@ def _base_entities(username="carol", email="carol@example.com"):
     conta = Conta(nome="Conta", tipo_id=tipo_conta.id, saldo_inicial=1000.0, saldo_atual=1000.0, user_id=user.id)
     db.session.add(conta)
 
-    category_receita = Category(name="Salario", type="receita", exclusive=True)
-    category_despesa = Category(name="Mercado", type="despesa", exclusive=True)
-    payment = PaymentMethod(name="Pix", is_active=True)
+    category_receita = Category(name="Salario", type="receita", exclusive=True, user_id=user.id)
+    category_despesa = Category(name="Mercado", type="despesa", exclusive=True, user_id=user.id)
+    payment = PaymentMethod(name="Pix", is_active=True, user_id=user.id)
     db.session.add_all([category_receita, category_despesa, payment])
 
     tipo_inv = TipoInvestimento(nome="CDB", descricao="CDB", ativo=True, user_id=user.id)

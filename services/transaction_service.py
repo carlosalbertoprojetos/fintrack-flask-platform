@@ -36,11 +36,40 @@ class TransactionService:
             ClosureService.ensure_period_open(user_id=user_id, account_id=account_id, date_value=effective_date)
 
     @staticmethod
+    def _validate_lookup_ownership(*, user_id: int, payload: Dict):
+        from app.models import Category, Conta, Expense, PaymentMethod
+
+        conta_id = payload.get("conta_id")
+        conta = Conta.query.filter_by(id=conta_id, user_id=user_id).first()
+        if conta is None:
+            raise ValueError("Conta nao pertence ao usuario")
+
+        category_id = payload.get("category_id")
+        category = Category.query.filter_by(id=category_id, user_id=user_id).first()
+        if category is None:
+            raise ValueError("Categoria nao pertence ao usuario")
+
+        expense_id = payload.get("expense_id")
+        if expense_id:
+            expense = Expense.query.filter_by(id=expense_id, user_id=user_id).first()
+            if expense is None:
+                raise ValueError("Descricao nao pertence ao usuario")
+            if expense.category_id and expense.category_id != category.id:
+                raise ValueError("Descricao nao pertence a categoria selecionada")
+
+        payment_method_id = payload.get("payment_method_id")
+        if payment_method_id:
+            payment_method = PaymentMethod.query.filter_by(id=payment_method_id, user_id=user_id).first()
+            if payment_method is None:
+                raise ValueError("Forma de pagamento nao pertence ao usuario")
+
+    @staticmethod
     def create_transaction(*, user_id: int, payload: Dict) -> Transaction:
         conta_id = payload.get("conta_id")
         if not conta_id:
             raise ValueError("Conta obrigatoria para lancamento")
 
+        TransactionService._validate_lookup_ownership(user_id=user_id, payload=payload)
         TransactionService._ensure_period_open_for_payload(user_id=user_id, account_id=conta_id, payload=payload)
 
         tx = Transaction(
@@ -91,6 +120,7 @@ class TransactionService:
             raise ValueError("Transacao nao pertence ao usuario")
 
         ClosureService.ensure_period_open(user_id=user_id, account_id=tx.conta_id, date_value=TransactionService._effective_date(tx))
+        TransactionService._validate_lookup_ownership(user_id=user_id, payload=payload)
 
         old_account_id = tx.conta_id
         old_effect = TransactionService._calculate_effect(

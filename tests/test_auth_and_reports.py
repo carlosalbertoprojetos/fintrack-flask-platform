@@ -1,4 +1,5 @@
 ﻿from datetime import datetime
+import json
 
 from app import db
 from app.models import Category, Conta, PaymentMethod, TipoConta, Transaction, User
@@ -25,9 +26,9 @@ def _create_account(user):
 
 
 def _seed_transactions(user, conta):
-    receita = Category(name="Salario", type="receita", exclusive=True)
-    despesa = Category(name="Mercado", type="despesa", exclusive=True)
-    pagamento = PaymentMethod(name="Pix", is_active=True)
+    receita = Category(name="Salario", type="receita", exclusive=True, user_id=user.id)
+    despesa = Category(name="Mercado", type="despesa", exclusive=True, user_id=user.id)
+    pagamento = PaymentMethod(name="Pix", is_active=True, user_id=user.id)
     db.session.add_all([receita, despesa, pagamento])
     db.session.flush()
 
@@ -202,6 +203,36 @@ def test_reset_token_valid_updates_password(client, app_ctx):
     assert response.location.endswith("/auth/login")
     assert user.check_password("newpass123") is True
 
+
+
+
+def test_export_route_returns_only_authenticated_user_data(client, app_ctx):
+    user_a = _create_user("export-a", "export-a@example.com")
+    conta_a = _create_account(user_a)
+    _seed_transactions(user_a, conta_a)
+
+    user_b = _create_user("export-b", "export-b@example.com")
+    conta_b = _create_account(user_b)
+    _seed_transactions(user_b, conta_b)
+    db.session.add(Category(name="Segredo B", type="despesa", exclusive=True, user_id=user_b.id))
+    db.session.commit()
+
+    login_client(client, user_a)
+
+    response = client.get("/transactions/export")
+
+    assert response.status_code == 200
+    assert response.mimetype == "application/json"
+    assert f'financas_user_{user_a.id}_' in response.headers["Content-Disposition"]
+
+    payload = json.loads(response.get_data(as_text=True))
+    assert payload["user"]["id"] == user_a.id
+    assert payload["user"]["email"] == user_a.email
+    assert user_b.email not in response.get_data(as_text=True)
+    assert "password_hash" not in response.get_data(as_text=True)
+    assert "Segredo B" not in [item["name"] for item in payload["categories"]]
+    assert len(payload["transactions"]) == 2
+    assert {item["conta_id"] for item in payload["transactions"]} == {conta_a.id}
 
 def test_reports_routes_return_200_for_authenticated_user(client, app_ctx):
     user = _create_user("rep1", "rep1@example.com")

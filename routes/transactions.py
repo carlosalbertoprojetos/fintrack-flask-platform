@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, session
+from flask import Blueprint, render_template, redirect, url_for, request, flash
 from app import db
 from datetime import datetime
-from functools import wraps
 from app.models import Transaction, Category, Expense, PaymentMethod, Conta, Investimento
 from app.forms import TransactionForm, ContaForm, InvestimentoForm
 from flask_login import login_required, current_user
@@ -9,30 +8,20 @@ from flask_login import login_required, current_user
 transactions = Blueprint("transactions", __name__)
 
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if "user_id" not in session:
-            flash("Please log in to access this page")
-            return redirect(url_for("auth.login"))
-        return f(*args, **kwargs)
-
-    return decorated_function
-
 
 def get_transaction_form_with_contas(form=None):
     if form is None:
         form = TransactionForm()
     
     # Preencher as opções de categorias
-    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.all()]
+    form.category_id.choices = [(cat.id, cat.name) for cat in Category.query.filter_by(user_id=current_user.id).all()]
     # Preencher as opções de formas de pagamento
     form.payment_method_id.choices = [
-        (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(is_active=True).all()
+        (pm.id, pm.name) for pm in PaymentMethod.query.filter_by(user_id=current_user.id, is_active=True).all()
     ]
     # Preencher as opções de descrições predefinidas
     form.expense_id.choices = [(0, "Selecione uma descrição")] + [
-        (exp.id, exp.name) for exp in Expense.query.all()
+        (exp.id, exp.name) for exp in Expense.query.filter_by(user_id=current_user.id).all()
     ]
     # Preencher as opções de contas
     contas = Conta.query.filter_by(user_id=current_user.id).all()
@@ -44,7 +33,7 @@ def get_transaction_form_with_contas(form=None):
 @transactions.route("/")
 @login_required
 def index():
-    user_id = session.get("user_id")
+    user_id = current_user.id
     transactions = (
         Transaction.query.filter_by(user_id=user_id)
         .order_by(Transaction.date.desc())
@@ -56,7 +45,7 @@ def index():
 @transactions.route("/transactions/new", methods=["GET", "POST"])
 @login_required
 def new():
-    user_id = session.get("user_id")
+    user_id = current_user.id
     form = get_transaction_form_with_contas()
     if form.validate_on_submit():
         transaction = Transaction(
@@ -78,7 +67,7 @@ def new():
 @transactions.route("/transactions/<int:id>/edit", methods=["GET", "POST"])
 @login_required
 def edit(id):
-    user_id = session.get("user_id")
+    user_id = current_user.id
     transaction = Transaction.query.filter_by(id=id, user_id=user_id).first_or_404()
     form = get_transaction_form_with_contas(form=TransactionForm(obj=transaction))
     if form.validate_on_submit():
@@ -98,7 +87,7 @@ def edit(id):
 @transactions.route("/transactions/<int:id>/delete", methods=["POST"])
 @login_required
 def delete(id):
-    user_id = session.get("user_id")
+    user_id = current_user.id
     transaction = Transaction.query.filter_by(id=id, user_id=user_id).first_or_404()
 
     db.session.delete(transaction)
@@ -111,9 +100,9 @@ def delete(id):
 @transactions.route("/reports", methods=["GET"])
 @login_required
 def reports():
-    user_id = session.get("user_id")
+    user_id = current_user.id
     # ... código já existente para relatórios ...
-    investimentos = Investimento.query.join(Investimento.conta).filter_by(user_id=user_id).all()
+    investimentos = []
     total_investido = sum(inv.saldo_atual for inv in investimentos)
     # ... outros contextos ...
     return render_template(
