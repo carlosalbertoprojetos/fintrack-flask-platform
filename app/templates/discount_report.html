@@ -1,8 +1,55 @@
 {% extends 'base.html' %}
 
-{% block title %}Relatório de Descontos - Finanças Pessoais{% endblock %}
+{% block title %}Relatório de Descontos{% endblock %}
 
 {% block content %}
+<style>
+  .report-bar-chart-card .card-body {
+    overflow: hidden;
+  }
+
+  .report-bar-chart-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 220px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 576px) {
+    .report-bar-chart-wrap {
+      height: 240px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .report-bar-chart-wrap {
+      height: 260px;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .report-bar-chart-wrap {
+      height: 280px;
+    }
+  }
+
+  @media (min-width: 1400px) {
+    .report-bar-chart-wrap {
+      height: 300px;
+    }
+  }
+
+  .report-bar-chart-wrap canvas {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    box-sizing: border-box;
+  }
+</style>
 <div class="container-fluid">
   <h1 class="h3 mb-4 text-gray-800">Relatório de Descontos</h1>
 

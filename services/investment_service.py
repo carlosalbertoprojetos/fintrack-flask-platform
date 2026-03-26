@@ -4,7 +4,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from app import db
-from app.models import Investimento, MovimentacaoInvestimento
+from app.models import Conta, Investimento, MovimentacaoInvestimento
 from services.closure_service import ClosureService
 from services.ledger_service import LedgerService
 
@@ -136,6 +136,10 @@ class InvestmentService:
         if mov.user_id != user_id:
             raise ValueError("Movimentacao nao pertence ao usuario")
 
+        conta = Conta.query.filter_by(id=mov.conta_id, user_id=user_id).first()
+        if conta is None:
+            raise ValueError("Conta nao pertence ao usuario")
+
         ClosureService.ensure_period_open(
             user_id=user_id,
             account_id=mov.conta_id,
@@ -147,17 +151,28 @@ class InvestmentService:
             date_value=data_movimentacao,
         )
 
-        old_effect = InvestmentService._account_effect(mov.tipo_movimentacao, mov.valor)
+        old_value = Decimal(str(mov.valor or 0))
+        new_value = Decimal(str(valor or 0))
+        old_effect = InvestmentService._account_effect(mov.tipo_movimentacao, old_value)
+        new_effect = InvestmentService._account_effect(mov.tipo_movimentacao, new_value)
+        delta = new_effect - old_effect
+
+        if delta < 0:
+            available_balance = Decimal(str(conta.saldo_atual or 0))
+            if available_balance + delta < 0:
+                if mov.tipo_movimentacao == "aplicacao":
+                    allowed_total = available_balance - old_effect
+                    raise ValueError(
+                        f"Valor excede o saldo disponivel para esta conta. Maximo permitido: R$ {float(allowed_total):.2f}"
+                    )
+                raise ValueError("Movimentacao excede o saldo disponivel para esta conta")
 
         mov.data_movimentacao = data_movimentacao
-        mov.valor = float(valor)
+        mov.valor = float(new_value)
         mov.observacoes = observacoes
 
         db.session.flush()
         InvestmentService.recalculate_movement_balances(investimento_id=mov.investimento_id)
-
-        new_effect = InvestmentService._account_effect(mov.tipo_movimentacao, mov.valor)
-        delta = new_effect - old_effect
 
         if delta != 0:
             LedgerService.append_entry(

@@ -1,5 +1,5 @@
 {% extends "index.html" %}
-{% block title %}Editar Movimentação - Finanças Pessoais{% endblock %}
+{% block title %}Editar Movimentação{% endblock %}
 
 {% block extra_css %}
 {{ super() }}
@@ -188,7 +188,7 @@
       // Validação do valor para edição de movimentações
       function validateEditValue(input) {
         const tipoMovimentacao = '{{ movimentacao.tipo_movimentacao }}';
-        const saldoConta = parseFloat('{{ conta_info.saldo_atual if conta_info else 0 }}');
+        const saldoConta = parseFloat('{{ conta_info.max_edit_value if conta_info else 0 }}');
         
         console.log('Validando valor...');
         console.log('Tipo de movimentação:', tipoMovimentacao);
@@ -265,7 +265,7 @@
       if (valorInput) {
         console.log('Campo de valor encontrado, adicionando listeners...');
         console.log('Tipo de movimentação:', '{{ movimentacao.tipo_movimentacao }}');
-        console.log('Saldo da conta:', '{{ conta_info.saldo_atual if conta_info else 0 }}');
+        console.log('Saldo disponivel para edicao:', '{{ conta_info.max_edit_value if conta_info else 0 }}');
         
         // Validar ao digitar
         valorInput.addEventListener('input', function() {

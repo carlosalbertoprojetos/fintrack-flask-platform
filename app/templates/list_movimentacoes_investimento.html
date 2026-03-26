@@ -1,0 +1,142 @@
+{% extends "index.html" %}
+{% block title %}Movimentacoes do Investimento{% endblock %}
+
+{% block index %}
+<div class="col p-lg-0">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <h1 class="h3 text-gray-800 mb-1">Movimentacoes do Investimento</h1>
+      <p class="text-muted mb-0">
+        Tipo: {{ investimento.tipo_investimento.nome if investimento.tipo_investimento else 'N/A' }}
+      </p>
+    </div>
+    <a href="{{ url_for('investimento.investimentos') }}{% if request.args.get('conta_id') %}?conta_id={{ request.args.get('conta_id') }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+      Voltar
+    </a>
+  </div>
+
+  <div class="row g-2 mb-2">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body py-3">
+          <small class="text-muted d-block">Saldo do Investimento</small>
+          <strong class="fs-5 {% if (saldo_investimento or 0) >= 0 %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ (saldo_investimento or 0)|currency }}
+          </strong>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body py-3">
+          <small class="text-muted d-block">Conta Atual</small>
+          <strong class="fs-6">{{ conta_info.nome }}</strong>
+          <div class="small text-muted">Saldo: R$ {{ conta_info.saldo_atual|currency }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body py-3">
+          <small class="text-muted d-block">Movimentacoes</small>
+          <strong class="fs-5">{{ movimentacoes|length }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow mb-2">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+      <h6 class="m-0 font-weight-bold text-primary">Nova Movimentacao</h6>
+      <form method="POST" action="{{ url_for('investimento.recalcular_saldos_investimento', investimento_id=investimento.id) }}" class="m-0">
+        {{ form.csrf_token }}
+        <button type="submit" class="btn btn-outline-primary btn-sm">Recalcular Saldos</button>
+      </form>
+    </div>
+    <div class="card-body">
+      <form method="POST" class="row g-2 align-items-end">
+        {{ form.hidden_tag() }}
+        <div class="col-md-3">
+          {{ form.data_movimentacao.label(class="form-label") }}
+          {{ form.data_movimentacao(class="form-control form-control-sm", type="date", max=today.isoformat()) }}
+        </div>
+        <div class="col-md-3">
+          {{ form.tipo_movimentacao.label(class="form-label") }}
+          {{ form.tipo_movimentacao(class="form-select form-select-sm") }}
+        </div>
+        <div class="col-md-2">
+          {{ form.valor.label(class="form-label") }}
+          {{ form.valor(class="form-control form-control-sm", step="0.01", min="0") }}
+        </div>
+        <div class="col-md-4">
+          {{ form.observacoes.label(class="form-label") }}
+          {{ form.observacoes(class="form-control form-control-sm", rows="1") }}
+        </div>
+        <div class="col-12">
+          {% for field in [form.data_movimentacao, form.tipo_movimentacao, form.valor, form.observacoes] %}
+            {% for error in field.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary btn-sm">Salvar Movimentacao</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Historico</h6>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Saldo Anterior</th>
+              <th>Saldo Atual</th>
+              <th>Observacoes</th>
+              <th class="text-center">Acoes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mov in movimentacoes %}
+            <tr>
+              <td>{{ mov.data_movimentacao.strftime('%d/%m/%Y') if mov.data_movimentacao else '-' }}</td>
+              <td><span class="badge {% if mov.tipo_movimentacao == 'aplicacao' %}bg-primary{% elif mov.tipo_movimentacao == 'resgate' %}bg-warning text-dark{% else %}bg-success{% endif %}">{{ mov.tipo_movimentacao|title }}</span></td>
+              <td>R$ {{ (mov.valor or 0)|currency }}</td>
+              <td>R$ {{ (mov.saldo_anterior or 0)|currency }}</td>
+              <td>R$ {{ (mov.saldo_atual or 0)|currency }}</td>
+              <td>{{ mov.observacoes or '-' }}</td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                  <a href="{{ url_for('investimento.editar_movimentacao', movimentacao_id=mov.id) }}" class="btn btn-link text-primary p-0 me-2" title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  {% if mov.id != primeiro_resgate_zero %}
+                  <form method="POST" action="{{ url_for('investimento.excluir_movimentacao', movimentacao_id=mov.id) }}" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir esta movimentacao?');">
+                    <button type="submit" class="btn btn-link text-danger p-0" title="Excluir">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4">Nenhuma movimentacao encontrada para este investimento.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

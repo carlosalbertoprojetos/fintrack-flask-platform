@@ -371,6 +371,37 @@ def test_investment_service_lifecycle_and_permissions(app_ctx):
         InvestmentService.delete_movement(user_id=other.id, mov=remaining)
 
 
+
+
+def test_investment_service_rejects_application_edit_above_available_balance(app_ctx):
+    user, conta_1, _, _, _, _, tipo_inv = _seed_user_and_accounts("svc-inv-limit", "svc-inv-limit@example.com")
+
+    inv = InvestmentService.create_investment(
+        user_id=user.id,
+        tipo_investimento_id=tipo_inv.id,
+        conta_id=conta_1.id,
+    )
+    mov = InvestmentService.create_movement(
+        user_id=user.id,
+        investimento=inv,
+        conta_id=conta_1.id,
+        data_movimentacao=date(2025, 1, 10),
+        tipo_movimentacao="aplicacao",
+        valor=400.0,
+        observacoes="aporte",
+    )
+    db.session.refresh(conta_1)
+    assert conta_1.saldo_atual == 600.0
+
+    with pytest.raises(ValueError, match="Maximo permitido"):
+        InvestmentService.update_movement(
+            user_id=user.id,
+            mov=mov,
+            data_movimentacao=date(2025, 1, 11),
+            valor=1200.0,
+            observacoes="aporte invalido",
+        )
+
 def test_data_quality_and_projection_and_simulation(app_ctx, tmp_path):
     user, conta_1, _, cat_receita, cat_despesa, pagamento, _ = _seed_user_and_accounts(
         "svc-ai",

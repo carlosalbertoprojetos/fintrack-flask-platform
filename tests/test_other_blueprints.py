@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app import db, repair_default_lookup_data
-from app.models import Category, Conta, Expense, Investimento, PaymentMethod, TipoConta, TipoInvestimento, Transaction, User
+from app.models import Category, Conta, Expense, Investimento, MovimentacaoInvestimento, PaymentMethod, TipoConta, TipoInvestimento, Transaction, User
 from conftest import login_client, set_legacy_session_user
 
 
@@ -205,6 +205,58 @@ def test_investimento_list_and_create_routes(client, app_ctx):
     )
     assert r_create.status_code == 302
 
+
+
+
+def test_investimento_movimentacoes_list_and_edit_routes(client, app_ctx):
+    user = _create_user("inv-edit", "inv-edit@example.com")
+    conta, _ = _create_account(user)
+    tipo_inv = TipoInvestimento(nome="CDB", descricao="Renda fixa", ativo=True, user_id=user.id)
+    db.session.add(tipo_inv)
+    db.session.commit()
+
+    investimento = Investimento(tipo_investimento_id=tipo_inv.id, data_abertura=date.today())
+    db.session.add(investimento)
+    db.session.flush()
+
+    mov = MovimentacaoInvestimento(
+        investimento_id=investimento.id,
+        data_movimentacao=date(2025, 1, 10),
+        tipo_movimentacao="aplicacao",
+        valor=100.0,
+        saldo_anterior=0.0,
+        saldo_atual=100.0,
+        observacoes="aporte inicial",
+        user_id=user.id,
+        conta_id=conta.id,
+    )
+    db.session.add(mov)
+    db.session.commit()
+
+    login_client(client, user)
+
+    r_list = client.get(f"/investimento/investimento/{investimento.id}/movimentacoes")
+    assert r_list.status_code == 200
+    assert "Hist?rico" in r_list.get_data(as_text=True)
+
+    r_edit_get = client.get(f"/investimento/movimentacao/{mov.id}/editar")
+    assert r_edit_get.status_code == 200
+
+    r_edit_post = client.post(
+        f"/investimento/movimentacao/{mov.id}/editar",
+        data={
+            "data_movimentacao": "2025-01-11",
+            "tipo_movimentacao": "aplicacao",
+            "valor": "150",
+            "observacoes": "aporte ajustado",
+        },
+        follow_redirects=False,
+    )
+    assert r_edit_post.status_code == 302
+
+    db.session.refresh(mov)
+    assert mov.valor == 150.0
+    assert mov.observacoes == "aporte ajustado"
 
 def test_legacy_transactions_blueprint_basic_flows(client, app_ctx):
     user = _create_user("leg1", "leg1@example.com")

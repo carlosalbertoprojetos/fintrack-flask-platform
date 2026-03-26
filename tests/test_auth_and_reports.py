@@ -273,6 +273,7 @@ def test_dashboard_and_reports_pages_include_local_chart_runtime(client, app_ctx
     assert "js/chart-lite.js" in reports_annual_body
 
     assert "new Chart(" in dashboard_body
+    assert "dashboard-monthly-card" in dashboard_body
     assert "chart-area-wide" in dashboard_body
     assert "category-chart-col" in dashboard_body
     assert "category-chart-canvas" in dashboard_body
@@ -282,6 +283,7 @@ def test_dashboard_and_reports_pages_include_local_chart_runtime(client, app_ctx
     assert "category-chart-canvas" in reports_monthly_body
     assert "category-chart-legend" in reports_monthly_body
     assert "new Chart(" in reports_annual_body
+    assert "report-chart-card" in reports_annual_body
     assert 'id="expenseChart"' in reports_monthly_body
     assert 'id="incomeChart"' in reports_monthly_body
     assert 'id="monthlyChart"' in reports_annual_body

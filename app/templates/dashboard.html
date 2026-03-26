@@ -1,6 +1,6 @@
 {% extends "index.html" %} 
 
-{% block title %}Dashboard - Finanças Pessoais{% endblock %} 
+{% block title %}Dashboard{% endblock %} 
 
 {% block index %}
 
@@ -12,12 +12,53 @@
     }
 
     .chart-area-wide {
-      height: 420px !important;
+      height: 220px !important;
       width: 100%;
     }
 
-    .chart-area-wide canvas {
+    @media (min-width: 576px) {
+      .chart-area-wide {
+        height: 240px !important;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .chart-area-wide {
+        height: 260px !important;
+      }
+    }
+
+    @media (min-width: 992px) {
+      .chart-area-wide {
+        height: 280px !important;
+      }
+    }
+
+    @media (min-width: 1400px) {
+      .chart-area-wide {
+        height: 300px !important;
+      }
+    }
+
+    .dashboard-monthly-card .card-body {
+      overflow: hidden;
+    }
+
+    .dashboard-monthly-card .chart-area-wide {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .dashboard-monthly-card .chart-area-wide canvas {
+      display: block;
       width: 100% !important;
+      max-width: 100% !important;
+      height: 100% !important;
+      box-sizing: border-box;
     }
 
     .category-chart-col {
@@ -597,7 +638,7 @@
     {% if monthly_data_json and monthly_data_json != '[]' and monthly_data_json != 'null' and monthly_data_json != '""' %}
     <div class="row mx-0">
       <div class="col-12 px-0">
-        <div class="card shadow mb-2 w-100">
+        <div class="card shadow mb-2 w-100 dashboard-monthly-card">
           <div class="card-header">
             <h6 class="m-0 font-weight-bold text-primary">
               Evolução Financeira (Últimos e próximos 6 meses)

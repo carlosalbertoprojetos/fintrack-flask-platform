@@ -204,7 +204,14 @@ def editar_movimentacao(movimentacao_id):
     conta_info = None
     conta_atual = get_current_conta()
     if conta_atual:
-        conta_info = {"nome": conta_atual.nome, "saldo_atual": conta_atual.saldo_atual or 0.0}
+        max_edit_value = conta_atual.saldo_atual or 0.0
+        if movimentacao.tipo_movimentacao == "aplicacao" and movimentacao.conta_id == conta_atual.id:
+            max_edit_value += movimentacao.valor or 0.0
+        conta_info = {
+            "nome": conta_atual.nome,
+            "saldo_atual": conta_atual.saldo_atual or 0.0,
+            "max_edit_value": max_edit_value,
+        }
 
     if form.validate_on_submit():
         try:
