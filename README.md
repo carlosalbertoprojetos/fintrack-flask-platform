@@ -1,697 +1,540 @@
-# Sistema de Finanças Pessoais Flask
+# SFP | Sistema de Finanças Pessoais
 
-## Visão Geral
+Sistema web de finanças pessoais construído em Flask, com foco em rastreabilidade financeira, isolamento de dados por usuário, operação local/offline e evolução arquitetural orientada a serviços.
 
-O **Sistema de Finanças Pessoais Flask** é uma aplicação web completa desenvolvida em Python/Flask para gerenciamento financeiro pessoal. O sistema oferece uma interface moderna e intuitiva para controle de receitas, despesas, investimentos e relatórios financeiros detalhados.
+Este repositório funciona como produto funcional e como portfólio técnico. Ele demonstra capacidade de transformar um problema real de domínio financeiro em uma aplicação utilizável, evoluir código legado com mais rigor arquitetural e aplicar estudos modernos em backend, qualidade de dados, IA aplicada e extensibilidade.
 
-## Funcionalidades Principais
+## Visão para recrutadores
 
-### Gestão de Usuários
+O SFP foi estruturado para comunicar competência prática em frentes que costumam importar em times de produto e engenharia:
 
-- **Registro e Login**: Sistema completo de autenticação com Flask-Login
-- **Recuperação de Senha**: Sistema de reset de senha via email
-- **Perfil do Usuário**: Edição de dados pessoais e alteração de senha
-- **Sessões Seguras**: Configurações avançadas de cookies e sessões
+- modelagem de domínio além de um CRUD simples
+- backend Python com Flask e SQLAlchemy
+- refatoração de legado para uma arquitetura mais sustentável
+- isolamento de dados por usuário e validação de ownership
+- trilha auditável de eventos financeiros com ledger imutável
+- operação local/offline com UX adaptada para ambiente Windows
+- suíte de testes versionada e documentação de evolução arquitetural
 
-### Gestão Financeira
+O valor do projeto não está apenas na interface final, mas nas decisões técnicas que sustentam consistência, segurança, manutenção e possibilidade real de expansão.
 
-#### **Contas Bancárias**
+## Leitura rápida
 
-- Criação e gerenciamento de múltiplas contas
-- Tipos de conta personalizáveis (Conta Corrente, Poupança, etc.)
-- Saldo inicial e saldo atual calculado automaticamente
-- Histórico completo de movimentações por conta
+Para uma leitura de 30 segundos, este projeto evidencia:
 
-#### **Transações**
+- capacidade de construir um produto funcional em Flask sobre um domínio real
+- capacidade de evoluir uma base legada para um desenho mais sustentável
+- capacidade de modelar regras financeiras com rastreabilidade e consistência
+- capacidade de isolar dados por usuário e endurecer fluxos críticos
+- capacidade de aplicar estudos em IA, qualidade de dados e arquitetura de forma pragmática
 
-- **Receitas**: Registro de salários, freelances, investimentos, etc.
-- **Despesas**: Controle de gastos com categorização automática
-- **Descontos**: Sistema de desconto em despesas
-- **Formas de Pagamento**: Dinheiro, PIX, cartões, boleto, etc.
-- **Recorrência**: Transações recorrentes (diária, semanal, mensal)
-- **Status de Pagamento**: Controle de transações pagas/pendentes
-- **Datas**: Data de vencimento e data de pagamento separadas
+## Resumo executivo
 
-#### **Categorias e Descrições**
+O sistema entrega hoje:
 
-- Categorias predefinidas (Salário, Alimentação, Moradia, etc.)
-- Categorias personalizáveis com ícones e cores
-- Descrições predefinidas para agilizar o cadastro
-- Sistema de categorias exclusivas ou compartilhadas
+- autenticação com login, logout, cadastro, perfil e recuperação de senha
+- dashboard financeiro com indicadores, gráficos e visão consolidada de receitas, despesas e saldo
+- relatórios mensais, anuais e por forma de pagamento
+- gestão de contas, categorias, despesas, formas de pagamento e tipos financeiros
+- módulo de investimentos com aplicações, resgates, rendimentos e recálculo de saldo
+- exportação lógica de dados por usuário
+- inicialização local com launcher próprio e execução offline sem dependência obrigatória de CDN
+- dados de demonstração para navegação do sistema
 
-### Sistema de Investimentos
+Na camada técnica, o projeto evoluiu para incorporar:
 
-#### **Tipos de Investimento**
+- ledger imutável por conta
+- fechamento mensal com possibilidade de bloqueio de período
+- simulação paralela de cenários
+- camada de serviços para regras de negócio críticas
+- rotas separadas por contexto funcional
+- preparação para recursos de IA local e evolução para arquiteturas mais contextuais
 
-- CDB, Ações, Fundos, Tesouro Direto, Poupança
-- Tipos personalizáveis pelo usuário
-- Descrições detalhadas para cada tipo
+## Casos de uso cobertos
 
-#### **Movimentações de Investimento**
+- acompanhar receitas, despesas e saldo por conta
+- analisar comportamento financeiro no dashboard e em relatórios
+- controlar despesas por categoria, descrição e forma de pagamento
+- registrar e reconciliar aplicações, resgates e rendimentos em investimentos
+- exportar os dados do usuário autenticado para uso externo
+- operar localmente, inclusive em ambientes sem internet
 
-- **Aplicações**: Registro de novos investimentos
-- **Resgates**: Saques parciais ou totais
-- **Rendimentos**: Registro de ganhos e dividendos
-- **Saldo Atual**: Cálculo automático do saldo por investimento
-- **Histórico Completo**: Todas as movimentações com datas e valores
+## Principais funcionalidades
 
-#### **Controle de Saldo**
+### 1. Gestão financeira do dia a dia
 
-- Integração automática com contas bancárias
-- Aplicações diminuem saldo da conta
-- Resgates aumentam saldo da conta
-- Rendimentos não afetam saldo da conta
+- cadastro de contas com saldo inicial e saldo recalculável
+- lançamentos de receitas e despesas
+- categorização das transações
+- vínculo com formas de pagamento e descrição da despesa
+- controle de vencimento, pagamento, desconto e recorrência
+- replicação de lançamentos para acelerar uso operacional
 
-### Dashboard e Relatórios
+### 2. Dashboard gerencial
 
-#### **Dashboard Principal**
+O dashboard foi pensado para leitura rápida do estado financeiro do usuário.
 
-- **Visão Geral**: Resumo financeiro do mês atual
-- **Cards de Resumo**: Receitas, despesas, saldo do mês, saldo atual
-- **Transações Pendentes**: Lista de transações não pagas
-- **Investimentos Ativos**: Resumo dos investimentos por conta
-- **Estatísticas**: Média diária, projeções, total de transações
+Ele reúne:
 
-#### **Gráficos Interativos**
+- totais consolidados do mês
+- saldo mensal e saldo acumulado
+- evolução financeira em janela de 12 meses
+- receitas por categoria
+- despesas por categoria
+- visão resumida de investimentos
+- lançamentos recentes e indicadores por conta
 
-- **Evolução Mensal**: Gráfico de linha dos últimos 6 meses
-- **Receitas por Categoria**: Gráfico de pizza
-- **Despesas por Categoria**: Gráfico de pizza
-- **Comparativo**: Receitas vs Despesas vs Saldo
+### 3. Relatórios financeiros
 
-#### **Relatórios Detalhados**
+O sistema oferece relatórios úteis para análise e acompanhamento:
 
-- **Relatório Mensal**: Transações do mês com filtros
-- **Relatório Anual**: Visão anual com evolução mensal
-- **Relatório por Forma de Pagamento**: Análise por método de pagamento
-- **Relatório de Descontos**: Transações com desconto aplicado
-- **Filtros Avançados**: Por conta, categoria, período, status
+- relatório mensal
+- relatório anual
+- relatório por forma de pagamento
+- relatório de descontos
+- relatório consolidado de despesas por forma de pagamento
+- exportação de dados em JSON por usuário autenticado
 
-### Funcionalidades Técnicas
+### 4. Módulo de investimentos
 
-#### **Sistema de Contas Múltiplas**
+O módulo de investimentos vai além do cadastro básico.
 
-- Abas para alternar entre contas
-- Filtros automáticos por conta selecionada
-- Saldos independentes por conta
-- Histórico separado por conta
+Ele contempla:
 
-#### **Backup Automático**
+- tipos de investimento por usuário
+- criação de investimentos vinculados a contas
+- aplicações, resgates e rendimentos
+- histórico completo de movimentações
+- edição e exclusão de movimentações
+- recálculo de saldos do investimento
+- consistência entre movimentação do investimento e impacto na conta de origem
 
-- Backup automático do banco de dados
-- Localização: `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
-- Atualização automática após cada operação
-
-#### **Compatibilidade de Navegadores**
-
-- Middleware de compatibilidade
-- Suporte a Chrome, Firefox, Edge
-- Configurações otimizadas de cookies e sessões
-
-#### **Sistema de Shutdown**
-
-- Encerramento automático do servidor
-- Fechamento de navegadores
-- Limpeza de processos Python e CMD
-
-## Tecnologias Utilizadas
-
-### **Backend**
-
-- **Python 3.10+**: Linguagem principal
-- **Flask 2.3.3**: Framework web
-- **SQLAlchemy 2.0.23**: ORM para banco de dados
-- **Flask-Login 0.6.2**: Autenticação de usuários
-- **Flask-Migrate 4.0.5**: Migrações de banco de dados
-- **Flask-Mail 0.9.1**: Envio de emails
-- **Flask-WTF 1.2.1**: Formulários web
-- **WTForms 3.1.1**: Validação de formulários
+### 5. Segurança funcional e isolamento de dados
 
-### **Frontend**
-
-- **Bootstrap 5.2.3**: Framework CSS
-- **Chart.js 4.4.1**: Gráficos interativos
-- **Font Awesome 6.5.0**: Ícones
-- **Boxicons**: Ícones adicionais
-- **Google Fonts**: Tipografia
+O sistema foi endurecido para que cada usuário visualize e manipule apenas seu próprio escopo.
 
-### **Banco de Dados**
+Isso inclui:
 
-- **SQLite**: Banco de dados principal
-- **Alembic**: Sistema de migrações
+- categorias por usuário
+- despesas por usuário
+- formas de pagamento por usuário
+- contas por usuário
+- tipos de conta por usuário
+- tipos de investimento por usuário
+- transações e investimentos sempre filtrados pelo usuário autenticado
+- validação de ownership antes de gravar ou editar relacionamentos
 
-### **Ferramentas de Desenvolvimento**
+### 6. Operação local e offline
 
-- **PyInstaller**: Criação de executáveis
-- **psutil**: Monitoramento de processos
-- **email-validator**: Validação de emails
+O projeto foi adaptado para funcionar bem em ambiente local, inclusive sem internet.
 
-## Estrutura do Projeto
+Foram implementados:
 
-```
-financas_pessoais_flask/
-├── app/                         # Aplicação principal
-│   ├── __init__.py              # Configuração da aplicação
-│   ├── models.py                # Modelos de dados
-│   ├── routes.py                # Rotas principais
-│   ├── forms.py                 # Formulários
-│   ├── middleware.py            # Middleware de compatibilidade
-│   ├── static/                  # Arquivos estáticos
-│   │   ├── css/                 # Estilos CSS
-│   │   ├── js/                  # Scripts JavaScript
-│   │   ├── img/                 # Imagens e favicon
-│   │   └── vendor/              # Bibliotecas externas
-│   └── templates/               # Templates HTML
-│       ├── base.html            # Template base
-│       ├── dashboard.html       # Dashboard principal
-│       ├── login.html           # Página de login
-│       ├── add_edit_transaction.html # Formulário de transações
-│       └── ...                  # Outros templates
-├── routes/                      # Módulos de rotas
-│   ├── conta.py                 # Gestão de contas
-│   ├── investimento.py          # Gestão de investimentos
-│   ├── transactions.py          # Transações
-│   ├── tipo_conta.py            # Tipos de conta
-│   └── tipo_investimento.py     # Tipos de investimento
-├── migrations/                  # Migrações do banco
- instance/                    # Instncia da aplicao
-├── build/                       # Arquivos de build
-├── dist/                        # Distribuição
-├── venv/                        # Ambiente virtual
-├── config.py                    # Configurações
-├── run.py                       # Arquivo principal
-├── requirements.txt             # Dependências
-├── installer.py                 # Instalador automático
-├── build_installer.bat          # Script de build
-└── README.md                    # Este arquivo
-```
-
-## Modelos de Dados
-
-### **User (Usuário)**
-
-- ID, username, email, password_hash
-- Relacionamento com transações e contas
-
-### **Conta (Conta Bancária)**
-
-- ID, nome, tipo_id, saldo_inicial, saldo_atual
-- Relacionamento com usuário e transações
-
-### **TipoConta (Tipo de Conta)**
-
-- ID, nome, descrição, ativo
-- Relacionamento com contas
-
-### **Transaction (Transação)**
-
-- ID, data, valor, tipo, categoria, descrição
-- Campos: due_date, payment_date, discount, paid
-- Relacionamentos com usuário, conta, categoria, forma de pagamento
-
-### **Category (Categoria)**
-
-- ID, nome, tipo (receita/despesa), exclusive
-- Ícones e cores personalizáveis
-
-### **PaymentMethod (Forma de Pagamento)**
-
-- ID, nome, is_active
-- Dinheiro, PIX, cartões, etc.
-
-### **Investimento (Investimento)**
-
-- ID, tipo_investimento_id, data_abertura
-- Relacionamento com movimentações
-
-### **MovimentacaoInvestimento (Movimentação)**
-
-- ID, investimento_id, data_movimentacao
-- Campos: tipo_movimentacao, valor, saldo_anterior, saldo_atual
-- Relacionamento com conta e usuário
-
-### **TipoInvestimento (Tipo de Investimento)**
-
-- ID, nome, descrição, ativo
-- Relacionamento com investimentos
-
-## Instalação e Configuração
-
-### **Pré-requisitos**
-
-- **Windows 10/11** ou **Linux** (Ubuntu, Debian, CentOS, etc.)
-- **Python 3.10 ou superior** (será instalado automaticamente se necessário)
-- **Conexão com internet** (para download de dependências)
-- **Privilégios de administrador** (para instalação)
-
-### **🚀 Instalação Automática (Recomendada)**
-
-#### **Método 1: Instalador Corrigido (Windows)**
-
-1. **Execute o Instalador:**
-   ```bash
-   # Duplo clique em:
-   INSTALAR_SISTEMA_CORRIGIDO.bat
-   ```
-
-2. **O instalador fará automaticamente:**
-   - ✅ Verificar/instalar Python 3.10+ se necessário
-   - ✅ Criar diretório `C:\Financas_Pessoais`
-   - ✅ Copiar todos os arquivos do sistema (app, routes, migrations, etc.)
-   - ✅ Criar ambiente virtual Python
-   - ✅ Instalar todas as dependências (Flask, SQLAlchemy, etc.)
-   - ✅ Criar scripts de inicialização
-   - ✅ Criar atalho na área de trabalho
-   - ✅ Testar o sistema
-   - ✅ Iniciar o sistema automaticamente
-
-#### **Método 2: Instalador Python (Windows/Linux)**
-
-1. **Execute o Instalador Python:**
-   ```bash
-   python instalar_sistema.py
-   ```
-
-2. **Siga as instruções na tela:**
-   - O sistema detectará automaticamente Windows ou Linux
-   - Instalará Python se necessário
-   - Criará ambiente virtual
-   - Instalará todas as dependências
-   - Criará atalho na área de trabalho
-
-### **📋 Instalação Manual (Desenvolvedores)**
-
-1. **Clone o Repositório**
-   ```bash
-   git clone https://github.com/seu-usuario/financas_pessoais_flask.git
-   cd financas_pessoais_flask
-   ```
-
-2. **Crie Ambiente Virtual**
-   ```bash
-   # Windows
-   py -3.10 -m venv venv
-   
-   # Linux
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-
-3. **Instale Dependências**
-   ```bash
-   # Windows
-   .\\venv\\Scripts\\python.exe -m pip install -r requirements.txt
-   
-   # Linux
-   pip install -r requirements.txt
-   ```
-
-4. **Execute a Aplicação**
-   ```bash
-   # Windows
-   run.bat
-
-   # Alternativa direta
-   .\\venv\\Scripts\\python.exe run.py
-   ```
+- assets críticos locais para CSS e JavaScript
+- fallbacks para recursos antes dependentes de CDN
+- launcher com `run.py` e `run.bat`
+- abertura de navegador em janela gerenciada
+- fechamento automático da janela do navegador ao desligar o sistema
+- backup automático do banco no encerramento
 
-5. **Acesse o Sistema**
-   - Abra o navegador em: `http://127.0.0.1:5000`
-   - **Usuário:** admin
-   - **Senha:** admin123
-
-### **🎯 Primeiro Acesso**
+## Diferenciais técnicos
 
-Após a instalação:
-
-1. **Acesse:** `http://127.0.0.1:5000`
-2. **Login inicial:**
-   - **Usuário:** admin
-   - **Senha:** admin123
-3. **Altere a senha** nas configurações do perfil
-4. **Crie sua primeira conta bancária**
-5. **Configure tipos de conta e investimento**
+### Ledger imutável como trilha auditável
 
-## Como Usar o Sistema
+Uma das evoluções mais relevantes do sistema foi a migração de uma lógica baseada apenas em mutação de saldo para uma abordagem com livro de eventos financeiros.
 
-### **1. Primeiro Acesso**
+Isso trouxe ganhos concretos:
 
-1. Acesse `http://127.0.0.1:5000`
-2. Clique em "Registrar" para criar sua conta
-3. Preencha os dados (username, email, senha)
-4. Após o registro, crie sua primeira conta bancária
-
-### **2. Configuração Inicial**
+- rastreabilidade das alterações financeiras
+- reconstrução de saldo por conta
+- base para validação de integridade com hash chain
+- menor risco de divergência silenciosa entre histórico e saldo atual
 
-1. **Criar Conta Bancária:**
-
-   - Vá em "Contas" → "Nova Conta"
-   - Defina nome, tipo e saldo inicial
-   - Salve a conta
-
-2. **Configurar Tipos de Conta:**
+Componentes centrais:
 
-   - Vá em "Tipos de Conta" → "Novo Tipo"
-   - Crie tipos como "Conta Corrente", "Poupança", etc.
+- `services/ledger_service.py`
+- `services/transaction_service.py`
+- `services/investment_service.py`
+- `app/models.py`
+- `migrations/versions/d2f6e9b1c4a0_sfp_v3_ledger_and_ai_models.py`
 
-3. **Configurar Tipos de Investimento:**
-   - Vá em "Tipos de Investimento" → "Novo Tipo"
-   - Crie tipos como "CDB", "Ações", "Fundos", etc.
+### Fechamento mensal e consistência de período
 
-### **3. Gestão Financeira Diária**
-
-#### **Registrar Receitas:**
+O projeto passou a suportar fechamento mensal por conta e por usuário, com possibilidade de bloqueio do período.
 
-1. Clique em "Nova Transação"
-2. Selecione tipo "Receita"
-3. Escolha categoria (Salário, Freelance, etc.)
-4. Informe valor e data de pagamento
-5. Selecione forma de pagamento
-6. Salve a transação
-
-#### **Registrar Despesas:**
-
-1. Clique em "Nova Transação"
-2. Selecione tipo "Despesa"
-3. Escolha categoria (Alimentação, Moradia, etc.)
-4. Informe valor e data de vencimento
-5. Adicione desconto se houver
-6. Selecione forma de pagamento
-7. Salve a transação
-
-#### **Gerenciar Investimentos:**
-
-1. Vá em "Investimentos"
-2. Clique em "Novo Investimento"
-3. Selecione o tipo de investimento
-4. Registre movimentações:
-   - **Aplicação**: Novo investimento
-   - **Resgate**: Saque do investimento
-   - **Rendimento**: Ganhos recebidos
-
-### **4. Acompanhamento e Relatórios**
-
-1. **Dashboard:** Visão geral do mês atual
-2. **Relatórios:** Análises detalhadas por período
-3. **Gráficos:** Visualização de dados financeiros
-4. **Filtros:** Análise por conta, categoria, período
-
-## Configurações Avançadas
-
-### **Configuração de Email**
-
-Edite o arquivo `config.py`:
-
-```python
-MAIL_SERVER = 'smtp.gmail.com'
-MAIL_PORT = 587
-MAIL_USE_TLS = True
-MAIL_USERNAME = 'seu-email@gmail.com'
-MAIL_PASSWORD = 'sua-senha'
-```
-
-### **Configuração de Banco de Dados**
-
-Para usar PostgreSQL ou MySQL:
-
-```python
-SQLALCHEMY_DATABASE_URI = 'postgresql://user:password@localhost/financas'
-```
-
-### **Configurações de Segurança**
-
-```python
-SECRET_KEY = 'sua-chave-secreta-muito-forte'
-SESSION_COOKIE_SECURE = True  # Para HTTPS
-```
-
-## Solução de Problemas
-
-### **Problemas Comuns**
-
-1. **Erro de Permissão:**
-   - Execute como administrador
-   - Verifique permissões da pasta de instalação
-
-2. **Python não Encontrado:**
-   - Instale Python 3.10+ do site oficial
-   - No Windows, prefira `run.bat` ou `.\\venv\\Scripts\\python.exe run.py`
-   - Não dependa do comando `python` no PATH
-3. **Dependências não Instalam:**
-   - Verifique conexão com internet
-   - Execute: `pip install --upgrade pip`
-   - Tente: `pip install -r requirements.txt --no-cache-dir`
-
-4. **Banco de Dados Corrompido:**
-   - Restaure do backup em `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
-   - Ou delete `instance/financas.db` para recriar
-
-5. **Porta 5000 Ocupada:**
-   - Feche outros programas usando a porta
-
-### **Erros Específicos Corrigidos**
-
-6. **"No module named 'routes'"**
-   - **Causa:** Diretório `routes` não foi copiado durante instalação
-   - **Solução:** Use `INSTALAR_SISTEMA_CORRIGIDO.bat` (versão corrigida)
-   - **Verificação:** Confirme que existe `C:\Financas_Pessoais\routes\`
-
-7. **"log_message() got an unexpected keyword argument 'end'"**
-   - **Causa:** Versão antiga do instalador com erro de função
-   - **Solução:** Use a versão corrigida do `instalar_sistema.py`
-   - **Status:** ✅ **CORRIGIDO** na versão atual
-
-8. **"Não é possível acessar esse site"**
-   - **Causa:** Servidor Flask não iniciou corretamente
-   - **Solução:** Execute `run.bat` na raiz do projeto
-   - **Alternativa:** `.\\venv\\Scripts\\python.exe run.py`
-
-9. **"Ambiente virtual não está sendo validado"**
-   - **Causa:** `venv` inconsistente ou `python.exe` quebrado
-   - **Solução:** Use os scripts corrigidos; eles tentam reparar o ambiente automaticamente
-   - **Verificação:** O script mostra `Ambiente virtual pronto`
-### **Verificação de Instalação**
-
-Para verificar se a instalação está correta:
-
-```bash
-# Verifique se todos os diretórios existem
-dir C:\Financas_Pessoais
-# Deve conter: app, routes, migrations, venv, run.py, run.bat
-
-# Teste o sistema
-cd C:\Financas_Pessoais
-.\\venv\\Scripts\\python.exe -c "from app import create_app; print('Sistema OK!')"
-
-# Inicialização recomendada
+Na prática isso permite:
+
+- preservar períodos já consolidados
+- impedir alterações em meses fechados
+- gerar snapshots de saldo e totais do mês
+- validar consistência entre ledger, saldo e fechamento
+
+### Arquitetura orientada a serviços
+
+As regras de negócio mais críticas foram desacopladas das rotas HTTP.
+
+Hoje a base usa uma divisão mais clara:
+
+- `app/` para app factory, modelos, formulários, rotas principais e templates
+- `routes/` para blueprints especializados
+- `services/` para regras de negócio, consistência, projeção e auditoria
+- `migrations/` para evolução controlada de schema
+- `tests/` para cobertura funcional e de serviços
+
+Essa separação melhora manutenção, legibilidade e testabilidade.
+
+### Observabilidade, segurança e operação
+
+O projeto também incorpora cuidados normalmente ausentes em projetos acadêmicos simples:
+
+- logs estruturados em JSON
+- rate limiting básico de login em memória de processo
+- suporte a `DATABASE_URL`
+- configuração de cookies de sessão e remember-me
+- backup automático com versionamento por trimestre
+- reparo/migração de dados legados com problemas de encoding e escopo
+
+## Tecnologias aplicadas
+
+A lista abaixo foi mapeada diretamente do código e da configuração do projeto.
+
+### Backend principal
+
+- Python 3.10+
+- Flask
+- Flask-Login
+- Flask-SQLAlchemy
+- Flask-Migrate
+- Flask-WTF
+- Flask-Mail
+- SQLAlchemy 2.x
+- Alembic
+- Jinja2
+- itsdangerous
+- Werkzeug
+
+### Persistência e dados
+
+- SQLite como banco local padrão
+- suporte por variável de ambiente para `DATABASE_URL`
+- compatibilidade de arquitetura para migração futura a PostgreSQL
+- migrations versionadas em `migrations/`
+
+### Frontend do sistema Flask
+
+- Jinja2 Templates
+- Bootstrap local
+- JavaScript vanilla
+- runtime local para gráficos offline em `app/static/js/chart-lite.js`
+- CSS local de ícones e fallbacks para operação sem CDN
+
+### Ferramentas de runtime e utilidades
+
+- `python-dotenv` para configuração via ambiente
+- `psutil` para apoio a shutdown/gerenciamento no Windows
+- launcher em `run.py`, `run.bat` e scripts auxiliares em `sistema/`
+
+### Qualidade e testes
+
+- pytest
+- suíte de testes versionada em `tests/`
+- 49 casos de teste identificáveis no repositório
+- cobertura de rotas, serviços, modelos, helpers e fluxo de execução
+
+## IA aplicada no projeto
+
+O SFP inclui uma camada local de inteligência aplicada ao domínio financeiro. O foco aqui não foi adicionar IA como vitrine, mas usar técnicas úteis para classificação, previsão e auditoria.
+
+Serviços implementados:
+
+- classificação local de transações por texto
+  - `services/ai_classification_service.py`
+- detecção de anomalias estatísticas
+  - `services/anomaly_detection_service.py`
+- projeção de fluxo de caixa e score de saúde financeira
+  - `services/projection_service.py`
+- verificação de integridade e qualidade dos dados financeiros
+  - `services/data_quality_service.py`
+
+Esse conjunto mostra dois resultados importantes dos estudos realizados:
+
+- capacidade de traduzir conceitos de IA em serviços aplicáveis ao domínio
+- preocupação com dados, contexto do usuário e extensibilidade antes de qualquer acoplamento com provedor externo
+
+## Resultado dos estudos e evolução arquitetural
+
+O projeto também materializa um ciclo de estudo técnico bem-sucedido, porque os aprendizados geraram artefatos concretos no código.
+
+### O que os estudos produziram na prática
+
+- evolução de uma base mais acoplada para uma estrutura orientada a serviços
+- introdução de ledger imutável e fechamento mensal
+- criação de entidades de simulação para cenários paralelos
+- metadados de modelos locais por usuário
+- melhoria de segurança funcional com isolamento por escopo
+- documentação técnica de diagnóstico, proposta de estrutura, estratégia de migração e breaking changes
+
+### Evidências no repositório
+
+- `docs/sfp_v3/01_diagnostico_tecnico.md`
+- `docs/sfp_v3/02_estrutura_proposta.md`
+- `docs/sfp_v3/03_estrategia_migracao_backfill.md`
+- `docs/sfp_v3/04_breaking_changes.md`
+- `services/`
+- `migrations/versions/d2f6e9b1c4a0_sfp_v3_ledger_and_ai_models.py`
+
+### Leitura correta para recrutadores
+
+O sucesso dos estudos não está em dizer que todo o projeto já virou uma plataforma enterprise pronta para escala global.
+
+O sucesso está em mostrar que o estudo:
+
+- alterou a arquitetura
+- melhorou a qualidade do domínio
+- gerou serviços executáveis
+- reduziu acoplamento
+- aumentou testabilidade
+- deixou o produto mais preparado para crescer
+
+## Desafios técnicos resolvidos
+
+### 1. Evolução de um legado acoplado
+
+O projeto partiu de uma base em que parte relevante das regras de negócio ainda estava concentrada em rotas e mutações diretas de saldo.
+
+O trabalho realizado trouxe:
+
+- extração de regras críticas para `services/`
+- redução do acoplamento entre HTTP, persistência e domínio
+- melhoria da clareza para manutenção e testes
+
+### 2. Consistência financeira e trilha auditável
+
+Em vez de depender apenas de saldo mutável em conta, o sistema passou a contar com ledger imutável e hash chain.
+
+Isso permitiu:
+
+- reconstrução de saldo por eventos
+- validação de integridade
+- menor risco de divergência histórica silenciosa
+
+### 3. Isolamento real por usuário
+
+Parte importante da evolução do sistema foi deixar de tratar cadastros auxiliares como globais e passar a escopá-los por usuário.
+
+O resultado foi:
+
+- consultas filtradas por `current_user`
+- validação de ownership em serviços e rotas
+- exportação lógica limitada ao usuário autenticado
+
+### 4. Operação local/offline com experiência controlada
+
+O sistema foi adaptado para um cenário de uso local em Windows, inclusive com execução sem internet.
+
+Foram resolvidos pontos como:
+
+- dependência anterior de CDN para frontend
+- inicialização frágil via `python` no Windows
+- fechamento coordenado do app com navegador gerenciado
+
+### 5. Base preparada para evolução
+
+Os estudos sobre IA aplicada, qualidade de dados e arquiteturas mais modernas não ficaram apenas na teoria.
+
+Eles resultaram em:
+
+- serviços locais de classificação, anomalia e projeção
+- documentação de diagnóstico, estratégia e breaking changes
+- workspace complementar `sa-saas/` para estudos de arquitetura moderna com TypeScript, Prisma e orquestração de IA
+
+## Estrutura do repositório
+
+```text
+app/
+  __init__.py
+  forms.py
+  middleware.py
+  models.py
+  routes.py
+  static/
+  templates/
+routes/
+  conta.py
+  investimento.py
+  tipo_conta.py
+  tipo_investimento.py
+  transactions.py
+services/
+  ledger_service.py
+  transaction_service.py
+  investment_service.py
+  closure_service.py
+  report_service.py
+  ai_classification_service.py
+  anomaly_detection_service.py
+  projection_service.py
+  data_quality_service.py
+migrations/
+docs/
+  sfp_v3/
+scripts/
+  seed_demo_2026.py
+tests/
+sistema/
+run.py
 run.bat
-```
-## 📦 Distribuição do Sistema
-
-### **Arquivos Necessários para Instalação**
-
-Para distribuir o sistema, inclua os seguintes arquivos:
-
-```
-financas_pessoais_flask/
-├── 📁 app/                    # Aplicação Flask principal
-├── 📁 routes/                 # Módulos de rotas (CORRIGIDO)
-├── 📁 migrations/             # Migrações do banco de dados
-├── 📄 instalar_sistema.py     # Instalador Python (CORRIGIDO)
-├── 📄 INSTALAR_SISTEMA_CORRIGIDO.bat  # Instalador Windows (RECOMENDADO)
-├── 📄 run.py                  # Servidor Flask
-├── 📄 config.py               # Configurações
-├── 📄 requirements.txt        # Dependências Python
-├── 📄 iconFP.png             # Ícone do sistema
-└── 📄 README.md              # Este arquivo
+README.md
 ```
 
-### **Instruções para o Usuário Final**
+## Principais entidades de domínio
 
-1. **Copie todos os arquivos** para uma pasta no computador
-2. **Execute:** `INSTALAR_SISTEMA_CORRIGIDO.bat` (Windows)
-3. **Ou execute:** `python instalar_sistema.py` (Windows/Linux)
-4. **Aguarde** a instalação automática
-5. **Acesse:** http://127.0.0.1:5000
-6. **Login:** admin / admin123
+- `User`: autenticação, recuperação de senha e escopo de dados
+- `Conta`: conta financeira com saldo inicial e saldo recalculável
+- `Transaction`: receita ou despesa com datas, desconto e pagamento
+- `Category`: categoria financeira escopada por usuário
+- `Expense`: descrição de despesa vinculada a categoria
+- `PaymentMethod`: forma de pagamento por usuário
+- `Investimento`: ativo financeiro vinculado a tipo de investimento
+- `MovimentacaoInvestimento`: aplicação, resgate ou rendimento
+- `LedgerEntry`: evento financeiro auditável por conta
+- `MonthlyClosure`: fechamento mensal com snapshot de saldos e totais
+- `SimulationSession` e `SimulationLedgerEntry`: cenários paralelos de simulação
+- `AIModelMetadata`: metadados de modelos locais por usuário
 
-### **Logs e Debug**
+## Execução local
 
-- Logs de instalação: `%USERPROFILE%\financas_pessoais_install.log`
-- Logs da aplicação: Console do terminal
-- Modo debug: `app.config['DEBUG'] = True`
+### Requisitos
 
-## Backup e Restauração
+- Python 3.10 ou superior
+- Windows é o cenário mais preparado no estado atual do launcher
+- acesso opcional à internet apenas para instalação inicial de dependências
 
-### **Backup Automático**
+### Instalação rápida no Windows
 
-- Localização: `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
-- Atualização: Automática após cada operação
-- Frequência: A cada transação salva
-
-### **Backup Manual**
-
-```bash
-# Copie o arquivo
-copy instance\financas.db backup\financas_backup_YYYYMMDD.db
-```
-
-### **Restauração**
-
-```bash
-# Restaure do backup
-copy backup\bk_flask.db instance\financas.db
-```
-
-## Desenvolvimento
-
-### **Estrutura de Desenvolvimento**
-
-```bash
-# Clone o repositório
-git clone https://github.com/seu-usuario/financas_pessoais_flask.git
-
-# Crie ambiente virtual
+```powershell
 py -3.10 -m venv venv
-
-# Instale dependências de desenvolvimento
-.\\venv\\Scripts\\python.exe -m pip install -r requirements.txt
-.\\venv\\Scripts\\python.exe -m pip install pytest flask-testing
-
-# Execute em modo desenvolvimento
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 run.bat
-
-# Alternativa direta
-.\\venv\\Scripts\\python.exe run.py
 ```
 
-### **Adicionando Novas Funcionalidades**
+### Execução direta
 
-1. Crie novos modelos em `app/models.py`
-2. Adicione formulários em `app/forms.py`
-3. Crie rotas em `routes/` ou `app/routes.py`
-4. Adicione templates em `app/templates/`
-5. Execute migrações: `flask db migrate -m "Descrição"`
-6. Aplique migrações: `flask db upgrade`
-
-### **Testes**
-
-```bash
-# Execute testes
-.\\venv\\Scripts\\python.exe -m pytest tests/
-
-# Teste específico
-.\\venv\\Scripts\\python.exe -m pytest tests/test_models.py
+```powershell
+.\venv\Scripts\python.exe run.py
 ```
 
-## Build e Distribuição
+### Acesso local
 
-### **Criar Executável**
+- URL: `http://127.0.0.1:5000`
+- login administrativo padrão: `admin`
+- senha padrão: `admin123`
+- usuário demo: `demo`
+- senha demo: `demo123`
 
-```bash
-# Execute o script de build
-build_installer.bat
+### Dados de demonstração
 
-# Ou manualmente
-pyinstaller installer_advanced.spec
+O repositório inclui um gerador de dados para navegação demonstrativa no período de 2026:
+
+- `scripts/seed_demo_2026.py`
+
+Exemplo:
+
+```powershell
+.\venv\Scripts\python.exe scripts\seed_demo_2026.py --username demo --email demo@sistema.com --password demo123
 ```
 
-### **Distribuição**
+## Testes
 
-- O executável será criado em `dist/Instalar_Financas_Pessoais_Avancado/`
-- Inclui todas as dependências
-- Instalação automática em `C:\Financas_Pessoais`
+A suíte de testes cobre fluxos relevantes do sistema:
 
-## Contribuição
+- autenticação
+- rotas principais e relatórios
+- isolamento de dados por usuário
+- ledger e detecção de adulteração
+- fechamento mensal
+- ciclo de vida de transações
+- ciclo de vida de investimentos
+- projeção, anomalias e qualidade de dados
+- helpers de execução do launcher
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+Com as dependências instaladas, a execução é:
 
-## Licença
+```powershell
+.\venv\Scripts\python.exe -m pytest -q
+```
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+## Material visual
 
-## Desenvolvedor
+Capturas do sistema disponíveis no repositório:
+
+- `Exibição/dashboard.png`
+- `Exibição/relatorio.png`
+- `Exibição/relatorio2.png`
+- `Exibição/conta.png`
+- `Exibição/tiposconta.png`
+
+## Workspace complementar de estudos modernos
+
+O repositório também contém um workspace complementar em `sa-saas/`, separado do núcleo Flask, com foco em arquitetura moderna para produtos SaaS e IA:
+
+- Next.js
+- Node.js + TypeScript
+- PostgreSQL
+- Prisma
+- abstração de provedores de IA
+- versionamento e orquestração de prompts
+
+Esse workspace não substitui o sistema Flask principal. Ele funciona como evidência adicional de estudo e experimentação em uma direção mais moderna de plataforma, mantendo o núcleo financeiro do SFP estável e utilizável.
+
+## O que este projeto evidencia profissionalmente
+
+### Capacidade de produto
+
+- entendimento de um domínio financeiro real
+- entrega de aplicação navegável e demonstrável
+- preocupação com experiência operacional local
+
+### Capacidade de engenharia
+
+- refatoração progressiva de código legado
+- modelagem financeira com mais rastreabilidade
+- organização por camadas e serviços
+- testes automatizados e migrações versionadas
+
+### Capacidade de estudo aplicado
+
+- uso disciplinado de Flask e extensões do ecossistema
+- adoção de SQLAlchemy e Alembic para manter a base evolutiva
+- aplicação pragmática de IA no contexto do produto
+- documentação técnica que mostra diagnóstico, proposta e execução
+
+## Status atual
+
+O SFP está em um estágio sólido como portfólio técnico e base funcional de produto.
+
+Hoje ele já demonstra:
+
+- aplicação Flask funcional com domínio real
+- operação local/offline
+- rastreabilidade com ledger
+- relatórios e dashboard
+- investimentos com regras de consistência
+- isolamento por usuário
+- base preparada para novos ciclos de evolução
+
+## Autor
 
 **Carlos Alberto Medeiros**
 
-- Email: [carlosalbertoprojetos2020@gmail.com]
-- WhatsApp: +55 (31) 98676-6866
-- LinkedIn: [https://www.linkedin.com/in/carlos-alberto-medeiros-29aa6258/]
+- LinkedIn: `https://www.linkedin.com/in/carlos-alberto-medeiros-29aa6258/`
+- Email: `carlosalbertoprojetos2020@gmail.com`
 
-## Agradecimentos
+## Fechamento
 
-- Comunidade Flask
-- Desenvolvedores do Bootstrap
-- Equipe do Chart.js
-- Todos os contribuidores do projeto
+Se este repositório for lido como material de recrutamento técnico, a melhor síntese é esta:
 
----
-
-## Suporte
-
-Para suporte técnico ou dúvidas:
-
-- Email: carlosalbertoprojetos2020@gmail.com
-- WhatsApp: +55 (31) 98676-6866
-- Issues: [GitHub Issues](https://github.com/seu-usuario/financas_pessoais_flask/issues)
-
-**Versão:** 2.0.0  
-**Última Atualização:** Janeiro 2025
-
-## ⚠️ Problema com Python 3.13?
-
-Se você encontrar o erro:
-```
-AssertionError: Class <class 'sqlalchemy.sql.elements.SQLCoreOperations'> directly inherits TypingOnly
-```
-
-**Soluções:**
-
-1. **Correção Automática**:
-   ```bash
-   python corrigir_sqlalchemy.py
-   ```
-
-2. **Solução Recomendada**: Instale Python 3.10.x:
-   - Baixe em: https://www.python.org/downloads/
-   - Desinstale Python 3.13
-   - Instale Python 3.10.x
-
-3. **Ver instruções detalhadas**: Leia o arquivo `SOLUCAO_PYTHON_313.md`
-
-
-## Arquitetura SFP V3 (Atualizado)
-
-### Principios
-- Ledger imutavel como fonte de verdade para saldo e auditoria.
-- Separacao estrita: rotas HTTP orquestram, services executam regras de negocio.
-- Fechamento mensal bloqueavel por conta/periodo.
-- Simulacao isolada em livro paralelo (sem tocar dados reais).
-- IA local por usuario, sem dependencia de API externa.
-
-### Componentes centrais
-- `app/models.py`: `LedgerEntry`, `MonthlyClosure`, `SimulationSession`, `SimulationLedgerEntry`, `AIModelMetadata`.
-- `services/ledger_service.py`: hash chain, backfill, validacao de integridade e simulacao.
-- `services/transaction_service.py` e `services/investment_service.py`: escrita financeira via ledger.
-- `services/closure_service.py`: lock/unlock e snapshot mensal.
-- `services/projection_service.py`: projecao de fluxo de caixa e score financeiro.
-- `services/data_quality_service.py`: controles de qualidade e consistencia.
-
-### Persistencia e migracao
-- SQLite atual, preparado para PostgreSQL via `DATABASE_URL`.
-- Migracao Alembic V3: `migrations/versions/d2f6e9b1c4a0_sfp_v3_ledger_and_ai_models.py`.
-- Backfill historico disponivel em `LedgerService.backfill_account_ledger`.
-
-### Observabilidade e seguranca
-- Logging estruturado JSON configuravel por ambiente.
-- Rate limiting de login por janela de tempo.
-- Backup configuravel por `SFP_BACKUP_DIR`.
-- `SECRET_KEY` via variavel de ambiente em producao.
-
-
-
-
+- um sistema funcional de domínio real
+- com decisões de engenharia coerentes
+- sustentado por estudo aplicado e melhoria contínua
+- e com sinais concretos de maturidade para evoluir além do escopo inicial
