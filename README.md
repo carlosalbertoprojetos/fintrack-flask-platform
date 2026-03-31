@@ -846,6 +846,207 @@ run.bat
 
 .\venv\Scripts\python.exe run.py
 
+<<<<<<< HEAD
+=======
+### **Transaction (Transação)**
+
+- ID, data, valor, tipo, categoria, descrição
+- Campos: due_date, payment_date, discount, paid
+- Relacionamentos com usuário, conta, categoria, forma de pagamento
+
+### **Category (Categoria)**
+
+- ID, nome, tipo (receita/despesa), exclusive
+- Ícones e cores personalizáveis
+
+### **PaymentMethod (Forma de Pagamento)**
+
+- ID, nome, is_active
+- Dinheiro, PIX, cartões, etc.
+
+### **Investimento (Investimento)**
+
+- ID, tipo_investimento_id, data_abertura
+- Relacionamento com movimentações
+
+### **MovimentacaoInvestimento (Movimentação)**
+
+- ID, investimento_id, data_movimentacao
+- Campos: tipo_movimentacao, valor, saldo_anterior, saldo_atual
+- Relacionamento com conta e usuário
+
+### **TipoInvestimento (Tipo de Investimento)**
+
+- ID, nome, descrição, ativo
+- Relacionamento com investimentos
+
+## Instalação e Configuração
+
+### **Pré-requisitos**
+
+- **Windows 10/11** ou **Linux** (Ubuntu, Debian, CentOS, etc.)
+- **Python 3.10 ou superior** (será instalado automaticamente se necessário)
+- **Conexão com internet** (para download de dependências)
+- **Privilégios de administrador** (para instalação)
+
+### **Instalação Automática (Recomendada)**
+
+#### **Método 1: Instalador Corrigido (Windows)**
+
+1. **Execute o Instalador:**
+   ```bash
+   # Duplo clique em:
+   INSTALAR_SISTEMA_CORRIGIDO.bat
+   ```
+
+2. **O instalador fará automaticamente:**
+   -  Verificar/instalar Python 3.10+ se necessário
+   -  Criar diretório `C:\Financas_Pessoais`
+   -  Copiar todos os arquivos do sistema (app, routes, migrations, etc.)
+   -  Criar ambiente virtual Python
+   -  Instalar todas as dependências (Flask, SQLAlchemy, etc.)
+   -  Criar scripts de inicialização
+   -  Criar atalho na área de trabalho
+   -  Testar o sistema
+   -  Iniciar o sistema automaticamente
+
+#### **Método 2: Instalador Python (Windows/Linux)**
+
+1. **Execute o Instalador Python:**
+   ```bash
+   python instalar_sistema.py
+   ```
+
+2. **Siga as instruções na tela:**
+   - O sistema detectará automaticamente Windows ou Linux
+   - Instalará Python se necessário
+   - Criará ambiente virtual
+   - Instalará todas as dependências
+   - Criará atalho na área de trabalho
+
+### **Instalação Manual (Desenvolvedores)**
+
+1. **Clone o Repositório**
+   ```bash
+   git clone https://github.com/seu-usuario/financas_pessoais_flask.git
+   cd financas_pessoais_flask
+   ```
+
+2. **Crie Ambiente Virtual**
+   ```bash
+   # Windows
+   python -m venv venv
+   venv\Scripts\activate
+   
+   # Linux
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. **Instale Dependências**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Execute a Aplicação**
+   ```bash
+   python run.py
+   ```
+
+5. **Acesse o Sistema**
+   - Abra o navegador em: `http://127.0.0.1:5000`
+   - **Usuário:** admin
+   - **Senha:** admin123
+
+### **Primeiro Acesso**
+
+Após a instalação:
+
+1. **Acesse:** `http://127.0.0.1:5000`
+2. **Login inicial:**
+   - **Usuário:** admin
+   - **Senha:** admin123
+3. **Altere a senha** nas configurações do perfil
+4. **Crie sua primeira conta bancária**
+5. **Configure tipos de conta e investimento**
+
+## Como Usar o Sistema
+
+### **1. Primeiro Acesso**
+
+1. Acesse `http://127.0.0.1:5000`
+2. Clique em "Registrar" para criar sua conta
+3. Preencha os dados (username, email, senha)
+4. Após o registro, crie sua primeira conta bancária
+
+### **2. Configuração Inicial**
+
+1. **Criar Conta Bancária:**
+
+   - Vá em "Contas" → "Nova Conta"
+   - Defina nome, tipo e saldo inicial
+   - Salve a conta
+
+2. **Configurar Tipos de Conta:**
+
+   - Vá em "Tipos de Conta" → "Novo Tipo"
+   - Crie tipos como "Conta Corrente", "Poupança", etc.
+
+3. **Configurar Tipos de Investimento:**
+   - Vá em "Tipos de Investimento" → "Novo Tipo"
+   - Crie tipos como "CDB", "Ações", "Fundos", etc.
+
+### **3. Gestão Financeira Diária**
+
+#### **Registrar Receitas:**
+
+1. Clique em "Nova Transação"
+2. Selecione tipo "Receita"
+3. Escolha categoria (Salário, Freelance, etc.)
+4. Informe valor e data de pagamento
+5. Selecione forma de pagamento
+6. Salve a transação
+
+#### **Registrar Despesas:**
+
+1. Clique em "Nova Transação"
+2. Selecione tipo "Despesa"
+3. Escolha categoria (Alimentação, Moradia, etc.)
+4. Informe valor e data de vencimento
+5. Adicione desconto se houver
+6. Selecione forma de pagamento
+7. Salve a transação
+
+#### **Gerenciar Investimentos:**
+
+1. Vá em "Investimentos"
+2. Clique em "Novo Investimento"
+3. Selecione o tipo de investimento
+4. Registre movimentações:
+   - **Aplicação**: Novo investimento
+   - **Resgate**: Saque do investimento
+   - **Rendimento**: Ganhos recebidos
+
+### **4. Acompanhamento e Relatórios**
+
+1. **Dashboard:** Visão geral do mês atual
+2. **Relatórios:** Análises detalhadas por período
+3. **Gráficos:** Visualização de dados financeiros
+4. **Filtros:** Análise por conta, categoria, período
+
+## Configurações Avançadas
+
+### **Configuração de Email**
+
+Edite o arquivo `config.py`:
+
+```python
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USERNAME = 'seu-email@gmail.com'
+MAIL_PASSWORD = 'sua-senha'
+>>>>>>> cbbf2a05602df940c745b4cf1d7c469ac041e8c4
 ```
 
 
@@ -862,7 +1063,59 @@ run.bat
 
 $env:SFP_NO_BROWSER = "1"
 
+<<<<<<< HEAD
 .\venv\Scripts\python.exe run.py
+=======
+4. **Banco de Dados Corrompido:**
+   - Restaure do backup em `diretorio configurado por SFP_BACKUP_DIR (padrao: ~/Financas_Pessoais/backup)`
+   - Ou delete `instance/financas.db` para recriar
+
+5. **Porta 5000 Ocupada:**
+   - Feche outros programas usando a porta
+
+### **Erros Específicos Corrigidos**
+
+6. **"No module named 'routes'"**
+   - **Causa:** Diretório `routes` não foi copiado durante instalação
+   - **Solução:** Use `INSTALAR_SISTEMA_CORRIGIDO.bat` (versão corrigida)
+   - **Verificação:** Confirme que existe `C:\Financas_Pessoais\routes\`
+
+7. **"log_message() got an unexpected keyword argument 'end'"**
+   - **Causa:** Versão antiga do instalador com erro de função
+   - **Solução:** Use a versão corrigida do `instalar_sistema.py`
+   - **Status:**  **CORRIGIDO** na versão atual
+
+8. **"Não é possível acessar esse site"**
+   - **Causa:** Servidor Flask não iniciou corretamente
+   - **Solução:** Verifique se o ambiente virtual está ativado
+   - **Comando:** `call venv\Scripts\activate.bat && python run.py`
+
+9. **"Ambiente virtual não está sendo ativado"**
+   - **Causa:** Script de inicialização com problema
+   - **Solução:** Use os scripts corrigidos com verificações robustas
+   - **Verificação:** Script mostra "Ambiente virtual ativado com sucesso!"
+
+### **Verificação de Instalação**
+
+Para verificar se a instalação está correta:
+
+```bash
+# Verifique se todos os diretórios existem
+dir C:\Financas_Pessoais
+# Deve conter: app, routes, migrations, venv, run.py
+
+# Teste o sistema
+cd C:\Financas_Pessoais
+call venv\Scripts\activate.bat
+python -c "from app import create_app; print(' Sistema OK!')"
+```
+
+##  Distribuição do Sistema
+
+### **Arquivos Necessários para Instalação**
+
+Para distribuir o sistema, inclua os seguintes arquivos:
+>>>>>>> cbbf2a05602df940c745b4cf1d7c469ac041e8c4
 
 ```
 
@@ -1084,6 +1337,53 @@ Hoje ele já demonstra:
 
 **Carlos Alberto Medeiros**
 
+<<<<<<< HEAD
+=======
+- Email: [carlosalbertoprojetos2020@gmail.com]
+- WhatsApp: +55 (31) 98676-6866
+- LinkedIn: [https://www.linkedin.com/in/carlos-alberto-medeiros-29aa6258/]
+
+## Agradecimentos
+
+- Comunidade Flask
+- Desenvolvedores do Bootstrap
+- Equipe do Chart.js
+- Todos os contribuidores do projeto
+
+---
+
+## Suporte
+
+Para suporte técnico ou dúvidas:
+
+- Email: carlosalbertoprojetos2020@gmail.com
+- WhatsApp: +55 (31) 98676-6866
+- Issues: [GitHub Issues](https://github.com/seu-usuario/financas_pessoais_flask/issues)
+
+**Versão:** 2.0.0  
+**Última Atualização:** Janeiro 2025
+
+##  Problema com Python 3.13?
+
+Se você encontrar o erro:
+```
+AssertionError: Class <class 'sqlalchemy.sql.elements.SQLCoreOperations'> directly inherits TypingOnly
+```
+
+**Soluções:**
+
+1. **Correção Automática**:
+   ```bash
+   python corrigir_sqlalchemy.py
+   ```
+
+2. **Solução Recomendada**: Instale Python 3.10.x:
+   - Baixe em: https://www.python.org/downloads/
+   - Desinstale Python 3.13
+   - Instale Python 3.10.x
+
+3. **Ver instruções detalhadas**: Leia o arquivo `SOLUCAO_PYTHON_313.md`
+>>>>>>> cbbf2a05602df940c745b4cf1d7c469ac041e8c4
 
 
 - LinkedIn: `https://www.linkedin.com/in/carlos-alberto-medeiros-29aa6258/`
