@@ -14,14 +14,14 @@ cd /d "%PROJECT_DIR%" 2>nul
 if errorlevel 1 (
     echo [ERRO] Diretorio do projeto nao encontrado!
     echo [INFO] Caminho tentado: %PROJECT_DIR%
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 
 if not exist "%PROJECT_DIR%\run.py" (
     echo [ERRO] Arquivo run.py nao encontrado no projeto!
     echo [INFO] Caminho: %PROJECT_DIR%
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 
@@ -35,14 +35,6 @@ if defined DB_FILE (
 )
 
 call :find_venv
-if not defined VENV_DIR (
-    echo [ERRO] Ambiente virtual nao encontrado!
-    echo [INFO] Esperado: venv\Scripts\python.exe ou .venv\Scripts\python.exe
-    echo [INFO] Execute com Python 3.10+: py -3.10 -m venv venv
-    pause
-    exit /b 1
-)
-
 set "PYTHON_EXE=%VENV_DIR%\Scripts\python.exe"
 
 echo ============================================================
@@ -53,7 +45,7 @@ echo.
 echo [INFO] Validando ambiente virtual...
 call :ensure_working_python
 if errorlevel 1 (
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 echo [OK] Ambiente virtual pronto
@@ -67,32 +59,48 @@ for /f "tokens=1,2 delims=." %%a in ("%PYVER%") do (
 
 if not defined PYMAJOR (
     echo [ERRO] Nao foi possivel identificar a versao do Python.
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 if not "%PYMAJOR%"=="3" (
     echo [ERRO] Python 3.10+ obrigatorio. Versao atual: %PYVER%
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 if not defined PYMINOR (
     echo [ERRO] Nao foi possivel identificar a versao do Python.
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 if %PYMINOR% LSS 10 (
     echo [ERRO] Python 3.10+ obrigatorio. Versao atual: %PYVER%
-    pause
+    call :pause_if_needed
     exit /b 1
 )
 echo [INFO] Python detectado: %PYVER%
 
 "%PYTHON_EXE%" -c "import flask" >nul 2>&1
 if errorlevel 1 (
-    echo [ERRO] Dependencias do projeto nao estao disponiveis neste ambiente virtual.
-    echo [INFO] Execute: "%PYTHON_EXE%" -m pip install -r requirements.txt
-    pause
-    exit /b 1
+    if not exist "%PROJECT_DIR%\requirements.txt" (
+        echo [ERRO] requirements.txt nao encontrado no projeto.
+        call :pause_if_needed
+        exit /b 1
+    )
+    echo [AVISO] Dependencias do projeto nao estao disponiveis neste ambiente virtual.
+    echo [INFO] Instalando dependencias automaticamente...
+    "%PYTHON_EXE%" -m pip install -r "%PROJECT_DIR%\requirements.txt"
+    if errorlevel 1 (
+        echo [ERRO] Falha ao instalar dependencias do projeto.
+        echo [INFO] Execute manualmente: "%PYTHON_EXE%" -m pip install -r requirements.txt
+        call :pause_if_needed
+        exit /b 1
+    )
+    "%PYTHON_EXE%" -c "import flask" >nul 2>&1
+    if errorlevel 1 (
+        echo [ERRO] Dependencias instaladas, mas Flask ainda nao esta disponivel.
+        call :pause_if_needed
+        exit /b 1
+    )
 )
 
 echo.
@@ -115,7 +123,7 @@ if errorlevel 1 (
     echo.
     echo [ERRO] O sistema foi encerrado com erros!
     echo.
-    pause
+    call :pause_if_needed
 )
 exit /b %errorlevel%
 
@@ -123,29 +131,64 @@ exit /b %errorlevel%
 set "VENV_DIR="
 if exist "%PROJECT_DIR%\venv\Scripts\python.exe" set "VENV_DIR=%PROJECT_DIR%\venv"
 if not defined VENV_DIR if exist "%PROJECT_DIR%\.venv\Scripts\python.exe" set "VENV_DIR=%PROJECT_DIR%\.venv"
+if not defined VENV_DIR if exist "%PROJECT_DIR%\venv" set "VENV_DIR=%PROJECT_DIR%\venv"
+if not defined VENV_DIR if exist "%PROJECT_DIR%\.venv" set "VENV_DIR=%PROJECT_DIR%\.venv"
+if not defined VENV_DIR set "VENV_DIR=%PROJECT_DIR%\venv"
 exit /b 0
 
 :ensure_working_python
+if exist "%PYTHON_EXE%" (
+    "%PYTHON_EXE%" --version >nul 2>&1
+    if not errorlevel 1 exit /b 0
+    echo [AVISO] Ambiente virtual inconsistente. Tentando reparar com Python 3.10...
+) else (
+    if exist "%VENV_DIR%" (
+        echo [AVISO] Ambiente virtual incompleto detectado em: %VENV_DIR%
+        echo [INFO] Recriando o bootstrap do ambiente virtual...
+    ) else (
+        echo [INFO] Ambiente virtual nao encontrado. Criando em: %VENV_DIR%
+    )
+)
+
+call :bootstrap_venv
+if errorlevel 1 (
+    echo [ERRO] Nao foi possivel criar ou reparar o ambiente virtual.
+    echo [INFO] Tente manualmente: py -3.10 -m venv "%VENV_DIR%"
+    exit /b 1
+)
+
 if not exist "%PYTHON_EXE%" (
-    echo [ERRO] Python nao encontrado no ambiente virtual!
+    echo [ERRO] Python nao encontrado no ambiente virtual apos bootstrap!
     echo [INFO] Caminho esperado: %PYTHON_EXE%
     exit /b 1
 )
 
 "%PYTHON_EXE%" --version >nul 2>&1
-if not errorlevel 1 exit /b 0
-
-echo [AVISO] Ambiente virtual inconsistente. Tentando reparar com Python 3.10...
-py -3.10 -m venv --upgrade "%VENV_DIR%" >nul 2>&1
 if errorlevel 1 (
-    echo [AVISO] Falha ao reparar com py -3.10. Tentando py -3...
-    py -3 -m venv --upgrade "%VENV_DIR%" >nul 2>&1
+    echo [ERRO] Python nao encontrado no ambiente virtual apos tentativa de reparo!
+    echo [INFO] Caminho esperado: %PYTHON_EXE%
+    exit /b 1
 )
+exit /b 0
 
-"%PYTHON_EXE%" --version >nul 2>&1
+:bootstrap_venv
+py -3.10 -m venv "%VENV_DIR%" >nul 2>&1
 if not errorlevel 1 exit /b 0
 
-echo [ERRO] Python nao encontrado no ambiente virtual apos tentativa de reparo!
-echo [INFO] Caminho esperado: %PYTHON_EXE%
-echo [INFO] Recrie o ambiente com: py -3.10 -m venv "%VENV_DIR%"
+echo [AVISO] Falha ao criar/reparar com py -3.10. Tentando py -3...
+py -3 -m venv "%VENV_DIR%" >nul 2>&1
+if not errorlevel 1 exit /b 0
+
+echo [AVISO] Falha ao criar/reparar com py -3. Tentando python -m venv...
+python -m venv "%VENV_DIR%" >nul 2>&1
+if not errorlevel 1 exit /b 0
+
 exit /b 1
+
+
+
+:pause_if_needed
+if /I "%SFP_VALIDATE_ONLY%"=="1" exit /b 0
+if /I "%CI%"=="1" exit /b 0
+pause
+exit /b 0

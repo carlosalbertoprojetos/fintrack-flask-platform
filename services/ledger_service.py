@@ -346,7 +346,7 @@ class LedgerService:
         amount,
         created_at: Optional[datetime] = None,
     ) -> SimulationLedgerEntry:
-        session = SimulationSession.query.get(simulation_session_id)
+        session = db.session.get(SimulationSession, simulation_session_id)
         if not session:
             raise ValueError("Sessao de simulacao nao encontrada")
         if session.status != "active":
@@ -366,7 +366,7 @@ class LedgerService:
 
     @staticmethod
     def get_simulation_balance(*, simulation_session_id: int) -> Decimal:
-        session = SimulationSession.query.get(simulation_session_id)
+        session = db.session.get(SimulationSession, simulation_session_id)
         if not session:
             raise ValueError("Sessao de simulacao nao encontrada")
 
@@ -380,7 +380,7 @@ class LedgerService:
 
     @staticmethod
     def close_simulation_session(*, simulation_session_id: int):
-        session = SimulationSession.query.get(simulation_session_id)
+        session = db.session.get(SimulationSession, simulation_session_id)
         if not session:
             raise ValueError("Sessao de simulacao nao encontrada")
         session.status = "closed"

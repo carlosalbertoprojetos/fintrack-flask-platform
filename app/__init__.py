@@ -439,6 +439,54 @@ def repair_default_lookup_data():
     return True
 
 
+def _repair_mojibake_text(value):
+    if not isinstance(value, str) or not any(marker in value for marker in ("Ã", "Â", "�")):
+        return value
+
+    candidate = value
+    for _ in range(3):
+        try:
+            repaired = candidate.encode("latin1").decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            break
+        if repaired == candidate:
+            break
+        candidate = repaired
+
+    return candidate
+
+
+def repair_user_visible_text_data():
+    """Corrige mojibake em campos textuais exibidos ao usu?rio."""
+    from app.models import Category, Conta, Expense, MovimentacaoInvestimento, PaymentMethod, TipoConta, TipoInvestimento, Transaction
+
+    model_fields = [
+        (Category, ("name",)),
+        (Expense, ("name",)),
+        (PaymentMethod, ("name",)),
+        (TipoConta, ("nome", "descricao")),
+        (TipoInvestimento, ("nome", "descricao")),
+        (Conta, ("nome",)),
+        (Transaction, ("description", "details", "notes")),
+        (MovimentacaoInvestimento, ("observacoes",)),
+    ]
+
+    changed = False
+    for model, fields in model_fields:
+        for record in model.query.all():
+            for field in fields:
+                current_value = getattr(record, field, None)
+                repaired_value = _repair_mojibake_text(current_value)
+                if repaired_value != current_value:
+                    setattr(record, field, repaired_value)
+                    changed = True
+
+    if changed:
+        db.session.commit()
+
+    return changed
+
+
 def get_database_path():
     """Retorna o caminho do banco de dados"""
     from config import Config
@@ -866,13 +914,13 @@ def create_app(config_class=Config):
             )
             admin_user.set_password("admin123")
             db.session.add(admin_user)
-            print("Usu?rio admin criado com sucesso!")
+            print("Usuário admin criado com sucesso!")
 
         try:
             db.session.commit()
-            print("Usu?rio admin commitado com sucesso!")
+            print("Usuário admin commitado com sucesso!")
         except Exception as e:
-            print(f"Erro ao commitar usu?rio admin: {str(e)}")
+            print(f"Erro ao commitar usuário admin: {str(e)}")
             db.session.rollback()
 
         _migrate_lookup_records_to_user_scope()
@@ -881,6 +929,7 @@ def create_app(config_class=Config):
         for user in users:
             initialize_user_default_data(user)
 
+        repair_user_visible_text_data()
         repair_default_lookup_data()
 
     return app

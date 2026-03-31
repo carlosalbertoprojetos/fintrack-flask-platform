@@ -12,7 +12,7 @@ from app import db, login_manager
 
 @login_manager.user_loader
 def load_user(id):
-    return User.query.get(int(id))
+    return db.session.get(User, int(id))
 
 
 class User(UserMixin, db.Model):
@@ -42,7 +42,7 @@ class User(UserMixin, db.Model):
             user_id = s.loads(token, max_age=1800)["user_id"]
         except Exception:
             return None
-        return User.query.get(user_id)
+        return db.session.get(User, user_id)
 
     def __repr__(self):
         return f"<User {self.username}>"

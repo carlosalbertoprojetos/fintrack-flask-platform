@@ -23,7 +23,7 @@ class InvestmentService:
 
     @staticmethod
     def recalculate_movement_balances(*, investimento_id: int):
-        investimento = Investimento.query.get(investimento_id)
+        investimento = db.session.get(Investimento, investimento_id)
         if not investimento:
             return False
 

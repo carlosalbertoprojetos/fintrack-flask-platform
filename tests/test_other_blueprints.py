@@ -1,9 +1,9 @@
-from datetime import date, datetime
+﻿from datetime import date, datetime
 
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app import db, repair_default_lookup_data
+from app import db, repair_default_lookup_data, repair_user_visible_text_data
 from app.models import Category, Conta, Expense, Investimento, MovimentacaoInvestimento, PaymentMethod, TipoConta, TipoInvestimento, Transaction, User
 from conftest import login_client, set_legacy_session_user
 
@@ -29,28 +29,31 @@ def _create_account(user, nome="Conta Base"):
 def test_repair_default_lookup_data_merges_corrupted_lookups(app_ctx):
     user = _create_user("repair1", "repair1@example.com")
 
+    def mojibake(value):
+        return value.encode("utf-8").decode("latin1")
+
     good_category = Category(name="Serviços", type="despesa", exclusive=True, user_id=user.id)
-    bad_category = Category(name="Serviços".encode("utf-8").decode("latin1"), type="despesa", exclusive=True, user_id=user.id)
+    bad_category = Category(name=mojibake("Serviços"), type="despesa", exclusive=True, user_id=user.id)
     good_payment = PaymentMethod(name="Transferência", is_active=True, user_id=user.id)
-    bad_payment = PaymentMethod(name="Transferência".encode("utf-8").decode("latin1"), is_active=True, user_id=user.id)
+    bad_payment = PaymentMethod(name=mojibake("Transferência"), is_active=True, user_id=user.id)
     good_tipo = TipoConta(nome="Banco Físico", descricao="Físico", ativo=True, user_id=user.id)
     bad_tipo = TipoConta(
-        nome="Banco Físico".encode("utf-8").decode("latin1"),
-        descricao="Físico".encode("utf-8").decode("latin1"),
+        nome=mojibake("Banco Físico"),
+        descricao=mojibake("Físico"),
         ativo=True,
         user_id=user.id,
     )
     good_tipo_inv = TipoInvestimento(nome="Ações", descricao="Investimento em ações", ativo=True, user_id=user.id)
     bad_tipo_inv = TipoInvestimento(
-        nome="Ações".encode("utf-8").decode("latin1"),
-        descricao="Investimento em ações".encode("utf-8").decode("latin1"),
+        nome=mojibake("Ações"),
+        descricao=mojibake("Investimento em ações"),
         ativo=True,
         user_id=user.id,
     )
     db.session.add_all([good_category, bad_category, good_payment, bad_payment, good_tipo, bad_tipo, good_tipo_inv, bad_tipo_inv])
     db.session.flush()
 
-    good_expense = Expense(name="Eletrônicos", category_id=good_category.id, user_id=user.id)
+    good_expense = Expense(name="Eletrúnicos", category_id=good_category.id, user_id=user.id)
     bad_expense = Expense(name="Eletrúnicos", category_id=bad_category.id, user_id=user.id)
     conta = Conta(nome="Conta Reparo", tipo_id=bad_tipo.id, saldo_inicial=100.0, saldo_atual=100.0, user_id=user.id)
     investimento = Investimento(tipo_investimento_id=bad_tipo_inv.id, data_abertura=date.today())
@@ -79,10 +82,10 @@ def test_repair_default_lookup_data_merges_corrupted_lookups(app_ctx):
     repaired_conta = db.session.get(Conta, conta.id)
     repaired_investimento = db.session.get(Investimento, investimento.id)
 
-    assert Category.query.filter_by(name="Serviços".encode("utf-8").decode("latin1")).count() == 0
-    assert PaymentMethod.query.filter_by(name="Transferência".encode("utf-8").decode("latin1")).count() == 0
-    assert TipoConta.query.filter_by(nome="Banco Físico".encode("utf-8").decode("latin1"), user_id=user.id).count() == 0
-    assert TipoInvestimento.query.filter_by(nome="Ações".encode("utf-8").decode("latin1"), user_id=user.id).count() == 0
+    assert Category.query.filter_by(name=mojibake("Serviços")).count() == 0
+    assert PaymentMethod.query.filter_by(name=mojibake("Transferência")).count() == 0
+    assert TipoConta.query.filter_by(nome=mojibake("Banco Físico"), user_id=user.id).count() == 0
+    assert TipoInvestimento.query.filter_by(nome=mojibake("Ações"), user_id=user.id).count() == 0
     assert Expense.query.filter_by(name="Eletrúnicos").count() == 0
 
     assert repaired_tx.category_id == good_category.id
@@ -90,6 +93,78 @@ def test_repair_default_lookup_data_merges_corrupted_lookups(app_ctx):
     assert repaired_tx.payment_method_id == good_payment.id
     assert repaired_conta.tipo_id == good_tipo.id
     assert repaired_investimento.tipo_investimento_id == good_tipo_inv.id
+
+
+def test_repair_user_visible_text_data_fixes_transaction_and_account_fields(app_ctx):
+    user = _create_user("repair2", "repair2@example.com")
+
+    def mojibake(value):
+        return value.encode("utf-8").decode("latin1")
+
+    tipo = TipoConta(nome="Banco", descricao="Conta", ativo=True, user_id=user.id)
+    tipo_investimento = TipoInvestimento(
+        nome="CDB",
+        descricao="Certificado de Dep?sito Banc?rio",
+        ativo=True,
+        user_id=user.id,
+    )
+    db.session.add_all([tipo, tipo_investimento])
+    db.session.flush()
+
+    conta = Conta(
+        nome=mojibake("Conta Março"),
+        tipo_id=tipo.id,
+        saldo_inicial=500.0,
+        saldo_atual=500.0,
+        user_id=user.id,
+    )
+    categoria = Category(name=mojibake("Serviços"), type="despesa", exclusive=True, user_id=user.id)
+    forma = PaymentMethod(name="PIX", is_active=True, user_id=user.id)
+    investimento = Investimento(tipo_investimento_id=tipo_investimento.id, data_abertura=date.today())
+    db.session.add_all([conta, categoria, forma, investimento])
+    db.session.flush()
+
+    tx = Transaction(
+        date=datetime.utcnow(),
+        amount=25.0,
+        type="despesa",
+        paid=True,
+        recurrence="none",
+        description=mojibake("Pagamento de Água"),
+        details=mojibake("Referente a Março 2026"),
+        notes=mojibake("Descrição complementar"),
+        conta_id=conta.id,
+        user_id=user.id,
+        category_id=categoria.id,
+        payment_method_id=forma.id,
+    )
+    mov = MovimentacaoInvestimento(
+        investimento_id=investimento.id,
+        data_movimentacao=date.today(),
+        tipo_movimentacao="rendimento",
+        valor=10.0,
+        saldo_anterior=100.0,
+        saldo_atual=110.0,
+        observacoes=mojibake("Rendimento do mês de Março"),
+        user_id=user.id,
+        conta_id=conta.id,
+    )
+    db.session.add_all([tx, mov])
+    db.session.commit()
+
+    assert repair_user_visible_text_data() is True
+
+    repaired_conta = db.session.get(Conta, conta.id)
+    repaired_categoria = db.session.get(Category, categoria.id)
+    repaired_tx = db.session.get(Transaction, tx.id)
+    repaired_mov = db.session.get(MovimentacaoInvestimento, mov.id)
+
+    assert repaired_conta.nome == "Conta Março"
+    assert repaired_categoria.name == "Serviços"
+    assert repaired_tx.description == "Pagamento de Água"
+    assert repaired_tx.details == "Referente a Março 2026"
+    assert repaired_tx.notes == "Descrição complementar"
+    assert repaired_mov.observacoes == "Rendimento do mês de Março"
 
 
 def test_tipo_conta_crud_routes(client, app_ctx):
@@ -237,7 +312,7 @@ def test_investimento_movimentacoes_list_and_edit_routes(client, app_ctx):
 
     r_list = client.get(f"/investimento/investimento/{investimento.id}/movimentacoes")
     assert r_list.status_code == 200
-    assert "Hist?rico" in r_list.get_data(as_text=True)
+    assert "Historico" in r_list.get_data(as_text=True)
 
     r_edit_get = client.get(f"/investimento/movimentacao/{mov.id}/editar")
     assert r_edit_get.status_code == 200
@@ -294,3 +369,4 @@ def test_legacy_transactions_blueprint_basic_flows(client, app_ctx):
             },
             follow_redirects=False,
         )
+

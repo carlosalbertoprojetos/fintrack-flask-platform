@@ -25,6 +25,13 @@ WINDOWS_BROWSER_PATHS = (
 )
 
 
+def env_flag(name: str) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return False
+    return raw.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 def check_python_version():
     """Valida se a versao minima do Python foi atendida."""
     if sys.version_info < MIN_PYTHON:
@@ -262,6 +269,16 @@ def launch_managed_browser(url):
         return False
 
 
+
+
+def should_launch_browser():
+    if env_flag("SFP_NO_BROWSER") or env_flag("SFP_VALIDATE_ONLY"):
+        return False
+    if env_flag("CI"):
+        return False
+    return True
+
+
 def minimize_and_open_browser():
     """Minimiza a janela do CMD e depois abre o navegador"""
     time.sleep(5)
@@ -372,8 +389,11 @@ if __name__ == "__main__":
         print("=" * 60)
         print()
 
-        browser_thread = threading.Thread(target=minimize_and_open_browser, daemon=True)
-        browser_thread.start()
+        if should_launch_browser():
+            browser_thread = threading.Thread(target=minimize_and_open_browser, daemon=True)
+            browser_thread.start()
+        else:
+            print("[INFO] Abertura automatica do navegador desativada para este ambiente.")
 
         app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
 

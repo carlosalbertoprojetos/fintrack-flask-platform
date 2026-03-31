@@ -56,3 +56,21 @@ def test_browser_runtime_metadata_roundtrip_and_cleanup(tmp_path):
 
     assert not runtime_file.exists()
     assert not profile_dir.exists()
+
+
+def test_should_launch_browser_respects_environment(monkeypatch):
+    monkeypatch.delenv("SFP_NO_BROWSER", raising=False)
+    monkeypatch.delenv("SFP_VALIDATE_ONLY", raising=False)
+    monkeypatch.delenv("CI", raising=False)
+    assert run.should_launch_browser() is True
+
+    monkeypatch.setenv("SFP_NO_BROWSER", "1")
+    assert run.should_launch_browser() is False
+
+    monkeypatch.delenv("SFP_NO_BROWSER", raising=False)
+    monkeypatch.setenv("SFP_VALIDATE_ONLY", "1")
+    assert run.should_launch_browser() is False
+
+    monkeypatch.delenv("SFP_VALIDATE_ONLY", raising=False)
+    monkeypatch.setenv("CI", "true")
+    assert run.should_launch_browser() is False

@@ -1,4 +1,4 @@
-from flask import (
+﻿from flask import (
     Blueprint,
     render_template,
     redirect,
@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db, mail
 from app.models import Expense, PaymentMethod, User, Category, Transaction
-from app.models import Conta
+from app.models import Conta, Investimento, MovimentacaoInvestimento
 from app.forms import (
     ExpenseForm,
     LoginForm,
@@ -42,6 +42,26 @@ auth_bp = Blueprint("auth", __name__)
 transaction_bp = Blueprint("transaction", __name__)
 
 _login_attempts = defaultdict(deque)
+
+MONTH_NAMES_PT = {
+    1: "Janeiro",
+    2: "Fevereiro",
+    3: "Março",
+    4: "Abril",
+    5: "Maio",
+    6: "Junho",
+    7: "Julho",
+    8: "Agosto",
+    9: "Setembro",
+    10: "Outubro",
+    11: "Novembro",
+    12: "Dezembro",
+}
+
+
+def _report_years(reference_year=None, years_back=5):
+    current_year = reference_year or datetime.now().year
+    return range(current_year - years_back, current_year + 1)
 
 
 def _login_limit_exceeded(identifier: str, max_attempts: int, window_seconds: int):
@@ -92,7 +112,7 @@ def get_current_conta():
     
     # Retornar a conta atual
     if conta_id:
-        return Conta.query.get(conta_id)
+        return db.session.get(Conta, conta_id)
     return None
 
 
@@ -118,6 +138,493 @@ def _user_expense_or_404(expense_id):
 
 def _user_payment_method_or_404(method_id):
     return _user_payment_methods_query().filter_by(id=method_id).first_or_404()
+
+
+def _resolve_conta_filter(contas, requested_conta_id, *, use_current_conta=False):
+    conta_filter = requested_conta_id
+
+    if conta_filter is None:
+        if use_current_conta:
+            conta_atual = get_current_conta()
+            if conta_atual:
+                conta_filter = conta_atual.id
+        else:
+            conta_filter = session.get("last_conta_id")
+
+        if conta_filter is None and contas:
+            conta_filter = contas[0].id
+
+    if conta_filter and not any(conta.id == conta_filter for conta in contas):
+        conta_filter = contas[0].id if contas else None
+        session["last_conta_id"] = conta_filter
+
+    return conta_filter
+
+
+def _build_category_totals(transactions, amount_getter):
+    totals = {}
+    for transaction in transactions:
+        if not transaction.category or not transaction.category.name:
+            continue
+
+        category_name = transaction.category.name
+        totals[category_name] = totals.get(category_name, 0.0) + amount_getter(transaction)
+
+    category_rows = [
+        {"category": category_name, "amount": total}
+        for category_name, total in totals.items()
+    ]
+    category_rows.sort(key=lambda item: item["amount"], reverse=True)
+    return category_rows
+
+
+def _build_reports_query(*, user_id, report_type, year, month, payment_method_id, show_discount_only, conta_filter):
+    if report_type != "annual":
+        query = Transaction.query.filter(
+            Transaction.user_id == user_id,
+            or_(
+                and_(
+                    Transaction.type == "despesa",
+                    or_(
+                        and_(
+                            extract("month", Transaction.due_date) == month,
+                            extract("year", Transaction.due_date) == year,
+                        ),
+                        and_(
+                            extract("month", Transaction.payment_date) == month,
+                            extract("year", Transaction.payment_date) == year,
+                        ),
+                    ),
+                ),
+                and_(
+                    Transaction.type == "receita",
+                    extract("month", Transaction.payment_date) == month,
+                    extract("year", Transaction.payment_date) == year,
+                ),
+            ),
+        )
+    else:
+        query = Transaction.query.filter(
+            Transaction.user_id == user_id,
+            or_(
+                and_(
+                    Transaction.type == "despesa",
+                    or_(
+                        extract("year", Transaction.due_date) == year,
+                        extract("year", Transaction.payment_date) == year,
+                    ),
+                ),
+                and_(
+                    Transaction.type == "receita",
+                    extract("year", Transaction.payment_date) == year,
+                ),
+            ),
+        )
+
+    if payment_method_id:
+        query = query.filter(Transaction.payment_method_id == payment_method_id)
+    if show_discount_only:
+        query = query.filter(Transaction.discount > 0)
+    if conta_filter:
+        query = query.filter(Transaction.conta_id == conta_filter)
+    return query
+
+
+def _report_sort_date(transaction):
+    if transaction.type == "despesa":
+        return transaction.due_date or transaction.payment_date or datetime.min
+    return transaction.payment_date or transaction.date or datetime.min
+
+
+def _split_report_transactions(transactions):
+    expense_transactions = sorted(
+        (transaction for transaction in transactions if transaction.type == "despesa"),
+        key=_report_sort_date,
+    )
+    income_transactions = sorted(
+        (transaction for transaction in transactions if transaction.type == "receita"),
+        key=_report_sort_date,
+    )
+    return expense_transactions, income_transactions
+
+
+def _calculate_report_totals(transactions, safe_float):
+    income_total = 0.0
+    expense_total = 0.0
+    total_discount = 0.0
+
+    for transaction in transactions:
+        amount = safe_float(transaction.amount)
+        discount = safe_float(transaction.discount)
+        if transaction.type == "receita":
+            income_total += amount
+        else:
+            expense_total += amount - discount
+            total_discount += discount
+
+    return income_total, expense_total, total_discount, income_total - expense_total
+
+
+def _build_annual_report_monthly_data(transactions, year, safe_float):
+    monthly_data = []
+    for month_number in range(1, 13):
+        month_income = 0.0
+        month_expense = 0.0
+        month_discount = 0.0
+
+        month_transactions = [transaction for transaction in transactions if transaction.date.month == month_number]
+        for transaction in month_transactions:
+            amount = safe_float(transaction.amount)
+            discount = safe_float(transaction.discount)
+            if transaction.type == "receita":
+                month_income += amount
+            else:
+                month_expense += amount
+                month_discount += discount
+
+        monthly_data.append(
+            {
+                "month": datetime(year, month_number, 1).strftime("%b"),
+                "receita": float(month_income),
+                "despesa": float(month_expense - month_discount),
+                "balance": float(month_income - (month_expense - month_discount)),
+            }
+        )
+
+    return monthly_data
+
+
+def _apply_optional_conta_filter(query, conta_filter):
+    if conta_filter:
+        return query.filter(Transaction.conta_id == conta_filter)
+    return query
+
+
+def _dashboard_recent_income(*, user_id, conta_filter, current_month, current_year):
+    query = Transaction.query.filter(
+        Transaction.user_id == user_id,
+        Transaction.type == "receita",
+        extract("month", Transaction.payment_date) == current_month,
+        extract("year", Transaction.payment_date) == current_year,
+    )
+    query = _apply_optional_conta_filter(query, conta_filter)
+    return query.order_by(Transaction.payment_date.desc()).limit(5).all()
+
+
+def _dashboard_recent_expenses(*, user_id, conta_filter, current_month, current_year):
+    query = Transaction.query.filter(
+        Transaction.user_id == user_id,
+        Transaction.type == "despesa",
+        or_(
+            extract("month", Transaction.due_date) == current_month,
+            and_(
+                extract("month", Transaction.payment_date) == current_month,
+                extract("year", Transaction.payment_date) == current_year,
+            ),
+        ),
+    )
+    query = _apply_optional_conta_filter(query, conta_filter)
+    return sorted(query.all(), key=lambda transaction: transaction.due_date or datetime.min)
+
+
+def _dashboard_total_transactions(*, user_id, conta_filter, current_month, current_year):
+    query = Transaction.query.filter(
+        Transaction.user_id == user_id,
+        or_(
+            and_(
+                extract("month", Transaction.due_date) == current_month,
+                extract("year", Transaction.due_date) == current_year,
+            ),
+            and_(
+                extract("month", Transaction.payment_date) == current_month,
+                extract("year", Transaction.payment_date) == current_year,
+            ),
+        ),
+    )
+    query = _apply_optional_conta_filter(query, conta_filter)
+    return query.count()
+
+
+def _dashboard_pending_transactions(*, user_id, conta_filter):
+    query = Transaction.query.filter(
+        Transaction.user_id == user_id,
+        Transaction.paid == False,
+    )
+    query = _apply_optional_conta_filter(query, conta_filter)
+    pending_list = query.order_by(Transaction.due_date.asc(), Transaction.date.asc()).all()
+    pending_count = len(pending_list)
+    pending_amount = sum((transaction.amount or 0) - (transaction.discount or 0) for transaction in pending_list)
+    return pending_count, pending_list, pending_amount
+
+
+def _dashboard_saldo_atual(*, contas, conta_filter):
+    if conta_filter:
+        conta_atual = next((conta for conta in contas if conta.id == conta_filter), None)
+        if conta_atual:
+            Conta.recalcular_saldos(conta_id=conta_filter)
+            db.session.refresh(conta_atual)
+            return conta_atual.saldo_atual
+        return 0.0
+
+    conta_atual = get_current_conta()
+    if conta_atual:
+        Conta.recalcular_saldos(conta_id=conta_atual.id)
+        db.session.refresh(conta_atual)
+        return conta_atual.saldo_atual
+
+    Conta.recalcular_saldos()
+    for conta in contas:
+        db.session.refresh(conta)
+    return sum(conta.saldo_atual for conta in contas)
+
+
+def _build_dashboard_monthly_series(*, user_id, conta_filter, current_month, current_year, get_final_value):
+    monthly_data = []
+    for offset in range(-5, 7):
+        month_number = current_month + offset
+        year_number = current_year
+        while month_number <= 0:
+            month_number += 12
+            year_number -= 1
+        while month_number > 12:
+            month_number -= 12
+            year_number += 1
+
+        month_income_query = db.session.query(func.sum(Transaction.amount)).filter(
+            Transaction.user_id == user_id,
+            Transaction.type == "receita",
+            extract("month", Transaction.date) == month_number,
+            extract("year", Transaction.date) == year_number,
+        )
+        month_income_query = _apply_optional_conta_filter(month_income_query, conta_filter)
+        month_income = month_income_query.scalar() or 0
+
+        month_expense_query = Transaction.query.filter(
+            Transaction.user_id == user_id,
+            Transaction.type == "despesa",
+            extract("month", Transaction.date) == month_number,
+            extract("year", Transaction.date) == year_number,
+        )
+        month_expense_query = _apply_optional_conta_filter(month_expense_query, conta_filter)
+        month_expense = sum(get_final_value(transaction) for transaction in month_expense_query.all())
+
+        monthly_data.append(
+            {
+                "month": datetime(year_number, month_number, 1).strftime("%b"),
+                "receita": float(month_income),
+                "despesa": float(month_expense),
+                "balance": float(month_income - month_expense),
+            }
+        )
+
+    return monthly_data
+
+
+def _safe_float(value):
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _get_final_transaction_value(transaction):
+    return _safe_float(transaction.amount) - _safe_float(transaction.discount)
+
+
+def _serialize_transactions_for_report(transactions, *, include_type=False):
+    rows = []
+    for transaction in transactions:
+        row = {
+            "date": transaction.date,
+            "category": transaction.category,
+            "expense": transaction.expense,
+            "description": transaction.description,
+            "amount": _safe_float(transaction.amount),
+            "discount": _safe_float(transaction.discount),
+            "due_date": transaction.due_date,
+            "payment_date": transaction.payment_date,
+            "payment_method": transaction.payment_method,
+            "paid": transaction.paid,
+        }
+        if include_type:
+            row["type"] = transaction.type
+        rows.append(row)
+    return rows
+
+
+def _payment_method_totals_report(transactions, payment_methods):
+    totals = {}
+    for method in payment_methods:
+        method_transactions = [
+            transaction for transaction in transactions if transaction.payment_method_id == method.id
+        ]
+        totals[method.id] = {
+            "name": method.name,
+            "total_income": sum(
+                _safe_float(transaction.amount)
+                for transaction in method_transactions
+                if transaction.type == "receita"
+            ),
+            "total_expenses": sum(
+                _safe_float(transaction.amount)
+                for transaction in method_transactions
+                if transaction.type == "despesa"
+            ),
+            "total_discount": sum(
+                _safe_float(transaction.discount) for transaction in method_transactions
+            ),
+            "count": len(method_transactions),
+        }
+    return totals
+
+
+def _payment_method_expense_totals(transactions, payment_methods):
+    totals = {}
+    for method in payment_methods:
+        method_transactions = [
+            transaction for transaction in transactions if transaction.payment_method_id == method.id
+        ]
+        totals[method.id] = {
+            "name": method.name,
+            "original": sum(_safe_float(transaction.amount) for transaction in method_transactions),
+            "discount": sum(_safe_float(transaction.discount) for transaction in method_transactions),
+            "final": sum(_get_final_transaction_value(transaction) for transaction in method_transactions),
+            "count": len(method_transactions),
+        }
+    return totals
+
+
+def _discount_categories_totals(transactions):
+    category_totals = {}
+    for transaction in transactions:
+        category_id = transaction.category_id
+        if category_id not in category_totals:
+            category_totals[category_id] = {
+                "name": transaction.category.name,
+                "total_amount": 0.0,
+                "total_discount": 0.0,
+            }
+        category_totals[category_id]["total_amount"] += _safe_float(transaction.amount)
+        category_totals[category_id]["total_discount"] += _safe_float(transaction.discount)
+    return list(category_totals.values())
+
+
+def _list_investments_for_scope(*, user_id, conta_filter, contas_by_id, should_include):
+    movement_query = MovimentacaoInvestimento.query.filter_by(user_id=user_id)
+    if conta_filter:
+        movement_query = movement_query.filter_by(conta_id=conta_filter)
+
+    investimento_ids = sorted({mov.investimento_id for mov in movement_query.all()})
+    investimentos = []
+
+    for inv_id in investimento_ids:
+        investimento = db.session.get(Investimento, inv_id)
+        if not investimento:
+            continue
+
+        if conta_filter:
+            investimento.conta = contas_by_id.get(conta_filter)
+        else:
+            primeira_mov = (
+                MovimentacaoInvestimento.query.filter_by(investimento_id=inv_id, user_id=user_id)
+                .order_by(MovimentacaoInvestimento.id.asc())
+                .first()
+            )
+            investimento.conta = db.session.get(Conta, primeira_mov.conta_id) if primeira_mov else None
+
+        if should_include(investimento):
+            investimentos.append(investimento)
+
+    return investimentos
+
+
+def _first_investment_movement(*, investimento_id, user_id):
+    return (
+        MovimentacaoInvestimento.query.filter_by(investimento_id=investimento_id, user_id=user_id)
+        .order_by(MovimentacaoInvestimento.data_movimentacao.asc(), MovimentacaoInvestimento.id.asc())
+        .first()
+    )
+
+
+def _latest_investment_movement(*, investimento_id, user_id):
+    return (
+        MovimentacaoInvestimento.query.filter_by(investimento_id=investimento_id, user_id=user_id)
+        .order_by(MovimentacaoInvestimento.data_movimentacao.desc(), MovimentacaoInvestimento.id.desc())
+        .first()
+    )
+
+
+def _should_show_investment_current_period(*, investimento, user_id, current_date):
+    ultima_movimentacao = _latest_investment_movement(investimento_id=investimento.id, user_id=user_id)
+    if not ultima_movimentacao:
+        return True
+
+    if (
+        ultima_movimentacao.tipo_movimentacao == "resgate"
+        and ultima_movimentacao.saldo_atual == 0.0
+        and (
+            ultima_movimentacao.data_movimentacao.year < current_date.year
+            or (
+                ultima_movimentacao.data_movimentacao.year == current_date.year
+                and ultima_movimentacao.data_movimentacao.month < current_date.month
+            )
+        )
+    ):
+        return False
+
+    return True
+
+
+def _should_show_investment_monthly_report(*, investimento, user_id, year, month):
+    primeira_movimentacao = _first_investment_movement(investimento_id=investimento.id, user_id=user_id)
+    if not primeira_movimentacao:
+        return True
+
+    if (
+        primeira_movimentacao.data_movimentacao.year > year
+        or (
+            primeira_movimentacao.data_movimentacao.year == year
+            and primeira_movimentacao.data_movimentacao.month > month
+        )
+    ):
+        return False
+
+    ultima_movimentacao = _latest_investment_movement(investimento_id=investimento.id, user_id=user_id)
+    if (
+        ultima_movimentacao
+        and ultima_movimentacao.tipo_movimentacao == "resgate"
+        and ultima_movimentacao.saldo_atual == 0.0
+        and (
+            ultima_movimentacao.data_movimentacao.year < year
+            or (
+                ultima_movimentacao.data_movimentacao.year == year
+                and ultima_movimentacao.data_movimentacao.month < month
+            )
+        )
+    ):
+        return False
+
+    return True
+
+
+def _should_show_investment_annual_report(*, investimento, user_id, year):
+    primeira_movimentacao = _first_investment_movement(investimento_id=investimento.id, user_id=user_id)
+    if not primeira_movimentacao:
+        return True
+
+    if primeira_movimentacao.data_movimentacao.year > year:
+        return False
+
+    ultima_movimentacao = _latest_investment_movement(investimento_id=investimento.id, user_id=user_id)
+    if (
+        ultima_movimentacao
+        and ultima_movimentacao.tipo_movimentacao == "resgate"
+        and ultima_movimentacao.saldo_atual == 0.0
+        and ultima_movimentacao.data_movimentacao.year < year
+    ):
+        return False
+
+    return True
 
 
 # Rotas principais
@@ -162,26 +669,12 @@ def dashboard():
     contas = Conta.query.filter_by(user_id=current_user.id).all()
     
     # Obter o filtro de conta da URL
-    conta_filter = request.args.get('conta_id', type=int)
-    
-    # Se não há filtro na URL, usar a Última conta acessada ou a primeira conta
-    if conta_filter is None:
-        # Tentar obter da sessão usando get_current_conta
-        conta_atual = get_current_conta()
-        if conta_atual:
-            conta_filter = conta_atual.id
-        elif contas:
-            # Se não há Última conta na sessão, usar a primeira conta
-            conta_filter = contas[0].id
-    
-    # Verificar se a conta filtrada existe
-    if conta_filter:
-        conta_existe = any(conta.id == conta_filter for conta in contas)
-        if not conta_existe:
-            # Se a conta não existe, usar a primeira conta disponível
-            conta_filter = contas[0].id if contas else None
-            session['last_conta_id'] = conta_filter
-    
+    conta_filter = _resolve_conta_filter(
+        contas,
+        request.args.get('conta_id', type=int),
+        use_current_conta=True,
+    )
+
     # Salvar a conta atual na sessão
     # if conta_filter:
     #     session['last_conta_id'] = conta_filter
@@ -196,94 +689,21 @@ def dashboard():
     current_year = datetime.now().year
     current_date = datetime.now().date()
 
-    # Mapeamento dos meses em português
-    meses = {
-        1: "Janeiro",
-        2: "Fevereiro",
-        3: "Março",
-        4: "Abril",
-        5: "Maio",
-        6: "Junho",
-        7: "Julho",
-        8: "Agosto",
-        9: "Setembro",
-        10: "Outubro",
-        11: "Novembro",
-        12: "Dezembro",
-    }
 
-    # Função auxiliar para calcular o valor final
-    def get_final_value(transaction):
-        amount = transaction.amount or 0
-        discount = transaction.discount or 0
-        return amount - discount
-    
-    # Função para verificar se um investimento deve ser exibido
-    def deve_exibir_investimento(investimento, current_date):
-        """
-        Verifica se um investimento deve ser exibido baseado nos critérios:
-        EXIBIR investimentos que NÃO se enquadrem nos critérios:
-        - Tipo de movimentação seja igual a 'Resgate' E
-        - Saldo atual seja igual a 0 E
-        - Data da Última movimentação (mês/ano) seja menor ao do mês/ano atual
-        """
-        from app.models import MovimentacaoInvestimento
-        
-        # Buscar a Última movimentação do investimento
-        ultima_movimentacao = MovimentacaoInvestimento.query.filter_by(
-            investimento_id=investimento.id,
-            user_id=current_user.id
-        ).order_by(MovimentacaoInvestimento.data_movimentacao.desc()).first()
-        
-        if not ultima_movimentacao:
-            return True  # Exibir investimentos sem movimentações
-        
-        # Verificar se o investimento se enquadra nos critérios para NÃO exibir
-        # Critério 1: Tipo de movimentação seja igual a 'Resgate'
-        # Critério 2: Saldo atual seja igual a 0
-        # Critério 3: Data da Última movimentação (mês/ano) seja menor ao do mês/ano atual
-        
-        if (ultima_movimentacao.tipo_movimentacao == 'resgate' and 
-            ultima_movimentacao.saldo_atual == 0.0 and
-            (ultima_movimentacao.data_movimentacao.year < current_date.year or
-             (ultima_movimentacao.data_movimentacao.year == current_date.year and 
-              ultima_movimentacao.data_movimentacao.month < current_date.month))):
-            return False  # NÃO exibir este investimento
-        
-        return True  # Exibir este investimento
-    
-
-
-    # Buscar transações recentes de receita do mês atual
-    recent_income_query = Transaction.query.filter(
-        Transaction.user_id == current_user.id,
-        Transaction.type == "receita",
-        extract("month", Transaction.payment_date) == current_month,
-        extract("year", Transaction.payment_date) == current_year,
+    recent_income = _dashboard_recent_income(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
+        current_month=current_month,
+        current_year=current_year,
     )
-    if conta_filter:
-        recent_income_query = recent_income_query.filter(Transaction.conta_id == conta_filter)
-    recent_income = recent_income_query.order_by(Transaction.payment_date.desc()).limit(5).all()
 
-    # Buscar transações recentes de despesa do mês atual
-    recent_expenses_query = Transaction.query.filter(
-        Transaction.user_id == current_user.id,
-        Transaction.type == "despesa",
-        or_(
-            # Filtrar por data de vencimento no mês (independente do ano)
-            extract("month", Transaction.due_date) == current_month,
-            # OU filtrar por data de pagamento no mês atual
-            and_(
-                extract("month", Transaction.payment_date) == current_month,
-                extract("year", Transaction.payment_date) == current_year,
-            ),
-        ),
+    # Buscar transaÃ§Ãµes recentes de despesa do mês atual
+    recent_expenses = _dashboard_recent_expenses(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
+        current_month=current_month,
+        current_year=current_year,
     )
-    if conta_filter:
-        recent_expenses_query = recent_expenses_query.filter(Transaction.conta_id == conta_filter)
-    recent_expenses = recent_expenses_query.all()
-    # Ordenar manualmente, substituindo None por datetime.min
-    recent_expenses = sorted(recent_expenses, key=lambda t: t.due_date or datetime.min)
 
     # Debug: Imprimir todas as despesas encontradas
     # print("\nDespesas encontradas no dashboard:")
@@ -293,7 +713,6 @@ def dashboard():
     #         f"Valor: {exp.amount}, Desconto: {exp.discount}, Categoria: {exp.category.name}"
     #     )
 
-    # Debug: Procurar especificamente por despesas de Água
     agua_expenses = Transaction.query.filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "despesa",
@@ -309,7 +728,6 @@ def dashboard():
     #         f"Valor: {exp.amount}, Desconto: {exp.discount}, Categoria: {exp.category.name}"
     #     )
 
-    # Buscar transações do mês atual para estatésticas mensais
     monthly_transactions = (
         Transaction.query.filter(
             Transaction.user_id == current_user.id,
@@ -321,11 +739,10 @@ def dashboard():
         .all()
     )
 
-    # Calcular o total de receitas do mês atual
     income_query = db.session.query(func.sum(Transaction.amount)).filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "receita",
-        Transaction.paid == True,  # Apenas receitas pagas
+        Transaction.paid == True,
         extract("month", Transaction.payment_date) == current_month,
         extract("year", Transaction.payment_date) == current_year,
     )
@@ -333,11 +750,10 @@ def dashboard():
         income_query = income_query.filter(Transaction.conta_id == conta_filter)
     income_total = income_query.scalar() or 0
 
-    # Calcular o total de despesas do mês atual considerando due_date ou payment_date
     expense_transactions_query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "despesa",
-        Transaction.paid == True,  # Apenas despesas pagas
+        Transaction.paid == True,
         or_(
             and_(
                 extract("month", Transaction.due_date) == current_month,
@@ -352,18 +768,10 @@ def dashboard():
     if conta_filter:
         expense_transactions_query = expense_transactions_query.filter(Transaction.conta_id == conta_filter)
     expense_transactions = expense_transactions_query.all()
-    expense_total = sum(get_final_value(t) for t in expense_transactions)
+    expense_total = sum(_get_final_transaction_value(transaction) for transaction in expense_transactions)
 
-    # Saldo do mês = Total de receitas - Total de despesas
     monthly_balance = income_total - expense_total
 
-    # Debug: Imprimir os valores para verificação
-    # print(f"\nValores do mês:")
-    # print(f"Total de receitas: {income_total}")
-    # print(f"Total de despesas: {expense_total}")
-    # print(f"Saldo do mês: {monthly_balance}")
-
-    # Calcular saldo acumulado (soma de todos os saldos dos meses anteriores)
     accumulated_balance_query = db.session.query(
         func.sum(
             case(
@@ -378,26 +786,18 @@ def dashboard():
     ).filter(
         Transaction.user_id == current_user.id,
         or_(
-            # Meses anteriores ao atual
             extract("year", Transaction.payment_date) < current_year,
-            # Meses do ano atual até o mês anterior
             and_(
                 extract("year", Transaction.payment_date) == current_year,
                 extract("month", Transaction.payment_date) < current_month,
             ),
         ),
     )
-    
-    # Aplicar filtro de conta se especificado
     if conta_filter:
         accumulated_balance_query = accumulated_balance_query.filter(Transaction.conta_id == conta_filter)
-    
     accumulated_balance = accumulated_balance_query.scalar() or 0
-
-    # Calcular saldo total (acumulado + saldo do mês atual)
     balance = accumulated_balance + monthly_balance
 
-    # Obter as categorias de despesas com maiores gastos no mês
     expense_by_category_query = (
         db.session.query(
             Category.name,
@@ -412,22 +812,16 @@ def dashboard():
             extract("year", Transaction.date) == current_year,
         )
     )
-    
-    # Aplicar filtro de conta se especificado
     if conta_filter:
         expense_by_category_query = expense_by_category_query.filter(Transaction.conta_id == conta_filter)
-    
     expense_by_category = expense_by_category_query.group_by(Category.name).all()
-
-    # Calcular totais finais por categoria (amount - discount)
     top_expense_categories = [
-        (cat, (total_amount or 0) - (total_discount or 0))
-        for cat, total_amount, total_discount in expense_by_category
+        (category, (total_amount or 0) - (total_discount or 0))
+        for category, total_amount, total_discount in expense_by_category
     ]
-    top_expense_categories.sort(key=lambda x: x[1], reverse=True)
+    top_expense_categories.sort(key=lambda item: item[1], reverse=True)
     top_expense_categories = top_expense_categories[:5]
 
-    # Obter todas as categorias de receitas do usuário (exceto investimentos)
     top_income_categories_query = (
         db.session.query(Category.name, func.sum(Transaction.amount).label("total"))
         .join(Transaction)
@@ -437,205 +831,72 @@ def dashboard():
             Category.name != "Investimentos",
         )
     )
-    
-    # Aplicar filtro de conta se especificado
     if conta_filter:
         top_income_categories_query = top_income_categories_query.filter(Transaction.conta_id == conta_filter)
-    
-    top_income_categories = top_income_categories_query.group_by(Category.name).order_by(func.sum(Transaction.amount).desc()).all()
+    top_income_categories = (
+        top_income_categories_query.group_by(Category.name)
+        .order_by(func.sum(Transaction.amount).desc())
+        .all()
+    )
 
-    # Obter dados para o grafico de evolucao mensal (ultimos e proximos 6 meses)
-    monthly_data = []
-    for offset in range(-5, 7):
-        month = current_month + offset
-        year = current_year
-        while month <= 0:
-            month += 12
-            year -= 1
-        while month > 12:
-            month -= 12
-            year += 1
+    monthly_data = _build_dashboard_monthly_series(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
+        current_month=current_month,
+        current_year=current_year,
+        get_final_value=_get_final_transaction_value,
+    )
 
-        month_income_query = db.session.query(func.sum(Transaction.amount)).filter(
-            Transaction.user_id == current_user.id,
-            Transaction.type == "receita",
-            extract("month", Transaction.date) == month,
-            extract("year", Transaction.date) == year,
-        )
-        if conta_filter:
-            month_income_query = month_income_query.filter(Transaction.conta_id == conta_filter)
-        month_income = month_income_query.scalar() or 0
-
-        month_expense_transactions_query = Transaction.query.filter(
-            Transaction.user_id == current_user.id,
-            Transaction.type == "despesa",
-            extract("month", Transaction.date) == month,
-            extract("year", Transaction.date) == year,
-        )
-        if conta_filter:
-            month_expense_transactions_query = month_expense_transactions_query.filter(Transaction.conta_id == conta_filter)
-        month_expense_transactions = month_expense_transactions_query.all()
-        month_expense = sum(get_final_value(t) for t in month_expense_transactions)
-
-        month_name = datetime(year, month, 1).strftime("%b")
-        monthly_data.append(
-            {
-                "month": month_name,
-                "receita": float(month_income),
-                "despesa": float(month_expense),
-                "balance": float(month_income - month_expense),
-            }
-        )
-
-    # Preparar dados para os gráficos
     expense_chart_data = [
-        {"name": cat, "value": float(total)} for cat, total in top_expense_categories
+        {"name": category, "value": float(total)} for category, total in top_expense_categories
     ]
     income_chart_data = [
-        {"name": cat, "value": float(total)} for cat, total in top_income_categories
+        {"name": category, "value": float(total)} for category, total in top_income_categories
     ]
 
-    # Serializar os dados para JSON
     expense_chart_json = json.dumps(expense_chart_data, ensure_ascii=False)
     income_chart_json = json.dumps(income_chart_data, ensure_ascii=False)
     monthly_data_json = json.dumps(monthly_data, ensure_ascii=False)
 
-    # Calcular estatésticas adicionais
-    # Total de transações: considerar transações com due_date ou payment_date no mês atual
-    total_transactions_query = Transaction.query.filter(
-        Transaction.user_id == current_user.id,
-        or_(
-            and_(
-                extract("month", Transaction.due_date) == current_month,
-                extract("year", Transaction.due_date) == current_year,
-            ),
-            and_(
-                extract("month", Transaction.payment_date) == current_month,
-                extract("year", Transaction.payment_date) == current_year,
-            ),
-        ),
+    total_transactions = _dashboard_total_transactions(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
+        current_month=current_month,
+        current_year=current_year,
     )
-    if conta_filter:
-        total_transactions_query = total_transactions_query.filter(Transaction.conta_id == conta_filter)
-    total_transactions = total_transactions_query.count()
 
-    # Calcular a média diária de despesas
-    # Considerar apenas despesas com due_date ou payment_date no mês atual
-    # A média é calculada dividindo o total pelo número de dias do mês
     days_in_month = monthrange(current_year, current_month)[1]
     daily_avg_expense = expense_total / days_in_month if days_in_month > 0 else 0
 
-    # Calcular a projeção para o final do mês
-    # Usar o dia atual do mês como base para a projeção
     current_day = datetime.now().day
-    # Garantir que estamos no mês atual
     if current_date.month == current_month and current_date.year == current_year:
-        projected_expense = (
-            (expense_total / current_day) * days_in_month if current_day > 0 else 0
-        )
+        projected_expense = (expense_total / current_day) * days_in_month if current_day > 0 else 0
     else:
-        # Se não estamos no mês atual, a projeção é igual ao total
         projected_expense = expense_total
 
-    # Verificar transações pendentes
-    pending_transactions_query = Transaction.query.filter(
-        Transaction.user_id == current_user.id,
-        Transaction.paid == False,
+    pending_transactions, pending_transactions_list, pending_amount = _dashboard_pending_transactions(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
     )
-    if conta_filter:
-        pending_transactions_query = pending_transactions_query.filter(Transaction.conta_id == conta_filter)
-    pending_transactions = pending_transactions_query.count()
 
-    # Lista de transações pendentes para a tabela collapsada
-    pending_transactions_list_query = Transaction.query.filter(
-        Transaction.user_id == current_user.id,
-        Transaction.paid == False
+    saldo_atual = _dashboard_saldo_atual(
+        contas=contas,
+        conta_filter=conta_filter,
     )
-    if conta_filter:
-        pending_transactions_list_query = pending_transactions_list_query.filter(Transaction.conta_id == conta_filter)
-    pending_transactions_list = pending_transactions_list_query.order_by(Transaction.due_date.asc(), Transaction.date.asc()).all()
-
-    # Corrigir o total exibido no card para ser a soma dos valores da tabela
-    pending_amount = sum((t.amount or 0) - (t.discount or 0) for t in pending_transactions_list)
-
-    # Calcular saldo_atual para o card do dashboard
-    saldo_atual = 0.0
-    if conta_filter:
-        conta_atual = next((c for c in contas if c.id == conta_filter), None)
-        if conta_atual:
-            # Recalcular apenas a conta específica
-            Conta.recalcular_saldos(conta_id=conta_filter)
-            # Recarregar o objeto do banco de dados para obter o valor atualizado
-            db.session.refresh(conta_atual)
-            saldo_atual = conta_atual.saldo_atual
-    else:
-        # Se não há conta específica, usar a conta atual da sessão
-        conta_atual = get_current_conta()
-        if conta_atual:
-            # Recalcular apenas a conta específica
-            Conta.recalcular_saldos(conta_id=conta_atual.id)
-            # Recarregar o objeto do banco de dados para obter o valor atualizado
-            db.session.refresh(conta_atual)
-            saldo_atual = conta_atual.saldo_atual
-        else:
-            # Recalcular todas as contas do usuário
-            Conta.recalcular_saldos()
-            # Recarregar todas as contas
-            for conta in contas:
-                db.session.refresh(conta)
-            saldo_atual = sum(c.saldo_atual for c in contas)
 
     # Buscar investimentos da conta selecionada
-    investimentos = []
-    investimentos_conta_atual = []
-    
-    if conta_filter:
-        from app.models import Investimento, MovimentacaoInvestimento
-        # Buscar investimentos que têm movimentações relacionadas à conta específica
-        movimentacoes_conta = MovimentacaoInvestimento.query.filter_by(
-            conta_id=conta_filter,
-            user_id=current_user.id
-        ).all()
-        
-        # Obter IDs únicos dos investimentos
-        investimento_ids = list(set(mov.investimento_id for mov in movimentacoes_conta))
-        
-        # Buscar os investimentos e aplicar filtros
-        for inv_id in investimento_ids:
-            investimento = Investimento.query.get(inv_id)
-            if investimento:
-                # Adicionar informações da conta ao investimento
-                investimento.conta = conta_atual
-                
-                # Verificar se deve ser exibido (aplicar filtros)
-                if deve_exibir_investimento(investimento, current_date):
-                    investimentos.append(investimento)
-                    investimentos_conta_atual.append(investimento)
-    else:
-        # Se não há conta específica, buscar todos os investimentos do usuário
-        from app.models import Investimento, MovimentacaoInvestimento
-        movimentacoes_usuario = MovimentacaoInvestimento.query.filter_by(
-            user_id=current_user.id
-        ).all()
-        
-        # Obter IDs únicos dos investimentos
-        investimento_ids = list(set(mov.investimento_id for mov in movimentacoes_usuario))
-        
-        # Buscar os investimentos e aplicar filtros
-        for inv_id in investimento_ids:
-            investimento = Investimento.query.get(inv_id)
-            if investimento:
-                # Buscar a conta da primeira movimentação deste investimento
-                primeira_mov = MovimentacaoInvestimento.query.filter_by(
-                    investimento_id=inv_id,
-                    user_id=current_user.id
-                ).first()
-                if primeira_mov:
-                    investimento.conta = Conta.query.get(primeira_mov.conta_id)
-                
-                # Verificar se deve ser exibido (aplicar filtros)
-                if deve_exibir_investimento(investimento, current_date):
-                    investimentos.append(investimento)
+    contas_by_id = {conta.id: conta for conta in contas}
+    investimentos = _list_investments_for_scope(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
+        contas_by_id=contas_by_id,
+        should_include=lambda investimento: _should_show_investment_current_period(
+            investimento=investimento,
+            user_id=current_user.id,
+            current_date=current_date,
+        ),
+    )
+    investimentos_conta_atual = list(investimentos) if conta_filter else []
 
     return render_template(
         "dashboard.html",
@@ -659,7 +920,7 @@ def dashboard():
         pending_transactions=pending_transactions,
         pending_amount=pending_amount,  # Adicionando o valor total pendente
         pending_transactions_list=pending_transactions_list,
-        current_month=f"{meses[current_month]} {current_year}",
+        current_month=f"{MONTH_NAMES_PT[current_month]} {current_year}",
         datetime=datetime,
         monthrange=monthrange,
         saldo_atual=saldo_atual,
@@ -996,25 +1257,11 @@ def reports():
     contas = Conta.query.filter_by(user_id=current_user.id).all()
     
     # Obter o filtro de conta da URL
-    conta_filter = request.args.get('conta_id', type=int)
-    
-    # Se não há filtro na URL, usar a Última conta acessada ou a primeira conta
-    if conta_filter is None:
-        # Tentar obter da sessão
-        conta_filter = session.get('last_conta_id')
-        if conta_filter is None and contas:
-            # Se não há Última conta na sessão, usar a primeira conta
-            conta_filter = contas[0].id
-    
-    # Verificar se a conta filtrada existe
-    if conta_filter:
-        conta_existe = any(conta.id == conta_filter for conta in contas)
-        if not conta_existe:
-            # Se a conta não existe, usar a primeira conta disponível
-            conta_filter = contas[0].id if contas else None
-            session['last_conta_id'] = conta_filter
-    
-    # Salvar a conta atual na sessão
+    conta_filter = _resolve_conta_filter(
+        contas,
+        request.args.get('conta_id', type=int),
+    )
+
     # if conta_filter:
     #     session['last_conta_id'] = conta_filter
         
@@ -1028,290 +1275,72 @@ def reports():
     month = request.args.get("month", datetime.now().month, type=int)
     payment_method_id = request.args.get("payment_method_id", type=int)
     show_discount_only = request.args.get("show_discount_only", type=bool)
-    years = range(datetime.now().year - 5, datetime.now().year + 1)
+    years = _report_years()
 
     # Debug: imprimir os valores de mês e ano
-    # print(f"DEBUG: Mês selecionado: {month}, Ano selecionado: {year}")
-    # print(f"DEBUG: Mês atual: {datetime.now().month}, Ano atual: {datetime.now().year}")
-
-    # Função auxiliar para calcular o valor final
-    def get_final_value(transaction):
-        amount = float(transaction.amount or 0)
-        discount = float(transaction.discount or 0)
-        return amount - discount
-
-    # Função auxiliar para garantir valor float
-    def safe_float(value):
-        try:
-            return float(value or 0)
-        except (TypeError, ValueError):
-            return 0.0
+    # print(f"DEBUG: mês selecionado: {month}, Ano selecionado: {year}")
+    # print(f"DEBUG: mês atual: {datetime.now().month}, Ano atual: {datetime.now().year}")
 
     # Obter todas as formas de pagamento para o select
     payment_methods = _user_payment_methods_query().filter_by(is_active=True).all()
 
-    # Construir a consulta base
-    if report_type != "annual":
-        query = Transaction.query.filter(
-            Transaction.user_id == current_user.id,
-            or_(
-                # Para despesas, manter a lógica atual de filtrar por due_date ou payment_date
-                and_(
-                    Transaction.type == "despesa",
-                    or_(
-                        and_(
-                            extract("month", Transaction.due_date) == month,
-                            extract("year", Transaction.due_date) == year,
-                        ),
-                        and_(
-                            extract("month", Transaction.payment_date) == month,
-                            extract("year", Transaction.payment_date) == year,
-                        ),
-                    ),
-                ),
-                # Para receitas, filtrar apenas por payment_date
-                and_(
-                    Transaction.type == "receita",
-                    extract("month", Transaction.payment_date) == month,
-                    extract("year", Transaction.payment_date) == year,
-                ),
-            ),
-        )
-    else:
-        # Para relatério anual, atualizar a lógica também
-        query = Transaction.query.filter(
-            Transaction.user_id == current_user.id,
-            or_(
-                # Para despesas, manter a lógica atual
-                and_(
-                    Transaction.type == "despesa",
-                    or_(
-                        extract("year", Transaction.due_date) == year,
-                        extract("year", Transaction.payment_date) == year,
-                    ),
-                ),
-                # Para receitas, filtrar apenas por payment_date
-                and_(
-                    Transaction.type == "receita",
-                    extract("year", Transaction.payment_date) == year,
-                ),
-            ),
-        )
-
-    # Aplicar filtro de forma de pagamento se especificado
-    if payment_method_id:
-        query = query.filter(Transaction.payment_method_id == payment_method_id)
-
-    # Aplicar filtro de descontos se especificado
-    if show_discount_only:
-        query = query.filter(Transaction.discount > 0)
-    
-    # Aplicar filtro de conta se especificado
-    if conta_filter:
-        query = query.filter(Transaction.conta_id == conta_filter)
-
-    # Executar a consulta
+    query = _build_reports_query(
+        user_id=current_user.id,
+        report_type=report_type,
+        year=year,
+        month=month,
+        payment_method_id=payment_method_id,
+        show_discount_only=show_discount_only,
+        conta_filter=conta_filter,
+    )
     transactions = query.all()
+    expense_transactions, income_transactions = _split_report_transactions(transactions)
+    income_total, expense_total, total_discount, balance = _calculate_report_totals(
+        transactions,
+        _safe_float,
+    )
 
-    # Função auxiliar para ordenação segura de datas
-    def safe_date_sort(transaction):
-        if transaction.type == "despesa":
-            # Para despesas, usar due_date ou payment_date como fallback
-            return transaction.due_date or transaction.payment_date or datetime.min
-        else:
-            # Para receitas, usar payment_date ou date como fallback
-            return transaction.payment_date or transaction.date or datetime.min
-
-    # Filtrar e ordenar transações
-    expense_transactions = [t for t in transactions if t.type == "despesa"]
-    expense_transactions.sort(key=safe_date_sort)
-
-    income_transactions = [t for t in transactions if t.type == "receita"]
-    income_transactions.sort(key=safe_date_sort)
-
-    # Debug: imprimir as transações filtradas
-    # print(f"DEBUG: Total de despesas filtradas: {len(expense_transactions)}")
-    # print(f"DEBUG: Total de receitas filtradas: {len(income_transactions)}")
-
-    # Inicializar totais
-    income_total = 0.0
-    expense_total = 0.0
-    total_discount = 0.0
-
-    # Calcular totais por tipo de transação
-    for t in transactions:
-        amount = safe_float(t.amount)
-        discount = safe_float(t.discount)
-        if t.type == "receita":
-            income_total += amount
-        else:  # despesa
-            expense_total += amount - discount  # Subtrair o desconto do valor total
-            total_discount += discount
-    # Calcular saldo (receitas - (despesas - descontos))
-    balance = (
-        income_total - expense_total
-    )  # expense_total já inclui o desconto subtraído
-
-    # Inicializar dados dos gráficos
-    expense_chart_data = []
     income_chart_data = []
     monthly_data = []
 
     if report_type == "monthly":
-        # Filtrar transações por tipo para cálculos específicos
-        income_transactions = [t for t in transactions if t.type == "receita"]
+        income_by_category = _build_category_totals(
+            income_transactions,
+            lambda transaction: _safe_float(transaction.amount),
+        )
 
-        # Calcular totais por categoria para receitas
-        income_by_category = []
-        income_category_totals = {}
-        for t in income_transactions:
-            if not t.category or not t.category.name:
-                continue  # Skip transactions with missing category
-            amount = safe_float(t.amount)
-            if t.category.name not in income_category_totals:
-                income_category_totals[t.category.name] = 0
-            income_category_totals[t.category.name] += amount
+        expense_by_category = _build_category_totals(
+            expense_transactions,
+            lambda transaction: _safe_float(transaction.amount) - _safe_float(transaction.discount),
+        )
 
-        for category_name, total in income_category_totals.items():
-            income_by_category.append({"category": category_name, "amount": total})
-
-        # Ordenar por valor decrescente
-        income_by_category.sort(key=lambda x: x["amount"], reverse=True)
-
-        # Calcular totais por categoria para despesas (usando as despesas filtradas)
-        expense_by_category = []
-        expense_category_totals = {}
-        for t in expense_transactions:
-            if not t.category or not t.category.name:
-                continue  # Skip transactions with missing category
-            amount = safe_float(t.amount)
-            discount = safe_float(t.discount)
-            final_amount = amount - discount
-            if t.category.name not in expense_category_totals:
-                expense_category_totals[t.category.name] = 0
-            expense_category_totals[t.category.name] += final_amount
-
-        for category_name, total in expense_category_totals.items():
-            expense_by_category.append({"category": category_name, "amount": total})
-
-        # Ordenar por valor decrescente
-        expense_by_category.sort(key=lambda x: x["amount"], reverse=True)
-
-        # Preparar dados para os gráficos
         expense_chart_data = [
             {"category": item["category"], "amount": item["amount"]}
-            for item in expense_by_category[:10]  # Top 10 categorias
+            for item in expense_by_category[:10]
         ]
         income_chart_data = [
             {"category": item["category"], "amount": item["amount"]}
-            for item in income_by_category[:10]  # Top 10 categorias
+            for item in income_by_category[:10]
         ]
 
-        # Buscar investimentos da conta selecionada
-        investimentos = []
-        
-        # Função para verificar se um investimento deve ser exibido
-        def deve_exibir_investimento_reports(investimento, year, month):
-            """
-            Verifica se um investimento deve ser exibido baseado nos critérios:
-            EXIBIR investimentos que NÃO se enquadrem nos critérios:
-            - Primeira movimentação seja igual ou posterior ao mês/ano selecionado no filtro
-            - Tipo de movimentação seja igual a 'Resgate' E
-            - Saldo atual seja igual a 0 E
-            - Data da Última movimentação (mês/ano) seja menor ao do mês/ano selecionado no filtro
-            """
-            from app.models import MovimentacaoInvestimento
-            
-            # Buscar a primeira movimentação do investimento
-            primeira_movimentacao = MovimentacaoInvestimento.query.filter_by(
-                investimento_id=investimento.id,
-                user_id=current_user.id
-            ).order_by(MovimentacaoInvestimento.data_movimentacao.asc()).first()
-            
-            if not primeira_movimentacao:
-                return True  # Exibir investimentos sem movimentações
-            
-            # Critério 0: Verificar se a primeira movimentação é igual ou posterior ao mês/ano selecionado
-            # Se a primeira movimentação for posterior ao período selecionado, NÃO exibir
-            if (primeira_movimentacao.data_movimentacao.year > year or
-                (primeira_movimentacao.data_movimentacao.year == year and 
-                 primeira_movimentacao.data_movimentacao.month > month)):
-                return False  # NÃO exibir este investimento
-            
-            # Buscar a Última movimentação do investimento
-            ultima_movimentacao = MovimentacaoInvestimento.query.filter_by(
-                investimento_id=investimento.id,
-                user_id=current_user.id
-            ).order_by(MovimentacaoInvestimento.data_movimentacao.desc()).first()
-            
-            # Verificar se o investimento se enquadra nos critérios para NÃO exibir
-            # Critério 1: Tipo de movimentação seja igual a 'Resgate'
-            # Critério 2: Saldo atual seja igual a 0
-            # Critério 3: Data da Última movimentação (mês/ano) seja menor ao do mês/ano selecionado no filtro
-            
-            if (ultima_movimentacao.tipo_movimentacao == 'resgate' and 
-                ultima_movimentacao.saldo_atual == 0.0 and
-                (ultima_movimentacao.data_movimentacao.year < year or 
-                 (ultima_movimentacao.data_movimentacao.year == year and 
-                  ultima_movimentacao.data_movimentacao.month < month))):
-                return False  # NÃO exibir este investimento
-            
-            return True  # Exibir este investimento
-        
-        if conta_filter:
-            from app.models import Investimento, MovimentacaoInvestimento
-            # Buscar investimentos que têm movimentações relacionadas à conta específica
-            movimentacoes_conta = MovimentacaoInvestimento.query.filter_by(
-                conta_id=conta_filter,
-                user_id=current_user.id
-            ).all()
-            
-            # Obter IDs únicos dos investimentos
-            investimento_ids = list(set(mov.investimento_id for mov in movimentacoes_conta))
-            
-            # Buscar os investimentos e aplicar filtros
-            for inv_id in investimento_ids:
-                investimento = Investimento.query.get(inv_id)
-                if investimento:
-                    # Adicionar informações da conta ao investimento
-                    conta_atual = next((c for c in contas if c.id == conta_filter), None)
-                    investimento.conta = conta_atual
-                    
-                    # Verificar se deve ser exibido (aplicar filtros)
-                    if deve_exibir_investimento_reports(investimento, year, month):
-                        investimentos.append(investimento)
-        else:
-            # Se não há conta específica, buscar todos os investimentos do usuário
-            from app.models import Investimento, MovimentacaoInvestimento
-            movimentacoes_usuario = MovimentacaoInvestimento.query.filter_by(
-                user_id=current_user.id
-            ).all()
-            
-            # Obter IDs únicos dos investimentos
-            investimento_ids = list(set(mov.investimento_id for mov in movimentacoes_usuario))
-            
-            # Buscar os investimentos e aplicar filtros
-            for inv_id in investimento_ids:
-                investimento = Investimento.query.get(inv_id)
-                if investimento:
-                    # Buscar a conta da primeira movimentação deste investimento
-                    primeira_mov = MovimentacaoInvestimento.query.filter_by(
-                        investimento_id=inv_id,
-                        user_id=current_user.id
-                    ).first()
-                    if primeira_mov:
-                        investimento.conta = Conta.query.get(primeira_mov.conta_id)
-                    
-                    # Verificar se deve ser exibido (aplicar filtros)
-                    if deve_exibir_investimento_reports(investimento, year, month):
-                        investimentos.append(investimento)
+        investimentos = _list_investments_for_scope(
+            user_id=current_user.id,
+            conta_filter=conta_filter,
+            contas_by_id={conta.id: conta for conta in contas},
+            should_include=lambda investimento: _should_show_investment_monthly_report(
+                investimento=investimento,
+                user_id=current_user.id,
+                year=year,
+                month=month,
+            ),
+        )
 
         return render_template(
             "reports.html",
             contas=contas,
             conta_filter=conta_filter,
             transactions=transactions,
-            expense_transactions=expense_transactions,  # Passar as despesas filtradas e ordenadas
+            expense_transactions=expense_transactions,
             income_by_category=income_by_category,
             expense_by_category=expense_by_category,
             income_total=income_total,
@@ -1327,138 +1356,32 @@ def reports():
             report_type=report_type,
             expense_chart_data=json.dumps(expense_chart_data),
             income_chart_data=json.dumps(income_chart_data),
-            investimentos=investimentos,  # Adicionando os investimentos
+            investimentos=investimentos,
         )
-    else:  # annual report
-        # Agrupar transações por mês
-        for m in range(1, 13):
-            month_income = 0.0
-            month_expense = 0.0
-            month_discount = 0.0
 
-            # Filtrar transações do mês
-            month_transactions = [t for t in transactions if t.date.month == m]
+    monthly_data = _build_annual_report_monthly_data(
+        transactions,
+        year,
+        _safe_float,
+    )
 
-            for t in month_transactions:
-                amount = safe_float(t.amount)
-                discount = safe_float(t.discount)
-                if t.type == "receita":
-                    month_income += amount
-                else:  # despesa
-                    month_expense += amount
-                    month_discount += discount
+    investimentos = _list_investments_for_scope(
+        user_id=current_user.id,
+        conta_filter=conta_filter,
+        contas_by_id={conta.id: conta for conta in contas},
+        should_include=lambda investimento: _should_show_investment_annual_report(
+            investimento=investimento,
+            user_id=current_user.id,
+            year=year,
+        ),
+    )
 
-            monthly_data.append(
-                {
-                    "month": datetime(year, m, 1).strftime("%b"),
-                    "receita": float(month_income),
-                    "despesa": float(month_expense - month_discount),
-                    "balance": float(month_income - (month_expense - month_discount)),
-                }
-            )
-
-    # Buscar investimentos da conta selecionada para relatério anual
-    investimentos = []
-    
-    # Função para verificar se um investimento deve ser exibido (relatério anual)
-    def deve_exibir_investimento_reports_anual(investimento, year):
-        """
-        Verifica se um investimento deve ser exibido baseado nos critérios:
-        EXIBIR investimentos que NÃO se enquadrem nos critérios:
-        - Primeira movimentação seja igual ou posterior ao ano selecionado no filtro
-        - Tipo de movimentação seja igual a 'Resgate' E
-        - Saldo atual seja igual a 0 E
-        - Data da Última movimentação (ano) seja menor ao do ano selecionado no filtro
-        """
-        from app.models import MovimentacaoInvestimento
-        
-        # Buscar a primeira movimentação do investimento
-        primeira_movimentacao = MovimentacaoInvestimento.query.filter_by(
-            investimento_id=investimento.id,
-            user_id=current_user.id
-        ).order_by(MovimentacaoInvestimento.data_movimentacao.asc()).first()
-        
-        if not primeira_movimentacao:
-            return True  # Exibir investimentos sem movimentações
-        
-        # Critério 0: Verificar se a primeira movimentação é igual ou posterior ao ano selecionado
-        # Se a primeira movimentação for posterior ao ano selecionado, NÃO exibir
-        if primeira_movimentacao.data_movimentacao.year > year:
-            return False  # NÃO exibir este investimento
-        
-        # Buscar a Última movimentação do investimento
-        ultima_movimentacao = MovimentacaoInvestimento.query.filter_by(
-            investimento_id=investimento.id,
-            user_id=current_user.id
-        ).order_by(MovimentacaoInvestimento.data_movimentacao.desc()).first()
-        
-        # Verificar se o investimento se enquadra nos critérios para NÃO exibir
-        # Critério 1: Tipo de movimentação seja igual a 'Resgate'
-        # Critério 2: Saldo atual seja igual a 0
-        # Critério 3: Data da Última movimentação (ano) seja menor ao do ano selecionado no filtro
-        
-        if (ultima_movimentacao.tipo_movimentacao == 'resgate' and 
-            ultima_movimentacao.saldo_atual == 0.0 and
-            ultima_movimentacao.data_movimentacao.year < year):
-            return False  # NÃO exibir este investimento
-        
-        return True  # Exibir este investimento
-    
-    if conta_filter:
-        from app.models import Investimento, MovimentacaoInvestimento
-        # Buscar investimentos que têm movimentações relacionadas à conta específica
-        movimentacoes_conta = MovimentacaoInvestimento.query.filter_by(
-            conta_id=conta_filter,
-            user_id=current_user.id
-        ).all()
-        
-        # Obter IDs únicos dos investimentos
-        investimento_ids = list(set(mov.investimento_id for mov in movimentacoes_conta))
-        
-        # Buscar os investimentos e aplicar filtros
-        for inv_id in investimento_ids:
-            investimento = Investimento.query.get(inv_id)
-            if investimento:
-                # Adicionar informações da conta ao investimento
-                conta_atual = next((c for c in contas if c.id == conta_filter), None)
-                investimento.conta = conta_atual
-                
-                # Verificar se deve ser exibido (aplicar filtros)
-                if deve_exibir_investimento_reports_anual(investimento, year):
-                    investimentos.append(investimento)
-    else:
-        # Se não há conta específica, buscar todos os investimentos do usuário
-        from app.models import Investimento, MovimentacaoInvestimento
-        movimentacoes_usuario = MovimentacaoInvestimento.query.filter_by(
-            user_id=current_user.id
-        ).all()
-        
-        # Obter IDs únicos dos investimentos
-        investimento_ids = list(set(mov.investimento_id for mov in movimentacoes_usuario))
-        
-        # Buscar os investimentos e aplicar filtros
-        for inv_id in investimento_ids:
-            investimento = Investimento.query.get(inv_id)
-            if investimento:
-                # Buscar a conta da primeira movimentação deste investimento
-                primeira_mov = MovimentacaoInvestimento.query.filter_by(
-                    investimento_id=inv_id,
-                    user_id=current_user.id
-                ).first()
-                if primeira_mov:
-                    investimento.conta = Conta.query.get(primeira_mov.conta_id)
-                
-                # Verificar se deve ser exibido (aplicar filtros)
-                if deve_exibir_investimento_reports_anual(investimento, year):
-                    investimentos.append(investimento)
-
-    # Return para relatério anual (fora do bloco if conta_filter)
     return render_template(
         "reports.html",
         contas=contas,
         conta_filter=conta_filter,
         transactions=transactions,
-        expense_transactions=expense_transactions,  # Adicionar as despesas filtradas
+        expense_transactions=expense_transactions,
         monthly_data=json.dumps(monthly_data),
         income_total=income_total,
         expense_total=expense_total,
@@ -1471,9 +1394,8 @@ def reports():
         selected_year=year,
         selected_month=month,
         report_type=report_type,
-        investimentos=investimentos,  # Adicionando os investimentos
+        investimentos=investimentos,
     )
-
 
 def _export_serialize(value):
     if value is None:
@@ -1634,21 +1556,6 @@ def send_reset_email(user):
     token = user.get_reset_token()
     reset_url = url_for("auth.reset_token", token=token, _external=True)
 
-    # print("\n" + "=" * 50)
-    # print("EMAIL DE RECUPERAÇÃO DE SENHA (CONSOLE)")
-    # print("=" * 50)
-    # print(f"De: {current_app.config['MAIL_DEFAULT_SENDER']}")
-    # print(f"Para: {user.email}")
-    # print(f"Assunto: Recuperação de Senha - Finanças Pessoais")
-    # print("-" * 50)
-    # print("Conteúdo do email:")
-    # print(f"Para redefinir sua senha, visite o seguinte link:")
-    # print(f"{reset_url}")
-    # print(
-    #     "\nSe você não solicitou esta recuperação de senha, simplesmente ignore este email."
-    # )
-    # print("=" * 50 + "\n")
-
     msg = Message("Recuperação de Senha - Finanças Pessoais", recipients=[user.email])
     msg.body = f"""Para redefinir sua senha, visite o seguinte link:
 {reset_url}
@@ -1694,99 +1601,39 @@ def payment_method_report():
     check = require_account()
     if check:
         return check
-    # Obter parâmetros do filtro
+
     payment_method_id = request.args.get("payment_method_id", type=int)
     month = request.args.get("month", datetime.now().month, type=int)
     year = request.args.get("year", datetime.now().year, type=int)
-    years = range(datetime.now().year - 5, datetime.now().year + 1)
+    years = _report_years()
 
-    # Construir a consulta base
     query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
         extract("month", Transaction.date) == month,
         extract("year", Transaction.date) == year,
     )
-
-    # Aplicar filtro de forma de pagamento se especificado
     if payment_method_id:
         query = query.filter(Transaction.payment_method_id == payment_method_id)
 
-    # Executar a consulta
     transactions = query.order_by(Transaction.date.desc()).all()
-
-    # Função auxiliar para calcular o valor final
-    def get_final_value(transaction):
-        amount = float(transaction.amount or 0)
-        discount = float(transaction.discount or 0)
-        return amount - discount
-
-    # Calcular totais
-    total_amount = sum(float(t.amount or 0) for t in transactions)
-    total_discount = sum(float(t.discount or 0) for t in transactions)
-    total_final = sum(get_final_value(t) for t in transactions)
-
-    # Obter todas as formas de pagamento para o select
     payment_methods = _user_payment_methods_query().all()
 
-    # Função auxiliar para garantir valor float
-    def safe_float(value):
-        try:
-            return float(value or 0)
-        except (TypeError, ValueError):
-            return 0.0
-
-    # Calcular totais por forma de pagamento
-    payment_method_totals = {}
-    for method in payment_methods:
-        method_transactions = [
-            t for t in transactions if t.payment_method_id == method.id
-        ]
-        method_income = sum(
-            safe_float(t.amount) for t in method_transactions if t.type == "receita"
-        )
-        method_expenses = sum(
-            safe_float(t.amount) for t in method_transactions if t.type == "despesa"
-        )
-        method_discount = sum(safe_float(t.discount) for t in method_transactions)
-        payment_method_totals[method.id] = {
-            "name": method.name,
-            "total_income": method_income,
-            "total_expenses": method_expenses,
-            "total_discount": method_discount,
-            "count": len(method_transactions),
-        }
-
-    # Preparar transações para o template
-    transactions_for_template = []
-    for t in transactions:
-        transactions_for_template.append(
-            {
-                "date": t.date,
-                "category": t.category,
-                "expense": t.expense,
-                "description": t.description,
-                "amount": safe_float(t.amount),
-                "discount": safe_float(t.discount),
-                "due_date": t.due_date,
-                "payment_date": t.payment_date,
-                "payment_method": t.payment_method,
-                "paid": t.paid,
-                "type": t.type,
-            }
-        )
+    total_amount = sum(_safe_float(transaction.amount) for transaction in transactions)
+    total_discount = sum(_safe_float(transaction.discount) for transaction in transactions)
+    total_final = sum(_get_final_transaction_value(transaction) for transaction in transactions)
 
     return render_template(
         "payment_method_report.html",
-        transactions=transactions_for_template,
+        transactions=_serialize_transactions_for_report(transactions, include_type=True),
         payment_methods=payment_methods,
         selected_method_id=payment_method_id,
         month=month,
         year=year,
         years=years,
-        total_amount=safe_float(total_amount),
-        total_discount=safe_float(total_discount),
-        total_final=safe_float(total_final),
-        payment_method_totals=payment_method_totals,
+        total_amount=_safe_float(total_amount),
+        total_discount=_safe_float(total_discount),
+        total_final=_safe_float(total_final),
+        payment_method_totals=_payment_method_totals_report(transactions, payment_methods),
         total_transactions=len(transactions),
     )
 
@@ -1797,12 +1644,11 @@ def discount_report():
     check = require_account()
     if check:
         return check
-    # Obter parâmetros do filtro
+
     month = request.args.get("month", datetime.now().month, type=int)
     year = request.args.get("year", datetime.now().year, type=int)
-    years = range(datetime.now().year - 5, datetime.now().year + 1)
+    years = _report_years()
 
-    # Buscar transações com desconto
     transactions = (
         Transaction.query.filter(
             Transaction.user_id == current_user.id,
@@ -1814,70 +1660,21 @@ def discount_report():
         .all()
     )
 
-    # Função auxiliar para calcular o valor final
-    def get_final_value(transaction):
-        amount = float(transaction.amount or 0)
-        discount = float(transaction.discount or 0)
-        return amount - discount
-
-    # Calcular totais
-    total_expenses = sum(float(t.amount or 0) for t in transactions)
-    total_discounts = sum(float(t.discount or 0) for t in transactions)
-    total_final = sum(get_final_value(t) for t in transactions)
-
-    # Função auxiliar para garantir valor float
-    def safe_float(value):
-        try:
-            return float(value or 0)
-        except (TypeError, ValueError):
-            return 0.0
-
-    # Preparar transações para o template
-    transactions_for_template = []
-    for t in transactions:
-        transactions_for_template.append(
-            {
-                "date": t.date,
-                "category": t.category,
-                "expense": t.expense,
-                "description": t.description,
-                "amount": safe_float(t.amount),
-                "discount": safe_float(t.discount),
-                "due_date": t.due_date,
-                "payment_date": t.payment_date,
-                "payment_method": t.payment_method,
-                "paid": t.paid,
-            }
-        )
-
-    # Calcular totais por categoria
-    category_totals = {}
-    for transaction in transactions:
-        category_id = transaction.category_id
-        if category_id not in category_totals:
-            category_totals[category_id] = {
-                "name": transaction.category.name,
-                "total_amount": 0.0,
-                "total_discount": 0.0,
-            }
-        category_totals[category_id]["total_amount"] += safe_float(transaction.amount)
-        category_totals[category_id]["total_discount"] += safe_float(
-            transaction.discount
-        )
-
-    categories = list(category_totals.values())
+    total_expenses = sum(_safe_float(transaction.amount) for transaction in transactions)
+    total_discounts = sum(_safe_float(transaction.discount) for transaction in transactions)
+    total_final = sum(_get_final_transaction_value(transaction) for transaction in transactions)
 
     return render_template(
         "discount_report.html",
-        transactions=transactions_for_template,
+        transactions=_serialize_transactions_for_report(transactions),
         month=month,
         year=year,
         years=years,
-        total_amount=safe_float(total_expenses),
-        total_discount=safe_float(total_discounts),
-        total_final=safe_float(total_final),
+        total_amount=_safe_float(total_expenses),
+        total_discount=_safe_float(total_discounts),
+        total_final=_safe_float(total_final),
         total_transactions=len(transactions),
-        categories=categories,
+        categories=_discount_categories_totals(transactions),
     )
 
 
@@ -1887,97 +1684,40 @@ def payment_method_expense_report():
     check = require_account()
     if check:
         return check
-    # Obter parâmetros do filtro
+
     payment_method_id = request.args.get("payment_method_id", type=int)
     month = request.args.get("month", datetime.now().month, type=int)
     year = request.args.get("year", datetime.now().year, type=int)
-    years = range(datetime.now().year - 5, datetime.now().year + 1)
+    years = _report_years()
 
-    # Construir a consulta base - apenas despesas
     query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
-        Transaction.type == "despesa",  # Apenas despesas
+        Transaction.type == "despesa",
         extract("month", Transaction.date) == month,
         extract("year", Transaction.date) == year,
     )
-
-    # Aplicar filtro de forma de pagamento se especificado
     if payment_method_id:
         query = query.filter(Transaction.payment_method_id == payment_method_id)
 
-    # Executar a consulta
     transactions = query.order_by(Transaction.date.desc()).all()
-
-    # Função auxiliar para calcular o valor final
-    def get_final_value(transaction):
-        amount = float(transaction.amount or 0)
-        discount = float(transaction.discount or 0)
-        return amount - discount
-
-    # Função auxiliar para garantir valor float
-    def safe_float(value):
-        try:
-            return float(value or 0)
-        except (TypeError, ValueError):
-            return 0.0
-
-    # Calcular totais usando valores finais
-    total_amount = sum(get_final_value(t) for t in transactions)
-    total_discount = sum(float(t.discount or 0) for t in transactions)
-    total_original = sum(float(t.amount or 0) for t in transactions)
-
-    # Obter todas as formas de pagamento para o select
     payment_methods = _user_payment_methods_query().filter_by(is_active=True).all()
 
-    # Preparar transações para o template
-    transactions_for_template = []
-    for t in transactions:
-        transactions_for_template.append(
-            {
-                "date": t.date,
-                "category": t.category,
-                "expense": t.expense,
-                "description": t.description,
-                "amount": safe_float(t.amount),
-                "discount": safe_float(t.discount),
-                "due_date": t.due_date,
-                "payment_date": t.payment_date,
-                "payment_method": t.payment_method,
-                "paid": t.paid,
-            }
-        )
-
-    # Calcular totais por forma de pagamento
-    payment_method_totals = {}
-    for method in payment_methods:
-        method_transactions = [
-            t for t in transactions if t.payment_method_id == method.id
-        ]
-        method_original = sum(safe_float(t.amount) for t in method_transactions)
-        method_discount = sum(safe_float(t.discount) for t in method_transactions)
-        method_final = sum(
-            safe_float(t.amount) - safe_float(t.discount) for t in method_transactions
-        )
-        payment_method_totals[method.id] = {
-            "name": method.name,
-            "original": method_original,
-            "discount": method_discount,
-            "final": method_final,
-            "count": len(method_transactions),
-        }
+    total_amount = sum(_get_final_transaction_value(transaction) for transaction in transactions)
+    total_discount = sum(_safe_float(transaction.discount) for transaction in transactions)
+    total_original = sum(_safe_float(transaction.amount) for transaction in transactions)
 
     return render_template(
         "payment_method_expense_report.html",
-        transactions=transactions_for_template,
+        transactions=_serialize_transactions_for_report(transactions),
         payment_methods=payment_methods,
         selected_method_id=payment_method_id,
         month=month,
         year=year,
         years=years,
-        total_original=safe_float(total_original),
-        total_discount=safe_float(total_discount),
-        total_amount=safe_float(total_amount),
-        payment_method_totals=payment_method_totals,
+        total_original=_safe_float(total_original),
+        total_discount=_safe_float(total_discount),
+        total_amount=_safe_float(total_amount),
+        payment_method_totals=_payment_method_expense_totals(transactions, payment_methods),
         total_transactions=len(transactions),
     )
 
@@ -1986,40 +1726,20 @@ def payment_method_expense_report():
 @login_required
 def transactions():
     page = request.args.get("page", 1, type=int)
-    per_page = 10  # número de itens por página
+    per_page = 10
 
-    # Obter o mês e ano atual
     current_date = datetime.now()
     current_month = current_date.month
     current_year = current_date.year
 
-    # Mapeamento dos meses em português
-    meses = {
-        1: "Janeiro",
-        2: "Fevereiro",
-        3: "Março",
-        4: "Abril",
-        5: "Maio",
-        6: "Junho",
-        7: "Julho",
-        8: "Agosto",
-        9: "Setembro",
-        10: "Outubro",
-        11: "Novembro",
-        12: "Dezembro",
-    }
-
-    # Construir a consulta base para despesas
     expense_query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "despesa",
         or_(
-            # Filtrar por data de vencimento no mês
             and_(
                 extract("month", Transaction.due_date) == current_month,
                 extract("year", Transaction.due_date) == current_year,
             ),
-            # OU filtrar por data de pagamento no mês
             and_(
                 extract("month", Transaction.payment_date) == current_month,
                 extract("year", Transaction.payment_date) == current_year,
@@ -2027,7 +1747,6 @@ def transactions():
         ),
     )
 
-    # Construir a consulta base para receitas
     income_query = Transaction.query.filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "receita",
@@ -2035,21 +1754,17 @@ def transactions():
         extract("year", Transaction.payment_date) == current_year,
     )
 
-    # Combinar as queries
     query = expense_query.union(income_query)
-
-    # Executar a consulta e ordenar por due_date para despesas e payment_date para receitas
     transactions = query.order_by(
-        Transaction.type.desc(),  # Despesas primeiro
-        Transaction.due_date.asc(),  # Ordenar por due_date
+        Transaction.type.desc(),
+        Transaction.due_date.asc(),
     ).paginate(page=page, per_page=per_page, error_out=False)
 
     return render_template(
         "list_transactions.html",
         transactions=transactions,
-        current_month=f"{meses[current_month]} {current_year}",
+        current_month=f"{MONTH_NAMES_PT[current_month]} {current_year}",
     )
-
 
 def _build_transaction_payload(form, conta_id):
     return {
@@ -2069,6 +1784,7 @@ def _build_transaction_payload(form, conta_id):
         "notes": form.notes.data,
         "conta_id": conta_id,
     }
+
 
 
 @transaction_bp.route("/transactions/add", methods=["GET", "POST"] )
@@ -2280,6 +1996,9 @@ def require_account():
         flash("Cadastre ao menos uma conta para acessar esta funcionalidade.", "warning")
         return redirect(url_for("conta.listar_contas"))
     return None
+
+
+
 
 
 
