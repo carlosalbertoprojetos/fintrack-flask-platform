@@ -671,8 +671,16 @@
         }
     }
 
+    // Instancias de grafico desta pagina (para re-render ao trocar de tema)
+    let pageChartInstances = [];
+
     // Função para criar os gráficos
     function createCharts() {
+        // Destruir instancias anteriores (evita "Canvas already in use")
+        pageChartInstances.forEach(function (chart) {
+            try { chart.destroy(); } catch (e) {}
+        });
+        pageChartInstances = [];
         {% if report_type == 'monthly' %}
         // Dados para os gráficos do relatério mensal
         let expenseData = [];
@@ -698,7 +706,7 @@
         // Gráfico de Despesas por Categoria
         const expenseCtx = document.getElementById('expenseChart');
         if (expenseCtx && expenseData && expenseData.length > 0) {
-            new Chart(expenseCtx.getContext('2d'), {
+            pageChartInstances.push(new Chart(expenseCtx.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: expenseData.map(item => item.category),
@@ -720,13 +728,13 @@
                     },
                     cutout: '70%'
                 }
-            });
+            }));
         }
 
         // Gráfico de Receitas por Categoria
         const incomeCtx = document.getElementById('incomeChart');
         if (incomeCtx && incomeData && incomeData.length > 0) {
-            new Chart(incomeCtx.getContext('2d'), {
+            pageChartInstances.push(new Chart(incomeCtx.getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: incomeData.map(item => item.category),
@@ -748,7 +756,7 @@
                     },
                     cutout: '70%'
                 }
-            });
+            }));
         }
         {% endif %}
 
@@ -769,7 +777,7 @@
         // Gráfico de Evolução Mensal
         const monthlyCtx = document.getElementById('monthlyChart');
         if (monthlyCtx && monthlyData && monthlyData.length > 0) {
-            new Chart(monthlyCtx.getContext('2d'), {
+            pageChartInstances.push(new Chart(monthlyCtx.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: monthlyData.map(item => item.month),
@@ -822,10 +830,13 @@
                         }
                     }
                 }
-            });
+            }));
         }
         {% endif %}
     }
+
+    // Permite ao alternador de tema re-renderizar os graficos
+    window.renderPageCharts = createCharts;
 
     // Função para filtrar as despesas com base no checkbox
     function filterExpenses() {

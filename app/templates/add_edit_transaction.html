@@ -101,6 +101,21 @@ endif %} Transação{% endblock %} {% block index %}
           {% endfor %}
         </div>
       </div>
+      {% if not edit %}
+      <div class="row mb-3 px-1 align-items-end">
+        <div class="col-md-2 px-1 d-flex flex-column justify-content-center">
+          {{ form.parcelado.label(class="form-check-label") }}
+          {{ form.parcelado(class="form-check-input", id="parceladoCheck") }}
+        </div>
+        <div class="col-md-3 px-1" id="numeroParcelasField" style="display: none">
+          {{ form.numero_parcelas.label(class="form-label") }}
+          {{ form.numero_parcelas(class="form-control form-control-sm", type="number", min="1", id="numeroParcelas", value=form.numero_parcelas.data or "") }}
+          {% for error in form.numero_parcelas.errors %}
+          <div class="text-danger">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       <div class="mb-3">
         {{ form.details.label(class="form-label") }} {{
         form.details(class="form-control form-control-sm", rows=3, id="details")
@@ -238,6 +253,28 @@ endif %} Transação{% endblock %} {% block index %}
         input.value = parseCurrency(originalValue);
       });
     });
+
+    // Mostrar/esconder o campo "Número de Parcelas" conforme o checkbox "Parcelas"
+    const parceladoCheck = document.getElementById("parceladoCheck");
+    const numeroParcelasField = document.getElementById("numeroParcelasField");
+    const numeroParcelas = document.getElementById("numeroParcelas");
+
+    function toggleParcelasField() {
+      if (!parceladoCheck || !numeroParcelasField) return;
+      if (parceladoCheck.checked) {
+        numeroParcelasField.style.display = "block";
+        if (numeroParcelas && (!numeroParcelas.value || parseInt(numeroParcelas.value, 10) < 1)) {
+          numeroParcelas.value = 2;
+        }
+      } else {
+        numeroParcelasField.style.display = "none";
+      }
+    }
+
+    if (parceladoCheck) {
+      toggleParcelasField();
+      parceladoCheck.addEventListener("change", toggleParcelasField);
+    }
 
     // Função para mostrar/esconder o campo de data de vencimento
     function toggleDueDateField() {

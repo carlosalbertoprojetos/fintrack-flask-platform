@@ -8,6 +8,7 @@
     jsonify,
     session,
     Response,
+    abort,
 )
 from urllib.parse import urlencode
 from flask_login import login_user, logout_user, login_required, current_user
@@ -24,16 +25,17 @@ from app.forms import (
     RequestResetForm,
     ResetPasswordForm,
     ProfileForm,
+    AdminUserForm,
 )
 from sqlalchemy import func, extract, desc, or_, and_, case
-from datetime import datetime
+from datetime import datetime, timedelta
 from calendar import monthrange
 import json
 import time
 from collections import defaultdict, deque
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer as Serializer
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP, ROUND_DOWN
 from services.transaction_service import TransactionService
 
 # Blueprints
@@ -961,6 +963,45 @@ def profile():
     return render_template("profile.html", form=form)
 
 
+@auth_bp.route("/admin_users", methods=["GET", "POST"])
+@login_required
+def admin_users():
+    if not current_user.is_admin:
+        abort(403)
+
+    form = AdminUserForm()
+    users = User.query.order_by(User.username).all()
+    form.user_id.choices = [(u.id, f"{u.username} ({u.email})") for u in users]
+
+    selected_id = request.args.get("user_id", type=int)
+    if selected_id:
+        form.user_id.data = selected_id
+    elif not form.user_id.data and users:
+        form.user_id.data = users[0].id
+
+    target_user = db.session.get(User, form.user_id.data) if form.user_id.data else None
+    if request.method == "GET" and target_user:
+        form.username.data = target_user.username
+        form.email.data = target_user.email
+
+    if form.validate_on_submit():
+        target_user = db.session.get(User, form.user_id.data)
+        if not target_user:
+            flash("Usuário não encontrado.", "danger")
+            return render_template("admin_users.html", form=form)
+
+        target_user.username = form.username.data
+        target_user.email = form.email.data
+        if form.password.data:
+            target_user.set_password(form.password.data)
+
+        db.session.commit()
+        flash("Usuário atualizado com sucesso.", "success")
+        return redirect(url_for("auth.admin_users", user_id=target_user.id))
+
+    return render_template("admin_users.html", form=form)
+
+
 # Rotas de autenticação
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -1556,6 +1597,8 @@ def send_reset_email(user):
     token = user.get_reset_token()
     reset_url = url_for("auth.reset_token", token=token, _external=True)
 
+    print("[INFO] Link de recuperação de senha:", reset_url)
+
     msg = Message("Recuperação de Senha - Finanças Pessoais", recipients=[user.email])
     msg.body = f"""Para redefinir sua senha, visite o seguinte link:
 {reset_url}
@@ -1766,6 +1809,56 @@ def transactions():
         current_month=f"{MONTH_NAMES_PT[current_month]} {current_year}",
     )
 
+PARCELA_INTERVALO_DIAS = 30
+
+
+def _split_amount_in_cents(total, parcelas):
+    """Divide um valor em ``parcelas`` partes arredondadas em centavos.
+
+    A diferenca de arredondamento e somada a ultima parcela para que a soma
+    das parcelas seja exatamente igual ao valor total informado.
+    Ex.: 100,00 / 3 -> [33.33, 33.33, 33.34].
+    """
+    total_dec = Decimal(str(total or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if parcelas <= 1:
+        return [total_dec]
+
+    base = (total_dec / Decimal(parcelas)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    valores = [base for _ in range(parcelas)]
+    valores[-1] = total_dec - base * (parcelas - 1)
+    return valores
+
+
+def _create_installments(*, user_id, base_payload, parcelas):
+    """Cria uma transacao por parcela.
+
+    - A primeira parcela mantem as datas originalmente informadas.
+    - Cada parcela seguinte soma 30 dias as datas (data, vencimento e pagamento).
+    - O valor total e dividido entre as parcelas (arredondado em centavos).
+    - A descricao recebe o sufixo "(n/total)".
+    """
+    base_description = (base_payload.get("description") or "").strip()
+    valores = _split_amount_in_cents(base_payload.get("amount"), parcelas)
+    descontos = _split_amount_in_cents(base_payload.get("discount"), parcelas)
+
+    criadas = []
+    for indice in range(parcelas):
+        payload = dict(base_payload)
+        offset = timedelta(days=PARCELA_INTERVALO_DIAS * indice)
+        for campo_data in ("date", "due_date", "payment_date"):
+            if payload.get(campo_data):
+                payload[campo_data] = payload[campo_data] + offset
+
+        payload["amount"] = float(valores[indice])
+        payload["discount"] = float(descontos[indice])
+
+        sufixo = f"({indice + 1}/{parcelas})"
+        payload["description"] = (f"{base_description} {sufixo}").strip() if base_description else sufixo
+
+        criadas.append(TransactionService.create_transaction(user_id=user_id, payload=payload))
+    return criadas
+
+
 def _build_transaction_payload(form, conta_id):
     return {
         "type": form.type.data,
@@ -1866,9 +1959,24 @@ def add_transaction():
             conta_id = conta_atual.id
 
         payload = _build_transaction_payload(form, conta_id)
+
+        parcelas = 1
+        if form.parcelado.data:
+            parcelas = form.numero_parcelas.data or 1
+            if parcelas < 1:
+                parcelas = 1
+
         try:
-            TransactionService.create_transaction(user_id=current_user.id, payload=payload)
-            flash("Transacao adicionada com sucesso!", "success")
+            if parcelas > 1:
+                _create_installments(
+                    user_id=current_user.id,
+                    base_payload=payload,
+                    parcelas=parcelas,
+                )
+                flash(f"{parcelas} parcelas adicionadas com sucesso!", "success")
+            else:
+                TransactionService.create_transaction(user_id=current_user.id, payload=payload)
+                flash("Transacao adicionada com sucesso!", "success")
             return redirect(url_for("main.dashboard"))
         except ValueError as exc:
             db.session.rollback()

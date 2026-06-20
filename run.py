@@ -338,6 +338,18 @@ if __name__ == "__main__":
         print()
         print("[INFO] Inicializando aplicacao...")
 
+        # Forçar uso do arquivo de banco de dados solicitado pelo usuário
+        # Se a variável de ambiente DATABASE_URL não estiver definida, apontar
+        # para o arquivo SQLite especificado.
+        requested_db = r"C:\\Financas_Pessoais\\março_2026_1ºtrimestre.db"
+        if not os.environ.get("DATABASE_URL"):
+            db_path = Path(requested_db)
+            if db_path.exists():
+                os.environ["DATABASE_URL"] = f"sqlite:///{db_path.as_posix()}"
+                print(f"[INFO] DATABASE_URL definido para: {os.environ['DATABASE_URL']}")
+            else:
+                print(f"[AVISO] Arquivo de banco de dados nao encontrado: {requested_db}. Usando configuracoes padrao.")
+
         app = create_app()
         migrate = Migrate(app, db)
 

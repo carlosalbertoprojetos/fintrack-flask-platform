@@ -35,6 +35,10 @@ class User(UserMixin, db.Model):
         s = Serializer(current_app.config["SECRET_KEY"])
         return s.dumps({"user_id": self.id})
 
+    @property
+    def is_admin(self):
+        return (self.username or "").lower() == "admin"
+
     @staticmethod
     def verify_reset_token(token):
         s = Serializer(current_app.config["SECRET_KEY"])
@@ -112,6 +116,7 @@ class Transaction(db.Model):
     recurrence = db.Column(db.String(10), default="none", nullable=False)
     details = db.Column(db.String(500), nullable=True)
     description = db.Column(db.String(500), nullable=True)
+    is_saldo_inicial = db.Column(db.Boolean, nullable=False, default=False, server_default="0")
 
     conta_id = db.Column(db.Integer, db.ForeignKey("conta.id"), nullable=True)
     conta = db.relationship("Conta", backref="transactions")

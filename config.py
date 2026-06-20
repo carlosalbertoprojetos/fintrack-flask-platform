@@ -2,6 +2,12 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
+except ImportError:
+    pass
+
 
 def _env_bool(name: str, default: bool) -> bool:
     raw = os.environ.get(name)

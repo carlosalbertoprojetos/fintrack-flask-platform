@@ -180,6 +180,42 @@ def test_reset_request_valid_email_redirects_login(monkeypatch, client, app_ctx)
     assert response.location.endswith("/auth/login")
 
 
+def test_admin_users_page_requires_admin(client, app_ctx):
+    regular = _create_user("user_regular", "regular@example.com")
+    db.session.commit()
+    login_client(client, regular)
+
+    response = client.get("/auth/admin_users")
+
+    assert response.status_code == 403
+
+
+def test_admin_users_page_updates_user(client, app_ctx):
+    admin = _create_user("admin", "admin@example.com", "admin123")
+    target = _create_user("user_edit", "edit@example.com", "oldpass")
+    db.session.commit()
+    login_client(client, admin)
+
+    response = client.post(
+        "/auth/admin_users",
+        data={
+            "user_id": target.id,
+            "username": "user_update",
+            "email": "updated@example.com",
+            "password": "newpass123",
+            "confirm_password": "newpass123",
+        },
+        follow_redirects=True,
+    )
+
+    db.session.refresh(target)
+    assert response.status_code == 200
+    assert "Usuário atualizado com sucesso" in response.get_data(as_text=True)
+    assert target.username == "user_update"
+    assert target.email == "updated@example.com"
+    assert target.check_password("newpass123")
+
+
 def test_reset_token_invalid_redirects_to_request(client):
     response = client.get("/auth/reset_password/token-invalido", follow_redirects=False)
 

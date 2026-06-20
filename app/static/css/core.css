@@ -26,3 +26,210 @@
     width: min(18rem, calc(100vw - 1rem));
   }
 }
+
+/* =====================================================================
+   THEME TOKENIZATION OVERRIDES
+   ---------------------------------------------------------------------
+   Mapeia as cores fixas dos componentes acima para os tokens semanticos
+   (tokens.css). No tema claro os valores sao identicos aos originais;
+   no tema escuro seguem os tokens. Carregado por ultimo => prevalece.
+   Rollback: remover este bloco.
+   ===================================================================== */
+
+/* Layout / superficies base */
+body {
+  background-color: var(--app-body-bg);
+  color: var(--app-text);
+}
+.layout-menu {
+  background: var(--app-surface);
+}
+
+/* Pagination */
+.page-item.active .page-link {
+  background-color: var(--app-primary) !important;
+  border-color: var(--app-primary) !important;
+  color: var(--app-primary-contrast) !important;
+}
+
+/* Menu toggle */
+.layout-menu-toggle {
+  color: var(--app-text);
+  background-color: var(--app-surface);
+}
+.layout-menu-toggle:hover {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+.layout-menu-toggle.menu-link.text-large.ms-auto.d-none.d-xl-block {
+  color: var(--app-accent-text);
+  background-color: var(--app-accent-soft);
+}
+
+/* App brand */
+.app-brand {
+  border-bottom: 1px solid var(--app-border);
+}
+.app-brand-link {
+  color: var(--app-text);
+}
+.app-brand-logo {
+  color: var(--app-accent-text);
+}
+.app-brand-text {
+  color: var(--app-text);
+}
+
+/* Menu links */
+.menu-link {
+  color: var(--app-accent-text);
+}
+.menu-link:hover {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+.menu-item.active .menu-link {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+.menu-arrow {
+  color: var(--app-accent-text);
+}
+.menu-sub {
+  background: var(--app-accent-soft-2);
+}
+.menu-sub .menu-link:hover {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+.menu-sub .menu-item.active .menu-link {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+.menu-item.open .menu-toggle {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+
+/* Navbar */
+.navbar {
+  background: var(--app-surface);
+}
+.nav-link {
+  color: var(--app-text);
+}
+.nav-link:hover {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+
+/* Dropdowns */
+.dropdown-menu {
+  color: var(--app-text);
+  background-color: var(--app-surface);
+  box-shadow: var(--app-shadow-lg);
+}
+.dropdown-item {
+  color: var(--app-text);
+}
+.dropdown-item:hover {
+  color: var(--app-text-strong);
+  background-color: var(--app-surface-2);
+}
+.dropdown-divider {
+  border-top: 1px solid var(--app-border);
+}
+
+/* Cards */
+.card {
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: var(--app-shadow);
+}
+.card-footer {
+  border-top: 1px solid var(--app-border);
+}
+
+/* Footer */
+.footer {
+  background: var(--app-surface);
+  border-top: 1px solid var(--app-border);
+}
+.footer-link {
+  color: var(--app-accent-text);
+}
+.footer-link:hover {
+  color: var(--app-accent-hover-text);
+}
+
+/* Avatar */
+.avatar-online {
+  background-color: var(--app-primary);
+}
+
+/* Buttons / forms */
+.btn-primary {
+  color: var(--app-primary-contrast);
+  background-color: var(--app-primary);
+  border-color: var(--app-primary);
+}
+.btn-primary:hover {
+  color: var(--app-accent-text);
+  background-color: var(--app-surface);
+  border-color: var(--app-primary);
+}
+.form-control:focus {
+  color: var(--app-text);
+  background-color: var(--app-surface);
+  border-color: var(--app-primary);
+  box-shadow: 0 0 0.25rem 0 var(--app-accent-soft);
+}
+
+.bg-bar {
+  color: var(--app-accent-text);
+  background: var(--app-accent-soft);
+}
+
+/* Nav tabs */
+.nav-tabs .nav-link:hover {
+  color: var(--app-accent-text);
+  background-color: var(--app-accent-soft-2);
+}
+.nav-tabs .nav-link.active {
+  color: var(--app-accent-text);
+  background-color: var(--app-surface);
+  border-bottom-color: var(--app-primary);
+}
+.card-header-tabs .nav-link.active {
+  border-bottom-color: var(--app-surface);
+}
+
+/* DataTables */
+.dataTables_wrapper .dataTables_info {
+  color: var(--app-text);
+}
+
+/* Alternador de tema flutuante (telas de autenticacao) */
+.theme-toggle-floating {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1080;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-accent-text);
+  box-shadow: var(--app-shadow);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.theme-toggle-floating:hover {
+  background-color: var(--app-accent-soft);
+  color: var(--app-accent-text);
+}

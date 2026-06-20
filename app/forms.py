@@ -21,8 +21,25 @@ from wtforms.validators import (
     Optional,
 )
 from app.models import Category, User, PaymentMethod
+from app.utils import parse_decimal_input
 from datetime import datetime, date
 from flask import current_app
+
+
+class BrazilianDecimalField(FloatField):
+    """FloatField que aceita entrada no formato brasileiro (ex.: 1.000,50)."""
+
+    def process_formdata(self, valuelist):
+        if not valuelist or valuelist[0] in (None, ""):
+            self.data = None
+            return
+        try:
+            self.data = parse_decimal_input(valuelist[0])
+        except (ValueError, TypeError) as exc:
+            self.data = None
+            raise ValueError(
+                self.gettext("Valor invalido. Use numeros como 1000,50 ou 150.75")
+            ) from exc
 
 
 class RegistrationForm(FlaskForm):
@@ -134,8 +151,19 @@ class TransactionForm(FlaskForm):
     details = TextAreaField("Detalhes", validators=[Optional(), Length(max=500)])
     notes = TextAreaField("Observações", validators=[Optional(), Length(max=500)])
     conta_id = SelectField("Conta", coerce=int, validators=[Optional()])
+    parcelado = BooleanField("Parcelas", default=False)
+    numero_parcelas = IntegerField(
+        "Número de Parcelas",
+        validators=[Optional(), NumberRange(min=1, max=360)],
+    )
 
     submit = SubmitField("Salvar")
+
+    def validate_numero_parcelas(self, field):
+        if self.parcelado.data and (not field.data or field.data < 1):
+            raise ValidationError(
+                "Informe o número de parcelas (mínimo 1) quando a opção Parcelas estiver marcada."
+            )
 
     def validate_amount(self, amount):
         if not amount.data:
@@ -206,10 +234,39 @@ class ProfileForm(FlaskForm):
     submit = SubmitField("Salvar Alterações")
 
 
+class AdminUserForm(FlaskForm):
+    user_id = SelectField("Usuário", coerce=int, validators=[DataRequired()])
+    username = StringField("Nome de usuário", validators=[DataRequired(), Length(min=3, max=20)])
+    email = EmailField("Email", validators=[DataRequired(), Email(), Length(max=120)])
+    password = PasswordField(
+        "Nova Senha",
+        validators=[Optional(), Length(min=6, message="A senha deve ter pelo menos 6 caracteres")],
+    )
+    confirm_password = PasswordField(
+        "Confirmar Nova Senha",
+        validators=[EqualTo("password", message="As senhas não conferem")],
+    )
+    submit = SubmitField("Salvar Usuário")
+
+    def validate_username(self, username):
+        existing = User.query.filter_by(username=username.data).first()
+        if existing and existing.id != self.user_id.data:
+            raise ValidationError(
+                "Este nome de usuário já está em uso. Por favor, escolha outro."
+            )
+
+    def validate_email(self, email):
+        existing = User.query.filter_by(email=email.data).first()
+        if existing and existing.id != self.user_id.data:
+            raise ValidationError(
+                "Este email já está registrado. Por favor, use outro."
+            )
+
+
 class ContaForm(FlaskForm):
     nome = StringField("Nome da Conta", validators=[DataRequired(), Length(max=100)])
     tipo_id = SelectField("Tipo de Conta", coerce=int, validators=[DataRequired()])
-    saldo_inicial = FloatField("Saldo Inicial", validators=[Optional()], default=0.0)
+    saldo_inicial = BrazilianDecimalField("Saldo Inicial", validators=[Optional()], default=0.0)
     submit = SubmitField("Adicionar")
 
 class InvestimentoForm(FlaskForm):

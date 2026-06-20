@@ -278,6 +278,9 @@ class LedgerService:
 
         txs = (
             Transaction.query.filter_by(user_id=user_id, conta_id=account_id, paid=True)
+            # Receitas de saldo inicial nao entram no ledger: o valor ja vem da
+            # coluna Conta.saldo_inicial e seria contado em dobro aqui.
+            .filter(Transaction.is_saldo_inicial.isnot(True))
             .order_by(Transaction.payment_date.asc(), Transaction.date.asc(), Transaction.id.asc())
             .all()
         )

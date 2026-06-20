@@ -107,7 +107,7 @@
       bottom: 6px;
       right: 20px;
       font-size: 12px;
-      color: rgba(0, 0, 0, 0.1);
+      color: var(--app-watermark);
       pointer-events: none;
       z-index: 9999;
       white-space: nowrap;
@@ -702,8 +702,17 @@
 
 {% endblock %} {% block extra_js %}
 <script>  
+  // Instancias de grafico desta pagina (para re-render ao trocar de tema)
+  let pageChartInstances = [];
+
   // Função para criar os gráficos
   function createCharts() {
+      // Destruir instancias anteriores (evita "Canvas already in use" no re-render)
+      pageChartInstances.forEach(function (chart) {
+          try { chart.destroy(); } catch (e) {}
+      });
+      pageChartInstances = [];
+
       // Dados para os gráficos
       let monthlyData = [];
       let expenseData = [];
@@ -735,7 +744,7 @@
       // Gráfico de Evolução Mensal
       const monthlyCtx = document.getElementById('monthlyChart');
       if (monthlyCtx && monthlyData && monthlyData.length > 0) {
-          new Chart(monthlyCtx.getContext('2d'), {
+          pageChartInstances.push(new Chart(monthlyCtx.getContext('2d'), {
               type: 'line',
               data: {
                   labels: monthlyData.map(item => item.month),
@@ -780,13 +789,13 @@
                       }
                   }
               }
-          });
+          }));
       }
 
       // Gráfico de Despesas por Categoria
       const expenseCtx = document.getElementById('expenseChart');
       if (expenseCtx && expenseData && expenseData.length > 0) {
-          new Chart(expenseCtx.getContext('2d'), {
+          pageChartInstances.push(new Chart(expenseCtx.getContext('2d'), {
               type: 'doughnut',
               data: {
                   labels: expenseData.map(item => item.name),
@@ -808,13 +817,13 @@
                   },
                   cutout: '70%'
               }
-          });
+          }));
       }
 
       // Gráfico de Receitas por Categoria
       const incomeCtx = document.getElementById('incomeChart');
       if (incomeCtx && incomeData && incomeData.length > 0) {
-          new Chart(incomeCtx.getContext('2d'), {
+          pageChartInstances.push(new Chart(incomeCtx.getContext('2d'), {
               type: 'doughnut',
               data: {
                   labels: incomeData.map(item => item.name),
@@ -836,9 +845,12 @@
                   },
                   cutout: '70%'
               }
-          });
+          }));
       }
   }
+
+  // Permite ao alternador de tema re-renderizar os graficos
+  window.renderPageCharts = createCharts;
 
   // Função para verificar se Chart.js está carregado
   function waitForChartJS(callback, maxAttempts = 50) {

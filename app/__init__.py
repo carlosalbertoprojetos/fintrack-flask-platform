@@ -135,6 +135,7 @@ def initialize_user_default_data(user):
             item.name: item for item in Category.query.filter_by(user_id=user.id).all()
         }
         expenses_data = [
+            {"name": "Saldo inicial", "category_name": "Outros"},
             {"name": "CDB", "category_name": "Investimentos"},
             {"name": "Ações", "category_name": "Investimentos"},
             {"name": "Fundos", "category_name": "Investimentos"},
@@ -223,6 +224,14 @@ def _ensure_user_scoped_lookup_columns():
         columns = {column["name"] for column in inspector.get_columns(table_name)}
         if "user_id" not in columns:
             db.session.execute(text(ddl))
+
+    # Coluna usada para marcar receitas geradas automaticamente como saldo inicial.
+    transaction_columns = {column["name"] for column in inspector.get_columns("transactions")}
+    if "is_saldo_inicial" not in transaction_columns:
+        db.session.execute(
+            text("ALTER TABLE transactions ADD COLUMN is_saldo_inicial BOOLEAN NOT NULL DEFAULT 0")
+        )
+
     db.session.commit()
 
 

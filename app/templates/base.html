@@ -7,6 +7,30 @@
 >
   <head>
     <meta charset="UTF-8" />
+    <!-- Anti-FOUC: aplica o tema salvo (ou preferencia do SO) ANTES do CSS pintar -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var theme = stored;
+          if (!theme) {
+            var prefersDark =
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches;
+            theme = prefersDark ? "theme-dark" : "theme-default";
+          }
+          document.documentElement.setAttribute("data-theme", theme);
+          document.documentElement.classList.toggle(
+            "dark-style",
+            theme === "theme-dark"
+          );
+          document.documentElement.classList.toggle(
+            "light-style",
+            theme !== "theme-dark"
+          );
+        } catch (e) {}
+      })();
+    </script>
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
@@ -40,11 +64,15 @@
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/core.css') }}?v=3.5"
+      href="{{ url_for('static', filename='css/tokens.css') }}?v=1.1"
     />
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='css/offline-icons.css') }}?v=2.0"
+      href="{{ url_for('static', filename='css/core.css') }}?v=3.6"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/offline-icons.css') }}?v=2.1"
     />
     {% block extra_css %}{% endblock %}
 
@@ -70,6 +98,19 @@
   </head>
 
   <body>
+    {% if not current_user.is_authenticated %}
+    <!-- Alternador de tema para telas sem navbar (login, cadastro, etc.) -->
+    <button
+      type="button"
+      class="theme-toggle-floating"
+      data-theme-toggle
+      title="Alternar tema"
+      aria-label="Alternar tema"
+    >
+      <i class="fas fa-moon" data-theme-toggle-icon></i>
+    </button>
+    {% endif %}
+
     {% block content %}{% endblock %}
 
     <!-- / Layout wrapper -->
@@ -103,6 +144,7 @@
     </script>
     <script src="{{ url_for('static', filename='js/offline-shims.js') }}?v=1.3"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}?v=3.5"></script>
+    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}?v=1.1"></script>
     <!-- Garantir que confirmShutdown esteja disponível -->
     <script>
       // Fallback caso scripts.js não carregue corretamente

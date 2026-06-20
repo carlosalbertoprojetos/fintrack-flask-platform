@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.forms import ContaForm
 from app.models import Conta, TipoConta
+from services.initial_balance_service import InitialBalanceService
 from services.ledger_service import LedgerService
 
 
@@ -47,6 +48,7 @@ def add_conta():
         )
         db.session.add(conta)
         db.session.commit()
+        InitialBalanceService.sync_for_account(user_id=current_user.id, conta=conta)
         LedgerService.rebuild_account_balances(conta_id=conta.id)
         flash('Conta criada com sucesso!', 'success')
         return redirect(url_for('conta.listar_contas'))
@@ -68,6 +70,7 @@ def editar_conta(conta_id):
         conta.tipo_id = form.tipo_id.data
         conta.saldo_inicial = form.saldo_inicial.data or 0.0
         db.session.commit()
+        InitialBalanceService.sync_for_account(user_id=current_user.id, conta=conta)
         LedgerService.rebuild_account_balances(conta_id=conta.id)
         flash('Conta atualizada com sucesso!', 'success')
         return redirect(url_for('conta.listar_contas'))
@@ -114,9 +117,15 @@ def excluir_conta(conta_id):
         flash('Nao e possivel excluir conta com movimentacoes de investimento vinculadas.', 'warning')
         return redirect(url_for('conta.listar_contas'))
 
-    if conta.transactions:
+    # A receita automatica de saldo inicial nao deve impedir a exclusao da conta.
+    transacoes_relevantes = [t for t in conta.transactions if not t.is_saldo_inicial]
+    if transacoes_relevantes:
         flash('Nao e possivel excluir conta com transacoes vinculadas.', 'warning')
         return redirect(url_for('conta.listar_contas'))
+
+    saldo_inicial_tx = InitialBalanceService.find_existing(user_id=current_user.id, conta_id=conta.id)
+    if saldo_inicial_tx is not None:
+        db.session.delete(saldo_inicial_tx)
 
     db.session.delete(conta)
     db.session.commit()

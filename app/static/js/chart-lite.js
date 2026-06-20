@@ -18,6 +18,17 @@
     '#6610f2'
   ];
 
+  function themeColor(varName, fallback) {
+    try {
+      var value = getComputedStyle(document.documentElement)
+        .getPropertyValue(varName)
+        .trim();
+      return value || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
   function isNumber(value) {
     return typeof value === 'number' && !isNaN(value) && isFinite(value);
   }
@@ -141,7 +152,7 @@
 
       ctx.fillStyle = color;
       ctx.fillRect(x, y - 5, 14, 10);
-      ctx.fillStyle = '#5a5c69';
+      ctx.fillStyle = themeColor('--app-chart-text', '#5a5c69');
       ctx.fillText(label, x + 20, y);
       x += textWidth + 36;
     });
@@ -198,8 +209,8 @@
     var xStep = labels.length > 1 ? (area.right - area.left) / (labels.length - 1) : 0;
 
     ctx.save();
-    ctx.strokeStyle = '#e3e6f0';
-    ctx.fillStyle = '#858796';
+    ctx.strokeStyle = themeColor('--app-chart-grid', '#e3e6f0');
+    ctx.fillStyle = themeColor('--app-chart-text', '#858796');
     ctx.lineWidth = 1;
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'right';

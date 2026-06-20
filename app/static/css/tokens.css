@@ -1,0 +1,252 @@
+/* =====================================================================
+   Design Tokens / Theming (Claro & Escuro)
+   ---------------------------------------------------------------------
+   Camada semantica unica de cores. Componentes (core.css, templates)
+   devem consumir SEMPRE estas variaveis em vez de cores fixas.
+
+   - Tema claro: definido em :root (mantem identidade visual atual).
+   - Tema escuro: html[data-theme="theme-dark"].
+   - Impressao: @media print força o tema claro.
+   ===================================================================== */
+
+:root {
+  /* Superficies e texto */
+  --app-body-bg: #f5f5f9;
+  --app-surface: #ffffff;          /* cards, navbar, menu, dropdown, modal */
+  --app-surface-2: #f5f5f9;        /* fundos secundarios / hover suave */
+  --app-surface-hover: #f5f5f9;
+  --app-text: #566a7f;
+  --app-text-strong: #2b354f;
+  --app-text-muted: #a1acb8;
+  --app-border: #d9dee3;
+  --app-border-translucent: rgba(67, 89, 113, 0.15);
+
+  /* Acento / marca */
+  --app-primary: #02568c;          /* fundo de botoes primarios */
+  --app-primary-contrast: #ffffff; /* texto sobre o primario */
+  --app-accent-text: #02568c;      /* links, icones e textos de acento */
+  --app-accent-soft: rgba(2, 86, 140, 0.16);
+  --app-accent-soft-2: rgba(2, 86, 140, 0.08);
+  --app-accent-hover-text: #1a4a7a;
+
+  /* Estados */
+  --app-success: #71dd37;
+  --app-info: #03c3ec;
+  --app-warning: #ffab00;
+  --app-danger: #ff3e1d;
+
+  /* Sombras */
+  --app-shadow-sm: 0 0.0625rem 0.125rem rgba(161, 172, 184, 0.075);
+  --app-shadow: 0 0 0.875rem 0 rgba(33, 37, 41, 0.05);
+  --app-shadow-lg: 0 0.25rem 1rem rgba(161, 172, 184, 0.45);
+
+  /* Charts (texto/grade dos graficos) */
+  --app-chart-text: #697a8d;
+  --app-chart-grid: rgba(0, 0, 0, 0.08);
+
+  /* Marca d'agua */
+  --app-watermark: rgba(0, 0, 0, 0.1);
+
+  /* Mapear variaveis do Bootstrap para os tokens (componentes que ja
+     consomem --bs-* seguem o tema automaticamente) */
+  --bs-body-bg: var(--app-body-bg);
+  --bs-body-color: var(--app-text);
+  --bs-emphasis-color: var(--app-text-strong);
+  --bs-border-color: var(--app-border);
+  --bs-border-color-translucent: var(--app-border-translucent);
+  --bs-secondary-bg: var(--app-surface-2);
+  --bs-tertiary-bg: var(--app-surface);
+  --bs-heading-color: var(--app-text);
+  --bs-link-color: var(--app-accent-text);
+  --bs-link-hover-color: var(--app-accent-hover-text);
+}
+
+/* ---------------------------------------------------------------------
+   TEMA ESCURO
+   --------------------------------------------------------------------- */
+html[data-theme="theme-dark"] {
+  --app-body-bg: #232333;
+  --app-surface: #2b2c40;
+  --app-surface-2: #34354a;
+  --app-surface-hover: #34354a;
+  --app-text: #c3c4dd;
+  --app-text-strong: #e7e7f0;
+  --app-text-muted: #8a8db0;
+  --app-border: #44455e;
+  --app-border-translucent: rgba(180, 188, 210, 0.18);
+
+  --app-primary: #0a6ebd;          /* levemente mais vivo no escuro */
+  --app-primary-contrast: #ffffff;
+  --app-accent-text: #6cb2ea;      /* legivel sobre superficies escuras */
+  --app-accent-soft: rgba(108, 178, 234, 0.18);
+  --app-accent-soft-2: rgba(108, 178, 234, 0.10);
+  --app-accent-hover-text: #9ccbf2;
+
+  --app-shadow-sm: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.3);
+  --app-shadow: 0 0 0.875rem 0 rgba(0, 0, 0, 0.35);
+  --app-shadow-lg: 0 0.25rem 1rem rgba(0, 0, 0, 0.45);
+
+  --app-chart-text: #a9acca;
+  --app-chart-grid: rgba(255, 255, 255, 0.10);
+  --app-watermark: rgba(255, 255, 255, 0.12);
+
+  /* Sobrescreve as variaveis do Bootstrap definidas no :root de core.css.
+     O seletor de atributo tem especificidade maior que :root, entao estes
+     valores prevalecem no tema escuro. */
+  --bs-body-bg: var(--app-body-bg);
+  --bs-body-color: var(--app-text);
+  --bs-emphasis-color: var(--app-text-strong);
+  --bs-emphasis-color-rgb: 231, 231, 240;
+  --bs-heading-color: var(--app-text-strong);
+  --bs-secondary-color: var(--app-text-muted);
+  --bs-secondary-bg: var(--app-surface-2);
+  --bs-tertiary-bg: var(--app-surface);
+  --bs-border-color: var(--app-border);
+  --bs-border-color-translucent: var(--app-border-translucent);
+  --bs-link-color: var(--app-accent-text);
+  --bs-link-hover-color: var(--app-accent-hover-text);
+
+  color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------
+   Cobertura de componentes Bootstrap 5.1.x que usam cor fixa
+   (esta versao nao possui dark mode nativo)
+   --------------------------------------------------------------------- */
+html[data-theme="theme-dark"] body {
+  background-color: var(--app-body-bg);
+  color: var(--app-text);
+}
+
+html[data-theme="theme-dark"] .modal-content,
+html[data-theme="theme-dark"] .offcanvas,
+html[data-theme="theme-dark"] .list-group {
+  background-color: var(--app-surface);
+  color: var(--app-text);
+}
+
+html[data-theme="theme-dark"] .modal-header,
+html[data-theme="theme-dark"] .modal-footer {
+  border-color: var(--app-border);
+}
+
+html[data-theme="theme-dark"] .list-group-item {
+  background-color: var(--app-surface);
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+
+html[data-theme="theme-dark"] .form-control,
+html[data-theme="theme-dark"] .form-select,
+html[data-theme="theme-dark"] .input-group-text {
+  background-color: var(--app-surface-2);
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+
+html[data-theme="theme-dark"] .form-control::placeholder {
+  color: var(--app-text-muted);
+}
+
+html[data-theme="theme-dark"] .form-control:disabled,
+html[data-theme="theme-dark"] .form-select:disabled {
+  background-color: #3a3b52;
+  color: var(--app-text-muted);
+}
+
+/* Selects nativos: opcoes legiveis */
+html[data-theme="theme-dark"] .form-select option,
+html[data-theme="theme-dark"] select option {
+  background-color: var(--app-surface);
+  color: var(--app-text);
+}
+
+html[data-theme="theme-dark"] .table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--app-text);
+  color: var(--app-text);
+  border-color: var(--app-border);
+}
+
+html[data-theme="theme-dark"] .table > :not(caption) > * > * {
+  border-color: var(--app-border);
+}
+
+html[data-theme="theme-dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+  --bs-table-accent-bg: rgba(255, 255, 255, 0.03);
+  color: var(--app-text);
+}
+
+html[data-theme="theme-dark"] .table-hover > tbody > tr:hover > * {
+  --bs-table-accent-bg: rgba(255, 255, 255, 0.06);
+  color: var(--app-text-strong);
+}
+
+html[data-theme="theme-dark"] .page-link {
+  background-color: var(--app-surface);
+  color: var(--app-accent-text);
+  border-color: var(--app-border);
+}
+
+html[data-theme="theme-dark"] .page-item.disabled .page-link {
+  background-color: var(--app-surface);
+  color: var(--app-text-muted);
+  border-color: var(--app-border);
+}
+
+/* Botao de fechar (X) usa SVG escuro por padrao -> inverter no escuro */
+html[data-theme="theme-dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Texto auxiliar */
+html[data-theme="theme-dark"] .text-muted {
+  color: var(--app-text-muted) !important;
+}
+
+/* .text-dark fica ilegivel (preto) no escuro -> usar texto claro */
+html[data-theme="theme-dark"] .text-dark {
+  color: var(--app-text-strong) !important;
+}
+
+/* Bordas utilitarias */
+html[data-theme="theme-dark"] .border,
+html[data-theme="theme-dark"] .border-top,
+html[data-theme="theme-dark"] .border-bottom,
+html[data-theme="theme-dark"] .border-start,
+html[data-theme="theme-dark"] .border-end {
+  border-color: var(--app-border) !important;
+}
+
+/* Inputs/numero: spinners e icones de data mais visiveis */
+html[data-theme="theme-dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.4);
+}
+
+/* ---------------------------------------------------------------------
+   IMPRESSAO: sempre claro e legivel
+   --------------------------------------------------------------------- */
+@media print {
+  html[data-theme="theme-dark"] {
+    --app-body-bg: #ffffff;
+    --app-surface: #ffffff;
+    --app-surface-2: #f5f5f9;
+    --app-text: #566a7f;
+    --app-text-strong: #2b354f;
+    --app-text-muted: #6c757d;
+    --app-border: #d9dee3;
+    --app-accent-text: #02568c;
+    --app-chart-text: #697a8d;
+    --app-chart-grid: rgba(0, 0, 0, 0.08);
+    color-scheme: light;
+  }
+  html[data-theme="theme-dark"] body,
+  html[data-theme="theme-dark"] .modal-content,
+  html[data-theme="theme-dark"] .form-control,
+  html[data-theme="theme-dark"] .form-select,
+  html[data-theme="theme-dark"] .list-group-item,
+  html[data-theme="theme-dark"] .table {
+    background-color: #ffffff;
+    color: #566a7f;
+  }
+}

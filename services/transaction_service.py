@@ -18,7 +18,13 @@ class TransactionService:
         return tx.payment_date or tx.due_date or tx.date or datetime.utcnow()
 
     @staticmethod
-    def _calculate_effect(*, tx_type: str, amount, discount, paid: bool) -> Decimal:
+    def _calculate_effect(*, tx_type: str, amount, discount, paid: bool, is_saldo_inicial: bool = False) -> Decimal:
+        # Lancamentos de saldo inicial nao movimentam o ledger: o valor ja e
+        # representado pela coluna ``Conta.saldo_inicial`` (semente do saldo).
+        # Eles existem apenas como receita visivel em relatorios.
+        if is_saldo_inicial:
+            return Decimal("0.00")
+
         if not paid:
             return Decimal("0.00")
 
@@ -87,6 +93,7 @@ class TransactionService:
             recurrence=payload.get("recurrence") or "none",
             details=payload.get("details"),
             notes=payload.get("notes"),
+            is_saldo_inicial=bool(payload.get("is_saldo_inicial")),
             user_id=user_id,
             conta_id=conta_id,
         )
@@ -99,6 +106,7 @@ class TransactionService:
             amount=tx.amount,
             discount=tx.discount,
             paid=tx.paid,
+            is_saldo_inicial=tx.is_saldo_inicial,
         )
         if effect != 0:
             LedgerService.append_entry(
@@ -128,6 +136,7 @@ class TransactionService:
             amount=tx.amount,
             discount=tx.discount,
             paid=tx.paid,
+            is_saldo_inicial=tx.is_saldo_inicial,
         )
 
         tx.type = payload.get("type")
@@ -145,6 +154,8 @@ class TransactionService:
         tx.details = payload.get("details")
         tx.notes = payload.get("notes")
         tx.conta_id = payload.get("conta_id")
+        if "is_saldo_inicial" in payload:
+            tx.is_saldo_inicial = bool(payload.get("is_saldo_inicial"))
 
         TransactionService._ensure_period_open_for_payload(user_id=user_id, account_id=tx.conta_id, payload=payload)
 
@@ -155,6 +166,7 @@ class TransactionService:
             amount=tx.amount,
             discount=tx.discount,
             paid=tx.paid,
+            is_saldo_inicial=tx.is_saldo_inicial,
         )
 
         if old_account_id == tx.conta_id:
@@ -206,6 +218,7 @@ class TransactionService:
             amount=tx.amount,
             discount=tx.discount,
             paid=tx.paid,
+            is_saldo_inicial=tx.is_saldo_inicial,
         )
         account_id = tx.conta_id
 
