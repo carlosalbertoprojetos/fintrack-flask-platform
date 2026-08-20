@@ -52,6 +52,53 @@ def test_dashboard_without_account_redirects_to_contas(client, app_ctx):
     assert response.location.endswith("/conta/contas")
 
 
+def test_dashboard_only_shows_current_month_and_year_data(client, app_ctx):
+    now = datetime.now().replace(day=1)
+    user = _create_user("dashboard-current", "dashboard-current@example.com")
+    conta = _create_account_for_user(user)
+    income_category = Category(name="Salario atual", type="receita", exclusive=True, user_id=user.id)
+    expense_category = Category(name="Mercado atual", type="despesa", exclusive=True, user_id=user.id)
+    payment = PaymentMethod(name="Pix", is_active=True, user_id=user.id)
+    db.session.add_all([income_category, expense_category, payment])
+    db.session.flush()
+
+    previous_year = now.year - 1
+    current_income = Transaction(
+        user_id=user.id, conta_id=conta.id, category_id=income_category.id,
+        payment_method_id=payment.id, date=now, payment_date=now, amount=1000,
+        type="receita", paid=True, recurrence="none", description="Receita atual",
+    )
+    previous_income = Transaction(
+        user_id=user.id, conta_id=conta.id, category_id=income_category.id,
+        payment_method_id=payment.id, date=now.replace(year=previous_year),
+        payment_date=now.replace(year=previous_year), amount=9000, type="receita",
+        paid=True, recurrence="none", description="Receita ano anterior",
+    )
+    current_expense = Transaction(
+        user_id=user.id, conta_id=conta.id, category_id=expense_category.id,
+        payment_method_id=payment.id, date=now, due_date=now, payment_date=now,
+        amount=100, type="despesa", paid=True, recurrence="none", description="Despesa atual",
+    )
+    previous_expense = Transaction(
+        user_id=user.id, conta_id=conta.id, category_id=expense_category.id,
+        payment_method_id=payment.id, date=now.replace(year=previous_year),
+        due_date=now.replace(year=previous_year), amount=900, type="despesa",
+        paid=False, recurrence="none", description="Despesa ano anterior",
+    )
+    db.session.add_all([current_income, previous_income, current_expense, previous_expense])
+    db.session.commit()
+    login_client(client, user)
+
+    response = client.get("/dashboard")
+    page = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Receita atual" in page
+    assert "Despesa atual" in page
+    assert "Receita ano anterior" not in page
+    assert "Despesa ano anterior" not in page
+
+
 def test_get_expenses_requires_login(client):
     response = client.get("/transactions/expenses/by-category/1")
     assert response.status_code == 302

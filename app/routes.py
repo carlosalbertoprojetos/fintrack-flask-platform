@@ -118,6 +118,11 @@ def get_current_conta():
     return None
 
 
+
+
+
+
+
 def _user_categories_query():
     return Category.query.filter_by(user_id=current_user.id)
 
@@ -318,7 +323,10 @@ def _dashboard_recent_expenses(*, user_id, conta_filter, current_month, current_
         Transaction.user_id == user_id,
         Transaction.type == "despesa",
         or_(
-            extract("month", Transaction.due_date) == current_month,
+            and_(
+                extract("month", Transaction.due_date) == current_month,
+                extract("year", Transaction.due_date) == current_year,
+            ),
             and_(
                 extract("month", Transaction.payment_date) == current_month,
                 extract("year", Transaction.payment_date) == current_year,
@@ -730,12 +738,13 @@ def dashboard():
     #         f"Valor: {exp.amount}, Desconto: {exp.discount}, Categoria: {exp.category.name}"
     #     )
 
+    monthly_transactions_query = Transaction.query.filter(
+        Transaction.user_id == current_user.id,
+        extract("month", Transaction.date) == current_month,
+        extract("year", Transaction.date) == current_year,
+    )
     monthly_transactions = (
-        Transaction.query.filter(
-            Transaction.user_id == current_user.id,
-            extract("month", Transaction.date) == current_month,
-            extract("year", Transaction.date) == current_year,
-        )
+        _apply_optional_conta_filter(monthly_transactions_query, conta_filter)
         .order_by(Transaction.date.desc())
         .limit(5)
         .all()
@@ -831,6 +840,8 @@ def dashboard():
             Transaction.user_id == current_user.id,
             Transaction.type == "receita",
             Category.name != "Investimentos",
+            extract("month", Transaction.payment_date) == current_month,
+            extract("year", Transaction.payment_date) == current_year,
         )
     )
     if conta_filter:
@@ -2104,9 +2115,5 @@ def require_account():
         flash("Cadastre ao menos uma conta para acessar esta funcionalidade.", "warning")
         return redirect(url_for("conta.listar_contas"))
     return None
-
-
-
-
 
 
