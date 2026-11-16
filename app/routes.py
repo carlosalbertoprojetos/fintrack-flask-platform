@@ -1327,7 +1327,13 @@ def reports():
     month = request.args.get("month", datetime.now().month, type=int)
     payment_method_id = request.args.get("payment_method_id", type=int)
     show_discount_only = request.args.get("show_discount_only", type=bool)
-    years = _report_years()
+    first_due_date = db.session.query(func.min(Transaction.due_date)).filter(
+        Transaction.user_id == current_user.id,
+        Transaction.due_date.isnot(None),
+    ).scalar()
+    current_year = datetime.now().year
+    first_year = first_due_date.year if first_due_date else current_year
+    years = range(first_year, max(first_year, current_year + 2) + 1)
 
     # Debug: imprimir os valores de mês e ano
     # print(f"DEBUG: mês selecionado: {month}, Ano selecionado: {year}")

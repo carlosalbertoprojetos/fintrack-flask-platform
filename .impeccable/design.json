@@ -1,0 +1,645 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T08:44:46-03:00",
+  "title": "Design System: SFP - Sistema de Finanças Pessoais",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Azul financeiro profundo",
+        "canonical": "#02568c",
+        "tonalRamp": [
+          "#08263b",
+          "#0b3a59",
+          "#0b4a70",
+          "#02568c",
+          "#3479a4",
+          "#6b9ab8",
+          "#a7c2d1",
+          "#e4eef3"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Azul de interação",
+        "canonical": "#1a4a7a",
+        "tonalRamp": [
+          "#101d2a",
+          "#19304a",
+          "#1d3d62",
+          "#1a4a7a",
+          "#4d6d91",
+          "#8199b0",
+          "#b7c5d3",
+          "#e9eef3"
+        ]
+      },
+      "primary-soft": {
+        "role": "primary",
+        "displayName": "Azul translúcido",
+        "canonical": "rgba(2, 86, 140, 0.16)",
+        "tonalRamp": [
+          "#dce8ef",
+          "#c5d9e5",
+          "#adcbdc",
+          "#96bdd2",
+          "#7eafc9",
+          "#67a1bf",
+          "#4f93b5",
+          "#3885ab"
+        ]
+      },
+      "primary-soft-subtle": {
+        "role": "primary",
+        "displayName": "Azul suave",
+        "canonical": "rgba(2, 86, 140, 0.08)",
+        "tonalRamp": [
+          "#e7eff4",
+          "#d8e6ed",
+          "#c9dce7",
+          "#bad3e1",
+          "#abc9da",
+          "#9cc0d4",
+          "#8db6ce",
+          "#7eacc7"
+        ]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Fundo névoa",
+        "canonical": "#f5f5f9",
+        "tonalRamp": [
+          "#29292f",
+          "#414147",
+          "#595960",
+          "#717178",
+          "#898990",
+          "#a1a1a8",
+          "#c8c8ce",
+          "#f5f5f9"
+        ]
+      },
+      "neutral-surface": {
+        "role": "neutral",
+        "displayName": "Branco de superfície",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#2b2b2b",
+          "#454545",
+          "#5e5e5e",
+          "#787878",
+          "#919191",
+          "#ababab",
+          "#d5d5d5",
+          "#ffffff"
+        ]
+      },
+      "neutral-text": {
+        "role": "neutral",
+        "displayName": "Texto ardósia",
+        "canonical": "#566a7f",
+        "tonalRamp": [
+          "#161b20",
+          "#242c34",
+          "#34414e",
+          "#435464",
+          "#566a7f",
+          "#74879a",
+          "#a4b0bc",
+          "#d7dde3"
+        ]
+      },
+      "neutral-text-strong": {
+        "role": "neutral",
+        "displayName": "Texto forte",
+        "canonical": "#2b354f",
+        "tonalRamp": [
+          "#0b0e15",
+          "#151a27",
+          "#20283d",
+          "#2b354f",
+          "#505a71",
+          "#7c8496",
+          "#afb4c0",
+          "#e2e4e9"
+        ]
+      },
+      "neutral-muted": {
+        "role": "neutral",
+        "displayName": "Texto auxiliar",
+        "canonical": "#6c757d",
+        "tonalRamp": [
+          "#20252a",
+          "#353d45",
+          "#4c5861",
+          "#596570",
+          "#6c757d",
+          "#9aa3ab",
+          "#c5cbd0",
+          "#edf0f2"
+        ]
+      },
+      "neutral-border": {
+        "role": "neutral",
+        "displayName": "Borda névoa",
+        "canonical": "#d9dee3",
+        "tonalRamp": [
+          "#37393b",
+          "#515456",
+          "#6b6e70",
+          "#85888a",
+          "#9fa2a4",
+          "#b9bcbe",
+          "#d9dcde",
+          "#f5f6f7"
+        ]
+      },
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Fundo meia-noite",
+        "canonical": "#232333",
+        "tonalRamp": [
+          "#08080c",
+          "#111119",
+          "#1b1b27",
+          "#232333",
+          "#414152",
+          "#68687a",
+          "#a0a0ad",
+          "#dedee2"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Superfície noite",
+        "canonical": "#2b2c40",
+        "tonalRamp": [
+          "#0a0a0f",
+          "#15151e",
+          "#20212f",
+          "#2b2c40",
+          "#48495e",
+          "#707185",
+          "#a6a7b5",
+          "#e1e1e6"
+        ]
+      },
+      "dark-surface-raised": {
+        "role": "neutral",
+        "displayName": "Superfície elevada noite",
+        "canonical": "#34354a",
+        "tonalRamp": [
+          "#0c0c11",
+          "#191a22",
+          "#272834",
+          "#34354a",
+          "#505166",
+          "#77788b",
+          "#abacb9",
+          "#e3e3e7"
+        ]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Texto lavanda frio",
+        "canonical": "#c3c4dd",
+        "tonalRamp": [
+          "#19191d",
+          "#303138",
+          "#484955",
+          "#626375",
+          "#7d7e98",
+          "#999ab4",
+          "#c3c4dd",
+          "#f0f0f5"
+        ]
+      },
+      "dark-text-strong": {
+        "role": "neutral",
+        "displayName": "Texto claro forte",
+        "canonical": "#e7e7f0",
+        "tonalRamp": [
+          "#202024",
+          "#3a3a41",
+          "#54545d",
+          "#6e6e79",
+          "#888893",
+          "#a2a2ad",
+          "#c4c4ce",
+          "#e7e7f0"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Texto auxiliar noturno",
+        "canonical": "#a9acca",
+        "tonalRamp": [
+          "#22232c",
+          "#363746",
+          "#4b4d61",
+          "#60627c",
+          "#757797",
+          "#a9acca",
+          "#c7c9db",
+          "#e3e4ed"
+        ]
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "Borda noite",
+        "canonical": "#44455e",
+        "tonalRamp": [
+          "#111116",
+          "#20212c",
+          "#323347",
+          "#44455e",
+          "#5f6077",
+          "#7a7b8e",
+          "#a5a6b2",
+          "#d7d7dd"
+        ]
+      },
+      "dark-primary": {
+        "role": "primary",
+        "displayName": "Azul de ação noturno",
+        "canonical": "#0a6ebd",
+        "tonalRamp": [
+          "#04182a",
+          "#062a46",
+          "#083e69",
+          "#0a6ebd",
+          "#3b8ac7",
+          "#75acd7",
+          "#b0cde7",
+          "#e7f1f8"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Azul claro de leitura noturna",
+        "canonical": "#6cb2ea",
+        "tonalRamp": [
+          "#14232f",
+          "#23425b",
+          "#35658c",
+          "#4989bc",
+          "#6cb2ea",
+          "#91c5ef",
+          "#b9d9f4",
+          "#e4f2fc"
+        ]
+      },
+      "success": {
+        "role": "tertiary",
+        "displayName": "Verde de sucesso",
+        "canonical": "#71dd37",
+        "tonalRamp": [
+          "#172b0c",
+          "#2b4a17",
+          "#436d24",
+          "#5d9630",
+          "#71dd37",
+          "#91e567",
+          "#b5ed96",
+          "#ddf8cd"
+        ]
+      },
+      "info": {
+        "role": "tertiary",
+        "displayName": "Ciano informativo",
+        "canonical": "#03c3ec",
+        "tonalRamp": [
+          "#002630",
+          "#004553",
+          "#006778",
+          "#008da3",
+          "#03c3ec",
+          "#4dd3f1",
+          "#91e3f6",
+          "#d5f5fb"
+        ]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Âmbar de alerta",
+        "canonical": "#ffab00",
+        "tonalRamp": [
+          "#332200",
+          "#593c00",
+          "#805700",
+          "#b27a00",
+          "#ffab00",
+          "#ffbf40",
+          "#ffd580",
+          "#ffebbf"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Vermelho de erro",
+        "canonical": "#ff3e1d",
+        "tonalRamp": [
+          "#33100a",
+          "#591d12",
+          "#802a1a",
+          "#b23a23",
+          "#ff3e1d",
+          "#ff7057",
+          "#ffa28f",
+          "#ffd4c7"
+        ]
+      },
+      "success-text": {
+        "role": "tertiary",
+        "displayName": "Texto de sucesso",
+        "canonical": "#287a13",
+        "tonalRamp": [
+          "#091a04",
+          "#12320a",
+          "#1d4c0d",
+          "#287a13",
+          "#4b9736",
+          "#75b864",
+          "#a6d197",
+          "#e0efda"
+        ]
+      },
+      "info-text": {
+        "role": "tertiary",
+        "displayName": "Texto informativo",
+        "canonical": "#087990",
+        "tonalRamp": [
+          "#082126",
+          "#0c3d47",
+          "#075765",
+          "#087990",
+          "#368fa2",
+          "#71b1bf",
+          "#a9cdd5",
+          "#e1f0f2"
+        ]
+      },
+      "warning-text": {
+        "role": "tertiary",
+        "displayName": "Texto de alerta",
+        "canonical": "#8a5b00",
+        "tonalRamp": [
+          "#261900",
+          "#4b3200",
+          "#6d4900",
+          "#8a5b00",
+          "#a87820",
+          "#c39a51",
+          "#ddbe86",
+          "#f2e8d4"
+        ]
+      },
+      "danger-text": {
+        "role": "tertiary",
+        "displayName": "Texto de erro",
+        "canonical": "#b02a37",
+        "tonalRamp": [
+          "#300a10",
+          "#5e111b",
+          "#871b29",
+          "#b02a37",
+          "#c65560",
+          "#d8888f",
+          "#e7b5ba",
+          "#f5e2e4"
+        ]
+      },
+      "dark-success-text": {
+        "role": "tertiary",
+        "displayName": "Texto de sucesso noturno",
+        "canonical": "#9be27a",
+        "tonalRamp": [
+          "#14240d",
+          "#243e1a",
+          "#3d6229",
+          "#689f4c",
+          "#9be27a",
+          "#b6eba0",
+          "#d1f2c2",
+          "#e9f9e0"
+        ]
+      },
+      "dark-info-text": {
+        "role": "tertiary",
+        "displayName": "Texto informativo noturno",
+        "canonical": "#6ddcf1",
+        "tonalRamp": [
+          "#102328",
+          "#173c44",
+          "#235560",
+          "#3a7b88",
+          "#6ddcf1",
+          "#94e6f4",
+          "#bceef8",
+          "#e5fbfe"
+        ]
+      },
+      "dark-warning-text": {
+        "role": "tertiary",
+        "displayName": "Texto de alerta noturno",
+        "canonical": "#ffd166",
+        "tonalRamp": [
+          "#30230d",
+          "#4b3918",
+          "#695123",
+          "#ad8a40",
+          "#ffd166",
+          "#ffdf91",
+          "#ffebba",
+          "#fff7e2"
+        ]
+      },
+      "dark-danger-text": {
+        "role": "tertiary",
+        "displayName": "Texto de erro noturno",
+        "canonical": "#ff8f82",
+        "tonalRamp": [
+          "#351b1b",
+          "#552626",
+          "#783632",
+          "#b25b55",
+          "#ff8f82",
+          "#ffb0a6",
+          "#ffd0ca",
+          "#fff0ed"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Public Sans",
+        "purpose": "Texto de interface, formulários e dados."
+      },
+      "title": {
+        "displayName": "Public Sans Semibold",
+        "purpose": "Marca e títulos destacados."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 0 0.875rem 0 rgba(33, 37, 41, 0.05)",
+        "purpose": "Separação suave de cartões no tema claro."
+      },
+      {
+        "name": "dropdown",
+        "value": "0 0.25rem 1rem rgba(161, 172, 184, 0.45)",
+        "purpose": "Sobreposição de menus e dropdowns no tema claro."
+      },
+      {
+        "name": "subtle",
+        "value": "0 0.0625rem 0.125rem rgba(161, 172, 184, 0.075)",
+        "purpose": "Elevação mínima no tema claro."
+      },
+      {
+        "name": "card-dark",
+        "value": "0 0 0.875rem 0 rgba(0, 0, 0, 0.35)",
+        "purpose": "Separação suave de cartões no tema escuro."
+      },
+      {
+        "name": "dropdown-dark",
+        "value": "0 0.25rem 1rem rgba(0, 0, 0, 0.45)",
+        "purpose": "Sobreposição de menus e dropdowns no tema escuro."
+      },
+      {
+        "name": "subtle-dark",
+        "value": "0 0.0625rem 0.125rem rgba(0, 0, 0, 0.3)",
+        "purpose": "Elevação mínima no tema escuro."
+      }
+    ],
+    "motion": [
+      {
+        "name": "theme-color-transition",
+        "value": "color, background-color, border-color, box-shadow 180ms ease-out",
+        "purpose": "Mudança explícita entre temas, sem animar o primeiro carregamento."
+      },
+      {
+        "name": "reduced-motion-theme-transition",
+        "value": "80ms",
+        "purpose": "Transição abreviada quando o usuário reduz movimento; animações espaciais são removidas."
+      },
+      {
+        "name": "adjusted-field-feedback",
+        "value": "360ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Destaque breve do campo de valor ajustado; desativado com movimento reduzido."
+      },
+      {
+        "name": "layout-transition",
+        "value": "all 0.25s ease-in-out",
+        "purpose": "Expansão e recolhimento da navegação, conforme a folha de estilos compartilhada."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile-navigation",
+        "value": "1199.98px"
+      },
+      {
+        "name": "small-screen",
+        "value": "767.98px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal azul; alterna para a superfície e texto de acento no hover, com cores semânticas nos dois temas.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Salvar</button>",
+      "css": ".ds-btn-primary { background: var(--app-primary, #02568c); color: var(--app-primary-contrast, #fff); border: 1px solid var(--app-primary, #02568c); border-radius: 0.375rem; padding: 0.375rem 0.75rem; font: 400 0.9375rem/1.53 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; transition: color 180ms ease-out, background-color 180ms ease-out, border-color 180ms ease-out; cursor: pointer; } .ds-btn-primary:hover { background: var(--app-surface, #fff); color: var(--app-accent-text, #02568c); } .ds-btn-primary:focus-visible { outline: 3px solid var(--app-primary, #02568c); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de formulário com superfície, texto e borda tokenizados e foco azul.",
+      "html": "<label class=\"ds-field-label\">Descrição<input class=\"ds-field\" type=\"text\" placeholder=\"Ex.: Mercado\"></label>",
+      "css": ".ds-field-label { display: grid; gap: 0.375rem; color: var(--app-text, #566a7f); font: 500 0.875rem/1.4 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-field { width: 100%; border: 1px solid var(--app-border, #d9dee3); border-radius: 0.375rem; background: var(--app-surface, #fff); color: var(--app-text, #566a7f); padding: 0.5rem 0.75rem; font: 400 0.9375rem/1.53 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; transition: border-color 180ms ease-out, box-shadow 180ms ease-out; } .ds-field:focus { outline: 0; border-color: var(--app-primary, #02568c); box-shadow: 0 0 0.25rem var(--app-accent-soft, rgba(2, 86, 140, 0.16)); } .ds-field:focus-visible { outline: 2px solid var(--app-primary, #02568c); outline-offset: 1px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Painel de conteúdo com superfícies e sombra sutis que acompanham o tema ativo.",
+      "html": "<section class=\"ds-card\"><h3>Saldo do mês</h3><strong>R$ 2.450,00</strong></section>",
+      "css": ".ds-card { padding: 1.5rem; border: 0; border-radius: 0.375rem; background: var(--app-surface, #fff); color: var(--app-text, #566a7f); box-shadow: var(--app-shadow, 0 0 0.875rem 0 rgba(33, 37, 41, 0.05)); font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-card h3 { margin: 0 0 0.75rem; color: var(--app-text-strong, #2b354f); font-size: 0.9375rem; font-weight: 600; } .ds-card strong { color: var(--app-accent-text, #02568c); font-size: 1.25rem; }"
+    },
+    {
+      "name": "Side Navigation Link",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Link lateral com seleção azul suave, formato de pílula e cores que acompanham o tema.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Relatórios</a><a class=\"ds-nav-link\" href=\"#\">Transações</a></nav>",
+      "css": ".ds-nav { display: grid; gap: 0.25rem; width: 16.25rem; padding: 0.75rem; background: var(--app-surface, #fff); font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-nav-link { padding: 0.625rem 1rem; border-radius: 50rem; color: var(--app-accent-text, #02568c); text-decoration: none; font-size: 0.9375rem; transition: color 180ms ease-out, background-color 180ms ease-out; } .ds-nav-link:hover, .ds-nav-link-active { background: var(--app-accent-soft, rgba(2, 86, 140, 0.16)); color: var(--app-accent-text, #02568c); } .ds-nav-link:focus-visible { outline: 3px solid var(--app-primary, #02568c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Financial Data Table",
+      "kind": "custom",
+      "description": "Dados alinhados em linhas com separadores sutis, hover azul e números tabulares.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead><tbody><tr><td>16/11</td><td>Mercado</td><td>R$ 84,90</td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; color: var(--app-text, #566a7f); font: 400 0.875rem/1.5 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; } .ds-table th, .ds-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--app-border, #d9dee3); text-align: left; } .ds-table th { color: var(--app-text-strong, #2b354f); font-weight: 600; } .ds-table tbody tr:hover { background: var(--app-accent-soft-2, rgba(2, 86, 140, 0.08)); } .ds-table td:last-child, .ds-table th:last-child { text-align: right; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Theme Toggle",
+      "kind": "button",
+      "description": "Controle compartilhado que expõe o estado atual com aria-pressed e nomeia o modo que pode ser ativado.",
+      "html": "<button class=\"ds-theme-toggle\" type=\"button\" aria-label=\"Tema escuro. Mudar para tema claro\" aria-pressed=\"true\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"></circle><path d=\"M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42\"></path></svg></button>",
+      "css": ".ds-theme-toggle { display: inline-flex; min-width: 2.75rem; min-height: 2.75rem; align-items: center; justify-content: center; border: 1px solid var(--app-border, #d9dee3); border-radius: 50%; background: var(--app-surface, #fff); color: var(--app-accent-text, #02568c); cursor: pointer; transition: background-color 150ms ease, color 150ms ease; } .ds-theme-toggle:hover { background: var(--app-accent-soft, rgba(2, 86, 140, 0.16)); } .ds-theme-toggle:focus-visible { outline: 3px solid var(--app-primary, #02568c); outline-offset: 2px; } .ds-theme-toggle svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; }"
+    },
+    {
+      "name": "Accessible Notice",
+      "kind": "custom",
+      "description": "Aviso dinâmico com texto seguro, quebra para conteúdo longo, fechamento acessível e semântica de alerta.",
+      "html": "<div class=\"ds-notice ds-notice-success\" role=\"alert\"><div class=\"ds-notice-content\"><span>Pagamento registrado com sucesso.</span><button class=\"ds-notice-close\" type=\"button\" aria-label=\"Fechar aviso\"><svg viewBox=\"0 0 16 16\" aria-hidden=\"true\"><path d=\"m3 3 10 10M13 3 3 13\"></path></svg></button></div></div>",
+      "css": ".ds-notice { padding: 0.75rem 1rem; border: 1px solid var(--app-border, #d9dee3); border-radius: 0.375rem; background: var(--app-surface, #fff); color: var(--app-text, #566a7f); font: 400 0.9375rem/1.53 Public Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; } .ds-notice-success { color: var(--app-success-text, #287a13); } .ds-notice-content { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 0.75rem; } .ds-notice-content > span { min-width: 0; overflow-wrap: anywhere; } .ds-notice-close { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border: 0; background: transparent; color: inherit; cursor: pointer; } .ds-notice-close:focus-visible { outline: 2px solid var(--app-primary, #02568c); outline-offset: 2px; } .ds-notice-close svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Painel financeiro claro e funcional",
+    "overview": "O sistema visual organiza tarefas financeiras frequentes em uma interface direta, familiar e utilitária. Superfícies neutras e cartões mantêm números, filtros e tabelas fáceis de localizar; o azul financeiro profundo destaca ações e estados ativos sem competir com os dados.\n\nO tema claro é a base visual original. O tema escuro reaproveita a mesma organização e hierarquia com superfícies azuladas, texto claro e acento mais luminoso. A escolha salva no navegador tem precedência; na ausência dela, a interface acompanha a preferência do sistema. O tema inicial é aplicado antes da pintura da página e as cores mudam em 180 ms; com movimento reduzido, a transição cai para 80 ms. A tipografia é sem serifa, de sistema, e os componentes seguem padrões familiares de formulários, navegação e botões.",
+    "keyCharacteristics": [
+      "Azul concentrado em ações, links, ícones e seleção.",
+      "Conteúdo operacional organizado em cartões e tabelas.",
+      "Sombras leves e superfícies tonais para separar áreas.",
+      "Temas claro e escuro com estrutura compartilhada.",
+      "Feedback em português com estado semântico, botão de fechamento e pausa do desaparecimento enquanto o aviso recebe foco ou ponteiro."
+    ],
+    "rules": [
+      {
+        "name": "The Financial Accent Rule",
+        "body": "Preserve o azul como sinal de ação e seleção; use as cores de estado para significados de sucesso, informação, alerta e erro.",
+        "section": "colors"
+      },
+      {
+        "name": "The Familiar Sans Rule",
+        "body": "Mantenha a família sem serifa e os fallbacks de sistema; não introduza uma família decorativa como voz paralela.",
+        "section": "typography"
+      },
+      {
+        "name": "The Subtle Layers Rule",
+        "body": "Use sombras para separar superfícies e sobreposições; preserve os níveis mais fortes para menus e controles que flutuam.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use o azul financeiro profundo para ações, links e seleção no tema claro.",
+      "Do mantenha contraste de texto e superfícies apropriado ao tema ativo.",
+      "Do use camadas sutis para separar cartões e sombras mais fortes para sobreposições.",
+      "Do preserve os padrões familiares do Bootstrap em formulários, botões e navegação.",
+      "Do comunique estados financeiros com texto semântico legível no tema ativo, sem depender apenas da cor.",
+      "Do preserve zoom, foco de teclado e preferência por movimento reduzido."
+    ],
+    "donts": [
+      "Don't introduza cores de marca adicionais sem uma função clara na interface.",
+      "Don't substitua os temas existentes por uma única paleta fixa.",
+      "Don't use sombras pesadas em todos os cartões ou aplique decoração que prejudique a leitura de números e tabelas.",
+      "Don't interpolar texto de mensagens em HTML; renderize conteúdo dinâmico como texto."
+    ]
+  }
+}

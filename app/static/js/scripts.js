@@ -185,20 +185,6 @@ function debounce(func, wait) {
 }
 
 /**
- * Throttle helper
- */
-function throttle(func, limit) {
-  let inThrottle;
-  return function executedFunction(...args) {
-    if (!inThrottle) {
-      func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
-    }
-  };
-}
-
-/**
  * Limpa cache DOM
  */
 function clearDOMCache() {
@@ -657,17 +643,21 @@ function toggleDropdown(toggleElement) {
       const activeSubItem = submenu.querySelector('.menu-item.active');
       if (!activeSubItem) {
         item.classList.remove('open');
+        item.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
       }
     } else {
       item.classList.remove('open');
+      item.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
     }
   });
 
   // Toggle do dropdown atual
   if (isOpen) {
     menuItem.classList.remove('open');
+    toggleElement.setAttribute('aria-expanded', 'false');
   } else {
     menuItem.classList.add('open');
+    toggleElement.setAttribute('aria-expanded', 'true');
   }
 }
 
@@ -681,6 +671,7 @@ function checkAndOpenActiveDropdowns() {
       const activeSubItem = submenu.querySelector('.menu-item.active');
       if (activeSubItem) {
         menuItem.classList.add('open');
+        menuItem.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'true');
       }
     }
   });
@@ -714,6 +705,15 @@ function initMenuDropdowns() {
 
     toggle.addEventListener('click', clickHandler);
     AppState.activeListeners.set(`dropdown-${toggle}`, clickHandler);
+
+    const keydownHandler = function(e) {
+      if (e.key === ' ') {
+        e.preventDefault();
+        toggle.click();
+      }
+    };
+    toggle.addEventListener('keydown', keydownHandler);
+    AppState.activeListeners.set(`dropdown-keydown-${toggle}`, keydownHandler);
   });
 
   // Fechar dropdowns ao clicar fora
@@ -725,9 +725,11 @@ function initMenuDropdowns() {
           const activeSubItem = submenu.querySelector('.menu-item.active');
           if (!activeSubItem) {
             item.classList.remove('open');
+          item.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
           }
         } else {
           item.classList.remove('open');
+        item.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
         }
       });
     }
@@ -746,7 +748,10 @@ function initMenuDropdowns() {
     }, CONFIG.DROPDOWN_CHECK_DELAY)
   );
 
-  observer.observe(document.body, {
+  // O observer só precisa acompanhar o menu; mudanças em tabelas, avisos,
+  // gráficos ou modais não alteram a inicialização dos dropdowns.
+  const menuRoot = safeQuerySelector('.layout-menu');
+  if (menuRoot) observer.observe(menuRoot, {
     childList: true,
     subtree: true
   });
@@ -771,6 +776,11 @@ function syncSidebarToggleIcon() {
 
   toggleIcon.classList.remove(expandedIcon, collapsedIcon);
   toggleIcon.classList.add(isCollapsed ? collapsedIcon : expandedIcon);
+  const toggle = toggleIcon.closest('.layout-menu-toggle');
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', String(!isCollapsed));
+    toggle.setAttribute('aria-label', isCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral');
+  }
 }
 
 /**
@@ -798,6 +808,14 @@ function initMenu() {
     };
     menuToggle.addEventListener('click', desktopToggleHandler);
     AppState.activeListeners.set('menu-toggle', desktopToggleHandler);
+    const desktopKeydownHandler = (e) => {
+      if (e.key === ' ') {
+        e.preventDefault();
+        menuToggle.click();
+      }
+    };
+    menuToggle.addEventListener('keydown', desktopKeydownHandler);
+    AppState.activeListeners.set('menu-toggle-keydown', desktopKeydownHandler);
   }
 
   const mobileMenuToggle = safeQuerySelector(
@@ -810,6 +828,17 @@ function initMenu() {
     };
     mobileMenuToggle.addEventListener('click', mobileToggleHandler);
     AppState.activeListeners.set('mobile-menu-toggle', mobileToggleHandler);
+    const mobileLink = mobileMenuToggle.querySelector('a');
+    if (mobileLink) {
+      const mobileKeydownHandler = (e) => {
+        if (e.key === ' ') {
+          e.preventDefault();
+          mobileLink.click();
+        }
+      };
+      mobileLink.addEventListener('keydown', mobileKeydownHandler);
+      AppState.activeListeners.set('mobile-menu-toggle-keydown', mobileKeydownHandler);
+    }
   }
 
   const layoutOverlay = safeQuerySelector('.layout-overlay');
@@ -835,9 +864,17 @@ function toggleMenu() {
   const layoutOverlay = safeQuerySelector('.layout-overlay');
   
   if (layoutMenu && layoutOverlay) {
-    layoutMenu.classList.toggle('layout-menu-expanded');
-    layoutOverlay.classList.toggle('layout-menu-expanded');
+    const expanded = layoutMenu.classList.toggle('layout-menu-expanded');
+    layoutOverlay.classList.toggle('layout-menu-expanded', expanded);
+    updateMobileMenuToggle(expanded);
   }
+}
+
+function updateMobileMenuToggle(expanded) {
+  const toggle = safeQuerySelector('.layout-menu-toggle.navbar-nav a');
+  if (!toggle) return;
+  toggle.setAttribute('aria-expanded', String(expanded));
+  toggle.setAttribute('aria-label', expanded ? 'Fechar menu lateral' : 'Abrir menu lateral');
 }
 
 /**
@@ -850,6 +887,7 @@ function closeMenu() {
   if (layoutMenu && layoutOverlay) {
     layoutMenu.classList.remove('layout-menu-expanded');
     layoutOverlay.classList.remove('layout-menu-expanded');
+    updateMobileMenuToggle(false);
   }
 }
 
@@ -1109,50 +1147,16 @@ function confirmShutdown() {
  * Alterna entre abas de contas
  */
 function switchTab(contaId, contaNome, tabType = 'conta') {
-  requestAnimationFrame(() => {
-    const tabSelector = tabType === 'reports' ? '#reportsTabs' : '#contaTabs';
-    const tabPrefix = tabType === 'reports' ? 'reports-tab' : 'conta-tab';
-    const tabItems = safeQuerySelectorAll(`${tabSelector} .nav-link`);
-    const activeTab = document.getElementById(`${tabPrefix}-${contaId}`);
-
-    // Animar saída da aba ativa
-    tabItems.forEach((tab) => {
-      if (tab.classList.contains('active')) {
-        tab.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-        tab.classList.remove('active');
-        tab.setAttribute('aria-selected', 'false');
-      }
-    });
-
-    // Animar entrada da nova aba
-    requestAnimationFrame(() => {
-      if (activeTab) {
-        activeTab.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-        activeTab.classList.add('active');
-        activeTab.setAttribute('aria-selected', 'true');
-        activeTab.style.animation = 'tabActivate 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-        setTimeout(() => {
-          activeTab.style.animation = '';
-        }, 400);
-      }
-
-      // Atualizar nome da conta
-      const contaNameElement = document.getElementById('current-conta-name');
-      if (contaNameElement) {
-        contaNameElement.textContent = contaNome;
-      }
-
-      // Redirecionar
-      if (tabType === 'reports') {
-        const urlParams = new URLSearchParams(window.location.search);
-        const reportType = urlParams.get('type') || 'monthly';
-        const year = urlParams.get('year') || new Date().getFullYear();
-        window.location.href = `/transactions/reports?conta_id=${contaId}&type=${reportType}&year=${year}`;
-      } else {
-        window.location.href = `/dashboard?conta_id=${contaId}`;
-      }
-    });
-  });
+  // A navegação carrega novamente a página e marca a conta ativa no servidor;
+  // a animação anterior alterava classes e iniciava timers antes do redirect.
+  if (tabType === 'reports') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reportType = urlParams.get('type') || 'monthly';
+    const year = urlParams.get('year') || new Date().getFullYear();
+    window.location.href = `/transactions/reports?conta_id=${contaId}&type=${reportType}&year=${year}`;
+  } else {
+    window.location.href = `/dashboard?conta_id=${contaId}`;
+  }
 }
 
 /**
@@ -1188,38 +1192,8 @@ function initTabs() {
     }
   });
 
-  // Efeitos de hover otimizados
-  const allNavLinks = safeQuerySelectorAll('.nav-link');
-  allNavLinks.forEach((tab) => {
-    tab.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-
-    const mouseEnterHandler = throttle(() => {
-      if (!tab.classList.contains('active')) {
-        tab.style.transform = 'translateY(-2px) translateZ(0)';
-        tab.style.boxShadow = '0 4px 12px rgba(2, 86, 140, 0.15)';
-      }
-    }, 100);
-
-    const mouseLeaveHandler = throttle(() => {
-      if (!tab.classList.contains('active')) {
-        tab.style.transform = 'translateY(0) translateZ(0)';
-        tab.style.boxShadow = '';
-      }
-    }, 100);
-
-    tab.addEventListener('mouseenter', mouseEnterHandler);
-    tab.addEventListener('mouseleave', mouseLeaveHandler);
-
-    tab.addEventListener('mousedown', () => {
-      tab.style.transform = 'translateY(-1px) translateZ(0)';
-    });
-
-    tab.addEventListener('mouseup', () => {
-      if (!tab.classList.contains('active')) {
-        tab.style.transform = 'translateY(-2px) translateZ(0)';
-      }
-    });
-  });
+  // Os estados de hover/foco são tratados pelo CSS compartilhado.
+  // Evita listeners e estilos inline em todos os links da navegação.
 }
 
 // ============================================================================

@@ -10,30 +10,33 @@
     <!-- Anti-FOUC: aplica o tema salvo (ou preferencia do SO) ANTES do CSS pintar -->
     <script>
       (function () {
+        var root = document.documentElement;
+        var theme = null;
         try {
           var stored = localStorage.getItem("theme");
-          var theme = stored;
-          if (!theme) {
+        } catch (e) {}
+
+        if (stored === "theme-dark" || stored === "theme-default") {
+          theme = stored;
+        } else {
+          try {
             var prefersDark =
               window.matchMedia &&
               window.matchMedia("(prefers-color-scheme: dark)").matches;
             theme = prefersDark ? "theme-dark" : "theme-default";
+          } catch (e) {
+            theme = "theme-default";
           }
-          document.documentElement.setAttribute("data-theme", theme);
-          document.documentElement.classList.toggle(
-            "dark-style",
-            theme === "theme-dark"
-          );
-          document.documentElement.classList.toggle(
-            "light-style",
-            theme !== "theme-dark"
-          );
-        } catch (e) {}
+        }
+
+        root.setAttribute("data-theme", theme);
+        root.classList.toggle("dark-style", theme === "theme-dark");
+        root.classList.toggle("light-style", theme !== "theme-dark");
       })();
     </script>
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+      content="width=device-width, initial-scale=1.0"
     />
     <title>{% block title %}{% endblock %} - Finanças Pessoais</title>
 
@@ -121,7 +124,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
           </div>
           <div class="modal-body">
             <p id="confirmDeleteMessage">Tem certeza que deseja excluir este item?</p>

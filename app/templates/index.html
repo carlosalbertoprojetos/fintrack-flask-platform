@@ -1,6 +1,11 @@
 {% extends "base.html" %} {% block content %}
 
 <style>
+  .alert .flex-grow-1 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   /* Fixar botões de ação no topo da navbar */
   .navbar-action-buttons {
     position: sticky;
@@ -84,6 +89,7 @@
 </style>
 
 <!-- Layout wrapper -->
+<a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 <div class="layout-wrapper layout-content-navbar">
   <div class="layout-container">
     <!-- Menu -->
@@ -105,6 +111,10 @@
         <a
           href="javascript:void(0);"
           class="layout-menu-toggle menu-link text-large ms-auto d-none d-xl-block"
+          role="button"
+          aria-label="Recolher menu lateral"
+          aria-controls="layout-menu"
+          aria-expanded="true"
         >
           <i class="bx bx-chevron-left align-middle sidebar-toggle-icon" data-expanded-icon="bx-chevron-left" data-collapsed-icon="bx-chevron-right"></i>
         </a>
@@ -135,12 +145,12 @@
 
         <!-- Configurações Dropdown -->
         <li class="menu-item">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <a href="javascript:void(0);" class="menu-link menu-toggle" role="button" aria-expanded="false" aria-controls="settings-submenu">
             <i class="menu-icon tf-icons bx bx-cog"></i>
             <div>Configurações</div>
             <i class="bx bx-chevron-down menu-arrow"></i>
           </a>
-          <ul class="menu-sub">           
+          <ul class="menu-sub" id="settings-submenu">
 
             <!-- Tipos de Conta -->
             <li class="menu-item {% if request.endpoint.startswith('tipo_conta.') %}active{% endif %}">
@@ -203,7 +213,7 @@
         class="layout-navbar container-fluid navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
         id="layout-navbar">
         <div class="layout-menu-toggle navbar-nav align-items-xl-center fixed-top m-3 me-xl-0 d-xl-none">
-          <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0);">
+          <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0);" role="button" aria-label="Abrir menu lateral" aria-controls="layout-menu" aria-expanded="false">
             <i class="bx bx-menu bx-sm"></i>
           </a>
         </div>
@@ -251,16 +261,15 @@
           <ul class="navbar-nav flex-row align-items-center ms-auto">
             <!-- Theme toggle -->
             <li class="nav-item me-1">
-              <a
-                class="nav-link"
-                href="javascript:void(0);"
-                role="button"
+              <button
+                type="button"
+                class="nav-link theme-toggle-control border-0 bg-transparent"
                 data-theme-toggle
                 title="Alternar tema"
                 aria-label="Alternar tema"
               >
                 <i class="fas fa-moon fs-5 align-middle" data-theme-toggle-icon></i>
-              </a>
+              </button>
             </li>
             <!-- User -->
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -352,7 +361,7 @@
       <!-- / Navbar -->
 
       <!-- Content wrapper -->
-      <div class="content-wrapper m-2 pe-1">
+      <div class="content-wrapper m-2 pe-1" id="main-content" tabindex="-1">
         <!-- Content -->
         <div class="container-fluid flex-grow-1 p-0 m-0">          
           {% with messages = get_flashed_messages(with_categories=true) %} 
@@ -383,7 +392,7 @@
                       type="button"
                       class="btn-close"
                       data-bs-dismiss="alert"
-                      aria-label="Close"
+                      aria-label="Fechar aviso"
                       onclick="dismissMessage('flash-message-{{ loop.index }}')"
                     ></button>
                   </div>
@@ -470,26 +479,47 @@
 <!-- Sistema de mensagens flash -->
 <script>
  
+  // Auto-dismiss acessível: pausa enquanto o aviso está sob ponteiro ou foco.
+  function startFlashDismiss(message, duration) {
+    if (!Number.isFinite(duration) || duration < 0) duration = 8000;
+    duration = Math.min(duration, 120000);
+    let remaining = duration;
+    let startedAt = Date.now();
+    let timer = null;
+
+    function pause() {
+      if (timer === null) return;
+      window.clearTimeout(timer);
+      timer = null;
+      remaining = Math.max(0, remaining - (Date.now() - startedAt));
+    }
+
+    function resume() {
+      if (timer !== null || remaining <= 0 || !message.isConnected) return;
+      startedAt = Date.now();
+      timer = window.setTimeout(function() {
+        if (message.isConnected) dismissMessage(message.id);
+      }, remaining);
+    }
+
+    message.addEventListener('mouseenter', pause);
+    message.addEventListener('mouseleave', resume);
+    message.addEventListener('focusin', pause);
+    message.addEventListener('focusout', function(event) {
+      if (!message.contains(event.relatedTarget)) resume();
+    });
+    message.addEventListener('close.bs.alert', function() {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = null;
+    }, { once: true });
+    resume();
+  }
+
   // Auto-dismiss para mensagens flash
   document.addEventListener('DOMContentLoaded', function() {
     const flashMessages = document.querySelectorAll('[id^="flash-message-"]');
-    
-    flashMessages.forEach(function(message, index) {
-      // Auto-dismiss após 8 segundos
-      setTimeout(function() {
-        if (message && message.parentNode) {
-          dismissMessage(message.id);
-        }
-      }, 6000);
-      
-      // Pausar auto-dismiss quando mouse passar sobre a mensagem
-      message.addEventListener('mouseenter', function() {
-        message.dataset.paused = 'true';
-      });
-      
-      message.addEventListener('mouseleave', function() {
-        message.dataset.paused = 'false';
-      });
+    flashMessages.forEach(function(message) {
+      startFlashDismiss(message, 8000);
     });
   });
   
@@ -498,39 +528,42 @@
     const container = document.querySelector('.container-fluid.flex-grow-1.p-0');
     if (!container) return;
     
-    const messageId = 'flash-message-' + Date.now();
-    const alertClass = 'alert-' + (category || 'info');
-    const iconClass = category === 'success' ? 'fa-check-circle text-success' :
-                     category === 'danger' ? 'fa-exclamation-circle text-danger' :
-                     category === 'warning' ? 'fa-exclamation-triangle text-warning' :
-                     'fa-info-circle text-info';
-    
-    const messageHtml = `
-      <div class="alert ${alertClass} alert-dismissible fade show" 
-           role="alert" 
-           id="${messageId}"
-           style="margin: 0 0 10px 0; z-index: 9999; position: static;">
-        <div class="d-flex align-items-center">
-          <div class="flex-grow-1">
-            <i class="fas ${iconClass} me-2"></i>
-            ${message}
-          </div>
-          <button type="button" 
-                  class="btn-close" 
-                  data-bs-dismiss="alert" 
-                  aria-label="Close"
-                  onclick="dismissMessage('${messageId}')">
-          </button>
-        </div>
-      </div>
-    `;
-    
-    container.insertAdjacentHTML('afterbegin', messageHtml);
-    
-    // Auto-dismiss
-    setTimeout(function() {
+    const allowedCategories = ['success', 'danger', 'warning', 'info'];
+    const safeCategory = allowedCategories.includes(category) ? category : 'info';
+    const iconClasses = {
+      success: 'fa-check-circle text-success',
+      danger: 'fa-exclamation-circle text-danger',
+      warning: 'fa-exclamation-triangle text-warning',
+      info: 'fa-info-circle text-info'
+    };
+    const messageId = 'flash-message-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-' + safeCategory + ' alert-dismissible fade show';
+    alert.id = messageId;
+    alert.setAttribute('role', 'alert');
+    alert.style.margin = '0 0 10px 0';
+
+    const content = document.createElement('div');
+    content.className = 'd-flex align-items-center';
+    const text = document.createElement('div');
+    text.className = 'flex-grow-1';
+    const icon = document.createElement('i');
+    icon.className = 'fas ' + iconClasses[safeCategory] + ' me-2';
+    icon.setAttribute('aria-hidden', 'true');
+    text.append(icon, document.createTextNode(String(message ?? '')));
+
+    const closeButton = document.createElement('button');
+    closeButton.type = 'button';
+    closeButton.className = 'btn-close';
+    closeButton.setAttribute('aria-label', 'Fechar aviso');
+    closeButton.addEventListener('click', function() {
       dismissMessage(messageId);
-    }, duration);
+    });
+
+    content.append(text, closeButton);
+    alert.append(content);
+    container.prepend(alert);
+    startFlashDismiss(alert, duration);
   }
   
   // Ocultar div do desenvolvedor quando chegar ao final da página

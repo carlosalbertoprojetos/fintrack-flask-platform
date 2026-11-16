@@ -43,6 +43,13 @@ body {
 }
 .layout-menu {
   background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+}
+.content {
+  background: var(--app-body-bg);
+}
+.navbar {
+  box-shadow: var(--app-shadow-sm);
 }
 
 /* Pagination */
@@ -56,10 +63,12 @@ body {
 .layout-menu-toggle {
   color: var(--app-text);
   background-color: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
 }
 .layout-menu-toggle:hover {
   color: var(--app-accent-text);
   background: var(--app-accent-soft);
+  box-shadow: var(--app-shadow);
 }
 .layout-menu-toggle.menu-link.text-large.ms-auto.d-none.d-xl-block {
   color: var(--app-accent-text);
@@ -203,6 +212,31 @@ body {
 .card-header-tabs .nav-link.active {
   border-bottom-color: var(--app-surface);
 }
+.nav-tabs .nav-link {
+  color: var(--app-text);
+  border-color: transparent;
+}
+.nav-tabs .nav-link::before,
+.nav-tabs .nav-link.active::before {
+  background: linear-gradient(90deg, var(--app-primary), var(--app-accent-text));
+}
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link.active:hover {
+  color: var(--app-accent-text);
+  border-color: var(--app-border);
+  background-color: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
+}
+.nav-tabs .nav-link:hover {
+  background-color: var(--app-surface-2);
+}
+.nav-tabs .nav-link.active {
+  border-bottom-color: var(--app-primary);
+}
+.card-header-tabs .nav-link.active {
+  border-bottom-color: var(--app-surface);
+}
 
 /* DataTables */
 .dataTables_wrapper .dataTables_info {
@@ -232,4 +266,384 @@ body {
 .theme-toggle-floating:hover {
   background-color: var(--app-accent-soft);
   color: var(--app-accent-text);
+}
+
+/* Substitui transition: all herdado do CSS base por propriedades previsiveis.
+   A duracao fica zerada fora da troca de tema, salvo interacoes listadas. */
+body,
+.layout-wrapper,
+.layout-container,
+.layout-navbar,
+.layout-menu,
+.layout-page,
+.content,
+.content-wrapper,
+.navbar,
+.app-brand,
+.app-brand-link,
+.app-brand-logo,
+.app-brand-text,
+.menu-link,
+.menu-arrow,
+.menu-sub,
+.layout-menu-toggle,
+.dropdown-menu,
+.dropdown-item,
+.dropdown-divider,
+.card,
+.card-header,
+.card-body,
+.card-footer,
+.modal-content,
+.modal-header,
+.modal-footer,
+.offcanvas,
+.list-group,
+.list-group-item,
+.table,
+.table th,
+.table td,
+.form-control,
+.form-control::placeholder,
+.form-select,
+.input-group-text,
+.btn,
+.btn-outline-primary,
+.btn-close,
+.nav-link,
+.nav-tabs .nav-link,
+.card-header-tabs .nav-link,
+.nav-tabs .nav-link::before,
+.footer-link,
+.alert,
+.alert-link,
+.text-muted,
+.text-dark,
+.text-primary,
+.link-primary,
+.text-success,
+.text-info,
+.text-warning,
+.text-danger,
+.bg-white,
+.bg-light,
+.bg-success,
+.bg-info,
+.bg-warning,
+.bg-danger,
+.btn-light,
+input[type="date"]::-webkit-calendar-picker-indicator,
+.footer,
+.page-link,
+.table-primary,
+.table-secondary,
+.table-success,
+.table-info,
+.table-warning,
+.table-danger,
+.table-light,
+.avatar-online,
+.theme-toggle-floating,
+.theme-toggle-control {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: 0s;
+}
+
+/* Mantem as animacoes funcionais de layout sem interpolar propriedades alheias. */
+.layout-menu {
+  transition-property: width, transform, color, background-color, border-color, box-shadow;
+}
+.layout-page {
+  transition-property: margin-left, color, background-color, border-color, box-shadow;
+}
+.layout-overlay {
+  transition-property: opacity, visibility, background-color;
+}
+.layout-menu-toggle,
+.layout-menu-toggle i,
+.menu-arrow {
+  transition-property: transform, color, background-color, border-color, box-shadow;
+}
+.menu-sub {
+  transition-property: max-height, color, background-color, border-color, box-shadow;
+}
+.layout-menu { transition-duration: 250ms, 250ms, 0s, 0s, 0s, 0s; }
+.layout-page { transition-duration: 250ms, 0s, 0s, 0s, 0s; }
+.layout-overlay { transition-duration: 250ms, 250ms, 0s; }
+.layout-menu-toggle,
+.layout-menu-toggle i,
+.menu-arrow { transition-duration: 250ms, 0s, 0s, 0s, 0s; }
+.menu-sub { transition-duration: 250ms, 0s, 0s, 0s, 0s; }
+.app-brand-link,
+.menu-link,
+.nav-link,
+.dropdown-item,
+.btn,
+.footer-link { transition-duration: 200ms; }
+.form-control,
+.form-select,
+.page-link { transition-duration: 150ms; }
+.theme-toggle-floating,
+.theme-toggle-control { transition-duration: 150ms; }
+.app-brand-text {
+  transition-property: opacity, color, background-color, border-color, box-shadow;
+  transition-duration: 250ms, 0s, 0s, 0s, 0s;
+}
+.nav-tabs .nav-link,
+.card-header-tabs .nav-link {
+  transition-property: transform, color, background-color, border-color, box-shadow;
+  transition-duration: 250ms;
+}
+.nav-tabs .nav-link::before {
+  transition-property: width, background-color;
+  transition-duration: 250ms, 0s;
+}
+.btn-close {
+  transition-property: opacity, filter;
+  transition-duration: 150ms, 0s;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  transition-property: filter;
+}
+
+/* Transicao tematica somente durante a alternancia explicita. */
+html.theme-transition body,
+html.theme-transition .layout-wrapper,
+html.theme-transition .layout-container,
+html.theme-transition .layout-navbar,
+html.theme-transition .layout-menu,
+html.theme-transition .layout-page,
+html.theme-transition .content,
+html.theme-transition .content-wrapper,
+html.theme-transition .navbar,
+html.theme-transition .app-brand,
+html.theme-transition .app-brand-link,
+html.theme-transition .app-brand-logo,
+html.theme-transition .app-brand-text,
+html.theme-transition .menu-link,
+html.theme-transition .menu-arrow,
+html.theme-transition .menu-sub,
+html.theme-transition .layout-menu-toggle,
+html.theme-transition .dropdown-menu,
+html.theme-transition .dropdown-item,
+html.theme-transition .dropdown-divider,
+html.theme-transition .card,
+html.theme-transition .card-header,
+html.theme-transition .card-body,
+html.theme-transition .card-footer,
+html.theme-transition .modal-content,
+html.theme-transition .modal-header,
+html.theme-transition .modal-footer,
+html.theme-transition .offcanvas,
+html.theme-transition .list-group,
+html.theme-transition .list-group-item,
+html.theme-transition .table,
+html.theme-transition .table th,
+html.theme-transition .table td,
+html.theme-transition .form-control,
+html.theme-transition .form-control::placeholder,
+html.theme-transition .form-select,
+html.theme-transition .input-group-text,
+html.theme-transition .btn,
+html.theme-transition .btn-outline-primary,
+html.theme-transition .btn-close,
+html.theme-transition .nav-link,
+html.theme-transition .nav-tabs .nav-link,
+html.theme-transition .nav-tabs .nav-link::before,
+html.theme-transition .alert,
+html.theme-transition .alert-link,
+html.theme-transition .text-muted,
+html.theme-transition .text-dark,
+html.theme-transition .text-primary,
+html.theme-transition .link-primary,
+html.theme-transition .text-success,
+html.theme-transition .text-info,
+html.theme-transition .text-warning,
+html.theme-transition .text-danger,
+html.theme-transition .bg-white,
+html.theme-transition .bg-light,
+html.theme-transition .bg-success,
+html.theme-transition .bg-info,
+html.theme-transition .bg-warning,
+html.theme-transition .bg-danger,
+html.theme-transition .btn-light,
+html.theme-transition input[type="date"]::-webkit-calendar-picker-indicator,
+html.theme-transition .footer,
+html.theme-transition .footer-link,
+html.theme-transition .page-link,
+html.theme-transition .table-primary,
+html.theme-transition .table-secondary,
+html.theme-transition .table-success,
+html.theme-transition .table-info,
+html.theme-transition .table-warning,
+html.theme-transition .table-danger,
+html.theme-transition .table-light,
+html.theme-transition .avatar-online,
+html.theme-transition .theme-toggle-floating,
+html.theme-transition .theme-toggle-control {
+  transition-duration: 180ms;
+  transition-timing-function: ease-out;
+}
+
+.theme-toggle-floating,
+.theme-toggle-control {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2000;
+  padding: 0.75rem 1rem;
+  color: var(--app-primary-contrast);
+  background: var(--app-primary);
+  border-radius: 0.375rem;
+  transform: translateY(calc(-100% - 1rem));
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.theme-toggle-floating:focus-visible,
+.theme-toggle-control:focus-visible {
+  outline: 3px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+/* Indicador de foco consistente para navegação por teclado em controles e ações. */
+a[href]:focus-visible,
+button:not(:disabled):focus-visible,
+input:not(:disabled):focus-visible,
+select:not(:disabled):focus-visible,
+textarea:not(:disabled):focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 3px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Mantem feedback de cor e opacidade, removendo movimento espacial/layout. */
+  .layout-navbar,
+  .layout-menu,
+  .layout-page,
+  .layout-overlay,
+  .layout-menu-toggle,
+  .layout-menu-toggle i,
+  .app-brand-link,
+  .app-brand-text,
+  .menu-link,
+  .menu-icon,
+  .menu-link div,
+  .menu-arrow,
+  .menu-sub,
+  .nav-link,
+  .dropdown-item,
+  .btn,
+  .btn-outline-primary,
+  .nav-tabs .nav-link,
+  .nav-tabs .nav-link::before {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
+    transition-duration: 80ms;
+  }
+
+  .btn-close,
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    transition-duration: 80ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .layout-menu-toggle:hover,
+  .nav-tabs .nav-link:hover,
+  .nav-tabs .nav-link.active {
+    transform: none !important;
+  }
+
+  html.theme-transition body,
+  html.theme-transition .layout-wrapper,
+  html.theme-transition .layout-container,
+  html.theme-transition .layout-navbar,
+  html.theme-transition .layout-menu,
+  html.theme-transition .layout-page,
+  html.theme-transition .content,
+  html.theme-transition .content-wrapper,
+  html.theme-transition .navbar,
+  html.theme-transition .app-brand,
+  html.theme-transition .app-brand-link,
+  html.theme-transition .app-brand-logo,
+  html.theme-transition .app-brand-text,
+  html.theme-transition .menu-link,
+  html.theme-transition .menu-arrow,
+  html.theme-transition .menu-sub,
+  html.theme-transition .layout-menu-toggle,
+  html.theme-transition .dropdown-item,
+  html.theme-transition .dropdown-divider,
+  html.theme-transition .card,
+  html.theme-transition .card-header,
+  html.theme-transition .card-body,
+  html.theme-transition .card-footer,
+  html.theme-transition .modal-content,
+  html.theme-transition .modal-header,
+  html.theme-transition .modal-footer,
+  html.theme-transition .offcanvas,
+  html.theme-transition .dropdown-menu,
+  html.theme-transition .list-group,
+  html.theme-transition .list-group-item,
+  html.theme-transition .table,
+  html.theme-transition .table th,
+  html.theme-transition .table td,
+  html.theme-transition .form-control,
+  html.theme-transition .form-control::placeholder,
+  html.theme-transition .form-select,
+  html.theme-transition .input-group-text,
+  html.theme-transition .btn,
+  html.theme-transition .btn-outline-primary,
+  html.theme-transition .btn-close,
+  html.theme-transition .nav-link,
+  html.theme-transition .nav-tabs .nav-link,
+  html.theme-transition .nav-tabs .nav-link::before,
+  html.theme-transition .alert,
+  html.theme-transition .alert-link,
+  html.theme-transition .text-muted,
+  html.theme-transition .text-dark,
+  html.theme-transition .text-primary,
+  html.theme-transition .link-primary,
+  html.theme-transition .text-success,
+  html.theme-transition .text-info,
+  html.theme-transition .text-warning,
+  html.theme-transition .text-danger,
+  html.theme-transition .bg-white,
+  html.theme-transition .bg-light,
+  html.theme-transition .bg-success,
+  html.theme-transition .bg-info,
+  html.theme-transition .bg-warning,
+  html.theme-transition .bg-danger,
+  html.theme-transition .btn-light,
+  html.theme-transition input[type="date"]::-webkit-calendar-picker-indicator,
+  html.theme-transition .footer,
+  html.theme-transition .footer-link,
+  html.theme-transition .page-link,
+  html.theme-transition .table-primary,
+  html.theme-transition .table-secondary,
+  html.theme-transition .table-success,
+  html.theme-transition .table-info,
+  html.theme-transition .table-warning,
+  html.theme-transition .table-danger,
+  html.theme-transition .table-light,
+  html.theme-transition .avatar-online,
+  html.theme-transition .theme-toggle-floating,
+  html.theme-transition .theme-toggle-control {
+    transition-duration: 80ms;
+  }
 }

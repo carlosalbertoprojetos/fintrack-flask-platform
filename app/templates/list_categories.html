@@ -172,8 +172,8 @@
       const inputElement = $('<input type="text" class="edit-input">').val(currentValue);
       
       // Criar botões de ação
-      const saveBtn = $('<button class="btn btn-success btn-sm save-btn">').html('<i class="fas fa-check"></i>');
-      const cancelBtn = $('<button class="btn btn-secondary btn-sm cancel-btn">').html('<i class="fas fa-times"></i>');
+      const saveBtn = $('<button type="button" class="btn btn-success btn-sm save-btn" aria-label="Salvar edição" title="Salvar edição">').html('<i class="fas fa-check" aria-hidden="true"></i>');
+      const cancelBtn = $('<button type="button" class="btn btn-secondary btn-sm cancel-btn" aria-label="Cancelar edição" title="Cancelar edição">').html('<i class="fas fa-times" aria-hidden="true"></i>');
       const actionDiv = $('<div class="mt-2">').append(saveBtn, cancelBtn);
       
       // Substituir conteúdo
@@ -256,17 +256,20 @@
     // Função para mostrar mensagens flash
     function showFlashMessage(message, type) {
       const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-      const flashDiv = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>`);
-      
-      $('.card-body').prepend(flashDiv);
-      
-      // Auto-remover após 3 segundos
-      setTimeout(() => {
-        flashDiv.fadeOut(() => flashDiv.remove());
-      }, 3000);
+      const flashDiv = $('<div>', {
+        id: 'flash-message-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+        class: `alert ${alertClass} alert-dismissible fade show`,
+        role: 'alert'
+      });
+      flashDiv.text(String(message ?? ''));
+      const closeButton = $('<button>', {
+        type: 'button',
+        class: 'btn-close',
+        'aria-label': 'Fechar aviso'
+      }).on('click', () => dismissMessage(flashDiv.attr('id')));
+      flashDiv.append(closeButton);
+      $('.card-body').first().prepend(flashDiv);
+      startFlashDismiss(flashDiv[0], 8000);
     }
   });
 </script>

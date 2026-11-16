@@ -38,7 +38,13 @@
         "title",
         isDark ? "Mudar para tema claro" : "Mudar para tema escuro"
       );
-      btn.setAttribute("aria-label", btn.getAttribute("title"));
+      btn.setAttribute(
+        "aria-label",
+        isDark
+          ? "Tema escuro. Mudar para tema claro"
+          : "Tema claro. Mudar para tema escuro"
+      );
+      btn.setAttribute("aria-pressed", isDark ? "true" : "false");
       var label = btn.querySelector("[data-theme-toggle-label]");
       if (label) {
         label.textContent = isDark ? "Tema Claro" : "Tema Escuro";
@@ -67,11 +73,38 @@
         window.Chart.defaults.plugins.legend.labels || {};
       window.Chart.defaults.plugins.legend.labels.color = textColor;
     }
+    if (window.Chart.defaults.plugins && window.Chart.defaults.plugins.tooltip) {
+      window.Chart.defaults.plugins.tooltip.backgroundColor = token(
+        "--app-chart-tooltip-bg",
+        "#ffffff"
+      );
+      window.Chart.defaults.plugins.tooltip.titleColor = token(
+        "--app-chart-tooltip-text",
+        "#2b354f"
+      );
+      window.Chart.defaults.plugins.tooltip.bodyColor = token(
+        "--app-chart-tooltip-text",
+        "#2b354f"
+      );
+      window.Chart.defaults.plugins.tooltip.borderColor = token(
+        "--app-chart-tooltip-border",
+        "#d9dee3"
+      );
+      window.Chart.defaults.plugins.tooltip.borderWidth = 1;
+    }
   }
 
   /* Re-renderiza os graficos da pagina (cada pagina registra sua funcao). */
   function rerenderCharts() {
     applyChartDefaults();
+    if (typeof window.updatePageChartTheme === "function") {
+      try {
+        window.updatePageChartTheme();
+        return;
+      } catch (e) {
+        /* Mantem o fallback de renderizacao para graficos sem update compativel. */
+      }
+    }
     if (typeof window.renderPageCharts === "function") {
       try {
         window.renderPageCharts();

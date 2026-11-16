@@ -153,11 +153,11 @@
     </ul>
   </div>
 
-  <div class="card-body ps-2 py-2">        
+  <div class="card-body px-2 py-2">
     <!-- Cards de Resumo -->
-    <div class="row mx-0">
-      <div class="col-md-3 px-0 pe-lg-1 ps-lg-0 mb-2">
-        <div class="card shadow bg-primary text-white m-0">
+    <div class="row g-2 mx-0">
+      <div class="col-12 col-sm-6 col-xxl-3">
+        <div class="card shadow bg-primary text-white mb-0">
           <div
           class="card-body d-flex justify-content-between align-items-center p-2 px-4"
           >
@@ -171,7 +171,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3 px-0 px-lg-1 mb-2">
+      <div class="col-12 col-sm-6 col-xxl-3">
         <div class="card shadow bg-primary text-white mb-0">
           <div
             class="card-body d-flex justify-content-between align-items-center p-2 px-4"
@@ -186,9 +186,9 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3 px-0 px-lg-1">
+      <div class="col-12 col-sm-6 col-xxl-3">
         <div
-          class="card shadow {% if monthly_balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white mb-2"
+          class="card shadow {% if monthly_balance >= 0 %}bg-primary{% else %}bg-warning{% endif %} text-white mb-0"
         >
           <div
             class="card-body d-flex justify-content-between align-items-center p-2 px-4"
@@ -203,8 +203,8 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3 px-0 pe-lg-0 ps-lg-1">
-        <div class="card shadow {% if saldo_atual >= 0 %}bg-primary{% else %}bg-danger{% endif %} text-white mb-2">
+      <div class="col-12 col-sm-6 col-xxl-3">
+        <div class="card shadow {% if saldo_atual >= 0 %}bg-primary{% else %}bg-danger{% endif %} text-white mb-0">
           <div class="card-body d-flex justify-content-between align-items-center p-2 px-4">
             <div class="col-auto">
               <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
@@ -221,7 +221,7 @@
     {% if pending_transactions > 0 %}
     <div class="row mx-0">
       <div class="col px-0">
-        <div class="card shadow bg-bar bg-gradient p-2 py-lg-2 mb-2" id="pendingCard" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse" aria-expanded="false" aria-controls="pendingTableCollapse">
+        <div class="card shadow bg-bar bg-gradient p-2 py-lg-2 mb-2" id="pendingCard" style="cursor:pointer;" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse" aria-expanded="false" aria-controls="pendingTableCollapse" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">
           <div
             class="row justify-content-start justify-content-lg-between align-items-center p-0"
           >
@@ -308,7 +308,7 @@
     {% if investimentos %}
     <div class="row mx-0">
       <div class="col px-0">
-        <div class="card shadow bg-bar p-2 py-lg-2 mb-2" id="pendingCard2" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse2" aria-expanded="false" aria-controls="pendingTableCollapse2">
+        <div class="card shadow bg-bar p-2 py-lg-2 mb-2" id="pendingCard2" style="cursor:pointer;" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#pendingTableCollapse2" aria-expanded="false" aria-controls="pendingTableCollapse2" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">
           <div
             class="row justify-content-start justify-content-lg-between align-items-center p-0"
           >
@@ -585,14 +585,14 @@
               </div>
               <div class="card-body">
                 <div class="chart-pie pt-4 pb-2 category-chart-canvas">
-                  <canvas id="incomeChart"></canvas>
+                  <canvas id="incomeChart" role="img" aria-label="Gráfico de receitas por categoria"></canvas>
                 </div>
                 <div class="mt-4 text-center small category-chart-legend">
                   {% for category, total in top_income_categories %}
                   <span class="mr-2">
                     <i
                       class="fas fa-circle"
-                      style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
+                      style="color: {{ ['var(--app-chart-category-1)', 'var(--app-chart-category-2)', 'var(--app-chart-category-3)', 'var(--app-chart-category-4)', 'var(--app-chart-category-5)'][loop.index0 % 5] }}"
                     ></i>
                     {{ category }} (R$ {{ total|currency }})
                   </span>
@@ -612,14 +612,14 @@
               </div>
               <div class="card-body">
                 <div class="chart-pie pt-4 pb-2 category-chart-canvas">
-                  <canvas id="expenseChart"></canvas>
+                  <canvas id="expenseChart" role="img" aria-label="Gráfico de despesas por categoria"></canvas>
                 </div>
                 <div class="mt-4 text-center small category-chart-legend">
                   {% for category, total in top_expense_categories %}
                   <span class="mr-2">
                     <i
                       class="fas fa-circle"
-                      style="color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][loop.index0 % 5] }}"
+                      style="color: {{ ['var(--app-chart-category-1)', 'var(--app-chart-category-2)', 'var(--app-chart-category-3)', 'var(--app-chart-category-4)', 'var(--app-chart-category-5)'][loop.index0 % 5] }}"
                     ></i>
                     {{ category }} (R$ {{ total|currency }})
                   </span>
@@ -646,7 +646,7 @@
           </div>
           <div class="card-body">
             <div class="chart-area chart-area-wide">
-              <canvas id="monthlyChart"></canvas>
+              <canvas id="monthlyChart" role="img" aria-label="Gráfico da evolução mensal de receitas, despesas e saldo"></canvas>
             </div>
           </div>
         </div>
@@ -705,6 +705,36 @@
   // Instancias de grafico desta pagina (para re-render ao trocar de tema)
   let pageChartInstances = [];
 
+  // Resolve tokens no momento de cada render para acompanhar o tema atual.
+  function chartToken(name, fallback) {
+      const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return value || fallback;
+  }
+  function chartPalette() {
+      return {
+          income: chartToken('--app-chart-income', '#1cc88a'),
+          incomeFill: chartToken('--app-chart-income-fill', 'rgba(28, 200, 138, 0.12)'),
+          expense: chartToken('--app-chart-expense', '#e74a3b'),
+          expenseFill: chartToken('--app-chart-expense-fill', 'rgba(231, 74, 59, 0.10)'),
+          balance: chartToken('--app-chart-balance', '#02568c'),
+          balanceFill: chartToken('--app-chart-balance-fill', 'rgba(2, 86, 140, 0.10)'),
+          categories: [1, 2, 3, 4, 5].map(function (index) {
+              return chartToken('--app-chart-category-' + index, ['#02568c', '#1a9b72', '#087990', '#a66b00', '#b02a37'][index - 1]);
+          }),
+          surface: chartToken('--app-surface', '#ffffff')
+      };
+  }
+  function chartTooltipOptions() {
+      return {
+          backgroundColor: chartToken('--app-chart-tooltip-bg', '#ffffff'),
+          titleColor: chartToken('--app-chart-tooltip-text', '#2b354f'),
+          bodyColor: chartToken('--app-chart-tooltip-text', '#2b354f'),
+          borderColor: chartToken('--app-chart-tooltip-border', '#d9dee3'),
+          borderWidth: 1,
+          displayColors: true
+      };
+  }
+
   // Função para criar os gráficos
   function createCharts() {
       // Destruir instancias anteriores (evita "Canvas already in use" no re-render)
@@ -712,6 +742,7 @@
           try { chart.destroy(); } catch (e) {}
       });
       pageChartInstances = [];
+      const palette = chartPalette();
 
       // Dados para os gráficos
       let monthlyData = [];
@@ -752,24 +783,24 @@
                       {
                           label: 'Receitas',
                           data: monthlyData.map(item => item.receita),
-                          borderColor: '#1cc88a',
-                          backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                          borderColor: palette.income,
+                          backgroundColor: palette.incomeFill,
                           tension: 0.3,
                           fill: true
                       },
                       {
                           label: 'Despesas',
                           data: monthlyData.map(item => item.despesa),
-                          borderColor: '#e74a3b',
-                          backgroundColor: 'rgba(231, 74, 59, 0.1)',
+                          borderColor: palette.expense,
+                          backgroundColor: palette.expenseFill,
                           tension: 0.3,
                           fill: true
                       },
                       {
                           label: 'Saldo',
                           data: monthlyData.map(item => item.balance),
-                          borderColor: '#4e73df',
-                          backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                          borderColor: palette.balance,
+                          backgroundColor: palette.balanceFill,
                           tension: 0.3,
                           fill: true
                       }
@@ -781,7 +812,8 @@
                   plugins: {
                       legend: {
                           position: 'top',
-                      }
+                      },
+                      tooltip: chartTooltipOptions()
                   },
                   scales: {
                       y: {
@@ -801,9 +833,9 @@
                   labels: expenseData.map(item => item.name),
                   datasets: [{
                       data: expenseData.map(item => item.value),
-                      backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                      hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                      hoverBorderColor: "rgba(234, 236, 244, 1)",
+                      backgroundColor: palette.categories,
+                      hoverBackgroundColor: palette.categories,
+                      hoverBorderColor: palette.surface,
                   }]
               },
               options: {
@@ -813,7 +845,8 @@
                       legend: {
                           position: 'bottom',
                           display: false
-                      }
+                      },
+                      tooltip: chartTooltipOptions()
                   },
                   cutout: '70%'
               }
@@ -829,9 +862,9 @@
                   labels: incomeData.map(item => item.name),
                   datasets: [{
                       data: incomeData.map(item => item.value),
-                      backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
-                      hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#be2617'],
-                      hoverBorderColor: "rgba(234, 236, 244, 1)",
+                      backgroundColor: palette.categories,
+                      hoverBackgroundColor: palette.categories,
+                      hoverBorderColor: palette.surface,
                   }]
               },
               options: {
@@ -841,7 +874,8 @@
                       legend: {
                           position: 'bottom',
                           display: false
-                      }
+                      },
+                      tooltip: chartTooltipOptions()
                   },
                   cutout: '70%'
               }
@@ -849,11 +883,53 @@
       }
   }
 
+  // Atualiza somente cores e opções; preserva instâncias e dados dos gráficos.
+  function updateChartsForTheme() {
+      const palette = chartPalette();
+      const lineColors = {
+          'Receitas': [palette.income, palette.incomeFill],
+          'Despesas': [palette.expense, palette.expenseFill],
+          'Saldo': [palette.balance, palette.balanceFill]
+      };
+
+      pageChartInstances.forEach(function (chart) {
+          const canvasId = chart.canvas && chart.canvas.id;
+          const chartData = chart.data || (chart.config && chart.config.data);
+          if (!chartData || !chartData.datasets) return;
+
+          if (canvasId === 'incomeChart' || canvasId === 'expenseChart') {
+              const dataset = chartData.datasets[0];
+              if (dataset) {
+                  dataset.backgroundColor = palette.categories;
+                  dataset.hoverBackgroundColor = palette.categories;
+                  dataset.hoverBorderColor = palette.surface;
+              }
+          } else if (canvasId === 'monthlyChart') {
+              chartData.datasets.forEach(function (dataset) {
+                  const colors = lineColors[dataset.label];
+                  if (colors) {
+                      dataset.borderColor = colors[0];
+                      dataset.backgroundColor = colors[1];
+                  }
+              });
+          }
+
+          const options = chart.options || (chart.config && chart.config.options);
+          if (options && options.plugins) options.plugins.tooltip = chartTooltipOptions();
+          if (typeof chart.update === 'function') chart.update('none');
+      });
+  }
+
   // Permite ao alternador de tema re-renderizar os graficos
   window.renderPageCharts = createCharts;
+  window.updatePageChartTheme = updateChartsForTheme;
 
   // Função para verificar se Chart.js está carregado
   function waitForChartJS(callback, maxAttempts = 50) {
+      if (typeof Chart !== 'undefined') {
+          callback();
+          return;
+      }
       let attempts = 0;
       const checkInterval = setInterval(() => {
           attempts++;

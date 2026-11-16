@@ -9,15 +9,24 @@
     background-color: #fff3cd !important;
     border-color: #ffc107 !important;
     box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
-    transition: all 0.3s ease;
-    animation: highlightField 0.5s ease-in-out;
+    transition: color 160ms ease-out, background-color 160ms ease-out,
+      border-color 160ms ease-out, box-shadow 160ms ease-out;
+    animation: highlightField 360ms cubic-bezier(0.16, 1, 0.3, 1);
   }
-  
+
+
   /* Animação para o campo ajustado */
   @keyframes highlightField {
     0% { transform: scale(1); }
-    50% { transform: scale(1.02); }
+    50% { transform: scale(1.015); }
     100% { transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .currency-input.is-adjusted {
+      animation: none;
+      transition-duration: 80ms;
+    }
   }
 </style>
 {% endblock %}
@@ -227,36 +236,37 @@
         // Criar nova mensagem usando o sistema de flash messages
         const flashContainer = document.querySelector('.container-fluid.flex-grow-1.p-0.m-0');
         if (flashContainer) {
-          const messageId = 'flash-message-' + Date.now();
-          const alertClass = 'alert-' + (type || 'info');
-          const iconClass = type === 'warning' ? 'fas fa-exclamation-triangle text-warning' : 'fas fa-info-circle text-info';
-          
-          const messageHtml = `
-            <div class="alert ${alertClass} alert-dismissible fade show" 
-                 role="alert" 
-                 id="${messageId}"
-                 style="z-index: 9999; position: relative; margin: 10px;">
-              <div class="d-flex align-items-center">
-                <div class="flex-grow-1">
-                  <i class="${iconClass}"></i>
-                  ${message}
-                </div>
-                <button type="button" 
-                        class="btn-close" 
-                        data-bs-dismiss="alert" 
-                        aria-label="Close"
-                        onclick="dismissMessage('${messageId}')">
-                </button>
-              </div>
-            </div>
-          `;
-          
-          flashContainer.insertAdjacentHTML('afterbegin', messageHtml);
-          
-          // Auto-dismiss após 8 segundos (mesmo comportamento das outras mensagens)
-          setTimeout(function() {
+          const safeType = type === 'warning' ? 'warning' : 'info';
+          const messageId = 'flash-message-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+          const alert = document.createElement('div');
+          alert.className = 'alert alert-' + safeType + ' alert-dismissible fade show';
+          alert.id = messageId;
+          alert.setAttribute('role', 'alert');
+          alert.style.margin = '10px';
+
+          const content = document.createElement('div');
+          content.className = 'd-flex align-items-center';
+          const text = document.createElement('div');
+          text.className = 'flex-grow-1';
+          const icon = document.createElement('i');
+          icon.className = safeType === 'warning'
+            ? 'fas fa-exclamation-triangle text-warning me-2'
+            : 'fas fa-info-circle text-info me-2';
+          icon.setAttribute('aria-hidden', 'true');
+          text.append(icon, document.createTextNode(String(message ?? '')));
+
+          const closeButton = document.createElement('button');
+          closeButton.type = 'button';
+          closeButton.className = 'btn-close';
+          closeButton.setAttribute('aria-label', 'Fechar aviso');
+          closeButton.addEventListener('click', function() {
             dismissMessage(messageId);
-          }, 8000);
+          });
+
+          content.append(text, closeButton);
+          alert.append(content);
+          flashContainer.prepend(alert);
+          startFlashDismiss(alert, 8000);
         }
       }
 

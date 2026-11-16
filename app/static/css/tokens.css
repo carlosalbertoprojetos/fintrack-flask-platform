@@ -43,6 +43,21 @@
   /* Charts (texto/grade dos graficos) */
   --app-chart-text: #697a8d;
   --app-chart-grid: rgba(0, 0, 0, 0.08);
+  --app-chart-income: #198754;
+  --app-chart-income-fill: rgba(25, 135, 84, 0.12);
+  --app-chart-expense: #b02a37;
+  --app-chart-expense-fill: rgba(176, 42, 55, 0.10);
+  --app-chart-balance: #02568c;
+  --app-chart-balance-fill: rgba(2, 86, 140, 0.10);
+  --app-chart-category-1: #02568c;
+  --app-chart-category-2: #1a9b72;
+  --app-chart-category-3: #087990;
+  --app-chart-category-4: #a66b00;
+  --app-chart-category-5: #b02a37;
+  --app-chart-tooltip-bg: #ffffff;
+  --app-chart-tooltip-text: #2b354f;
+  --app-chart-tooltip-border: #d9dee3;
+  --app-focus-ring: #02568c;
 
   /* Marca d'agua */
   --app-watermark: rgba(0, 0, 0, 0.1);
@@ -88,6 +103,21 @@ html[data-theme="theme-dark"] {
 
   --app-chart-text: #a9acca;
   --app-chart-grid: rgba(255, 255, 255, 0.10);
+  --app-chart-income: #71dd9b;
+  --app-chart-income-fill: rgba(113, 221, 155, 0.14);
+  --app-chart-expense: #ff8f82;
+  --app-chart-expense-fill: rgba(255, 143, 130, 0.12);
+  --app-chart-balance: #6cb2ea;
+  --app-chart-balance-fill: rgba(108, 178, 234, 0.12);
+  --app-chart-category-1: #6cb2ea;
+  --app-chart-category-2: #71dd9b;
+  --app-chart-category-3: #6ddcf1;
+  --app-chart-category-4: #ffd166;
+  --app-chart-category-5: #ff8f82;
+  --app-chart-tooltip-bg: #2b2c40;
+  --app-chart-tooltip-text: #e7e7f0;
+  --app-chart-tooltip-border: #44455e;
+  --app-focus-ring: #9ccbf2;
   --app-watermark: rgba(255, 255, 255, 0.12);
 
   /* Sobrescreve as variaveis do Bootstrap definidas no :root de core.css.
@@ -116,6 +146,38 @@ html[data-theme="theme-dark"] {
 html[data-theme="theme-dark"] body {
   background-color: var(--app-body-bg);
   color: var(--app-text);
+}
+
+/* Utilitários Bootstrap com cores próprias passam a respeitar o tema. */
+html[data-theme="theme-dark"] .bg-white,
+html[data-theme="theme-dark"] .bg-light,
+html[data-theme="theme-dark"] .btn-light {
+  color: var(--app-text) !important;
+  background-color: var(--app-surface-2) !important;
+  border-color: var(--app-border) !important;
+}
+
+html[data-theme="theme-dark"] .text-primary,
+html[data-theme="theme-dark"] .link-primary {
+  color: var(--app-accent-text) !important;
+}
+
+html[data-theme="theme-dark"] .btn-outline-primary {
+  color: var(--app-accent-text);
+  border-color: var(--app-primary);
+}
+html[data-theme="theme-dark"] .btn-outline-primary:hover,
+html[data-theme="theme-dark"] .btn-check:checked + .btn-outline-primary,
+html[data-theme="theme-dark"] .btn-outline-primary.active,
+html[data-theme="theme-dark"] .btn-outline-primary.dropdown-toggle.show,
+html[data-theme="theme-dark"] .btn-outline-primary:active {
+  color: var(--app-primary-contrast);
+  background-color: var(--app-primary);
+  border-color: var(--app-primary);
+}
+html[data-theme="theme-dark"] .btn-outline-primary:focus,
+html[data-theme="theme-dark"] .btn-outline-primary:active:focus {
+  box-shadow: 0 0 0 0.25rem var(--app-accent-soft);
 }
 
 html[data-theme="theme-dark"] .modal-content,
